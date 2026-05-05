@@ -1,0 +1,216 @@
+/* ============================================================
+   LAUNCHPAD — Dashboard Styles (Student + Investor)
+   ============================================================ */
+
+/* ── Activity feed ── */
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.activity-text {
+    font-size: 13.5px;
+    line-height: 1.5;
+    flex: 1;
+}
+
+.activity-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ── Project row ── */
+.project-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: var(--tr-fast);
+    margin-bottom: 10px;
+}
+
+.project-row:last-child {
+    margin-bottom: 0;
+}
+
+.project-row:hover {
+    border-color: var(--accent-mid);
+    background: var(--bg-hover);
+}
+
+.project-row-emoji {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.project-row-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.project-row-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.project-row-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ── Similarity card ── */
+.similarity-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.similarity-pct {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--success);
+}
+
+/* ── AI Banner ── */
+.ai-banner {
+    background: linear-gradient(135deg, rgba(91, 115, 245, .07), rgba(139, 92, 246, .07));
+    border: 1px solid rgba(91, 115, 245, .15);
+    border-radius: var(--r-lg);
+    padding: 18px 20px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.ai-banner-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.ai-banner-text {
+    flex: 1;
+}
+
+.ai-banner-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.ai-banner-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* ── Portfolio table ── */
+.portfolio-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+}
+
+.portfolio-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: background var(--tr-fast);
+}
+
+.portfolio-row:hover {
+    background: var(--bg-hover);
+}
+
+.portfolio-row:last-child {
+    border-bottom: none;
+}
+
+/* ── Quick actions ── */
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+
+    .portfolio-header,
+    .portfolio-row {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+
+    .portfolio-header span:last-child,
+    .portfolio-row span:last-child {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .ai-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .portfolio-header {
+        display: none;
+    }
+
+    .portfolio-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .portfolio-row span:nth-child(3),
+    .portfolio-row span:nth-child(4),
+    .portfolio-row span:nth-child(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-3.similarity-grid {
+        grid-template-columns: 1fr;
+    }
+}

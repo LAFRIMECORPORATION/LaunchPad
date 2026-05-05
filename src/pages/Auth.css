@@ -1,0 +1,220 @@
+/* ============================================================
+   LAUNCHPAD — Auth Pages (Login + Register)
+   ============================================================ */
+
+.auth-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ── Panneau décoratif gauche ── */
+.auth-deco {
+    width: 420px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 48px;
+    flex-shrink: 0;
+}
+
+.auth-deco-title {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 800;
+    color: white;
+    text-align: center;
+    margin-bottom: 18px;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+.auth-deco-sub {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    line-height: 1.65;
+    margin-bottom: 44px;
+}
+
+.auth-deco-stat {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border-radius: var(--r-md);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.auth-deco-stat-icon {
+    font-size: 22px;
+}
+
+.auth-deco-stat-val {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.02em;
+}
+
+.auth-deco-stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Panneau formulaire droite ── */
+.auth-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    background: var(--bg);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-logo {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+    margin-bottom: 24px;
+    display: inline-block;
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+}
+
+.auth-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.auth-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 26px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Role toggle */
+.auth-role-toggle {
+    display: flex;
+    background: var(--bg-input);
+    border-radius: var(--r-sm);
+    padding: 3px;
+    border: 1px solid var(--border);
+}
+
+.auth-role-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: var(--r-xs);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: var(--tr-fast);
+}
+
+.auth-role-btn.active {
+    background: var(--bg-card);
+    color: var(--accent);
+    box-shadow: var(--shadow-xs);
+}
+
+/* Role card (register) */
+.auth-role-card {
+    padding: 16px;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: var(--tr-fast);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.auth-role-card:hover {
+    border-color: var(--accent-mid);
+    background: var(--bg-hover);
+}
+
+.auth-role-card.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.auth-role-icon {
+    font-size: 26px;
+    flex-shrink: 0;
+}
+
+.auth-role-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.auth-role-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.auth-footer-text {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 18px;
+}
+
+.auth-link {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .auth-deco {
+        display: none;
+    }
+
+    .auth-panel {
+        padding: 24px 16px;
+    }
+
+    .auth-title {
+        font-size: 26px;
+    }
+}

@@ -1,0 +1,108 @@
+/* ============================================================
+   LAUNCHPAD — Bottom Navigation Mobile
+   ============================================================ */
+
+.bottom-nav {
+    display: none;
+    /* caché par défaut sur desktop */
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border);
+        z-index: 600;
+        padding: 0 4px;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 4px;
+        border-radius: var(--r-sm);
+        transition: var(--tr-fast);
+        color: var(--text-muted);
+        font-family: var(--font-body);
+    }
+
+    .bottom-nav-item:hover {
+        background: var(--bg-hover);
+    }
+
+    .bottom-nav-item.active {
+        color: var(--accent);
+    }
+
+    .bottom-nav-icon-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bottom-nav-icon {
+        font-size: 22px;
+        line-height: 1;
+        transition: transform var(--tr-fast);
+    }
+
+    .bottom-nav-item.active .bottom-nav-icon {
+        transform: scale(1.15);
+    }
+
+    .bottom-nav-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .bottom-nav-badge {
+        position: absolute;
+        top: -4px;
+        right: -6px;
+        min-width: 16px;
+        height: 16px;
+        background: var(--danger);
+        color: white;
+        border-radius: var(--r-full);
+        font-size: 9px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 2px solid white;
+    }
+
+    /* Active indicator bar */
+    .bottom-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        width: 24px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 0 0 var(--r-xs) var(--r-xs);
+    }
+
+    /* Espace pour éviter que le contenu soit caché par la bottom nav */
+    .app-main {
+        padding-bottom: 80px !important;
+    }
+}

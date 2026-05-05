@@ -1,0 +1,159 @@
+/* ============================================================
+   LAUNCHPAD — ShareMenu Styles
+   ============================================================ */
+
+.share-menu-wrap {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    width: 260px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 300;
+    animation: scaleIn 0.18s ease both;
+    transform-origin: bottom right;
+    overflow: hidden;
+}
+
+/* ── Header ── */
+.share-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.share-menu-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.share-menu-close {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--r-xs);
+    transition: var(--tr-fast);
+    line-height: 1;
+}
+
+.share-menu-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ── Project preview ── */
+.share-menu-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
+}
+
+.share-menu-preview-emoji {
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.share-menu-preview-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.share-menu-preview-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+/* ── Options ── */
+.share-menu-options {
+    padding: 6px 0;
+}
+
+.share-menu-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--tr-fast);
+    font-family: var(--font-body);
+    text-align: left;
+}
+
+.share-menu-option:hover {
+    background: var(--bg-hover);
+}
+
+.share-menu-option.active {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.share-menu-option-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.share-menu-option.active .share-menu-option-icon {
+    color: var(--success);
+}
+
+.share-menu-option-label {
+    flex: 1;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.share-menu-option.active .share-menu-option-label {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.share-menu-option-ext {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ── Footer ── */
+.share-menu-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+    .share-menu-wrap {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: var(--r-xl) var(--r-xl) 0 0;
+        transform-origin: bottom center;
+    }
+}

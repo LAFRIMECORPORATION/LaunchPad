@@ -1,0 +1,194 @@
+/* ============================================================
+   LAUNCHPAD — Investor Requests / Marketplace
+   ============================================================ */
+
+.ir-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Card ── */
+.ir-card {
+    padding: 0;
+    overflow: hidden;
+    transition: var(--tr-normal);
+}
+
+.ir-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+}
+
+.ir-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-hover);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ir-card-header-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ir-card-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.ir-card-author {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.ir-card-company {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ir-card-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.ir-card-body {
+    padding: 18px 20px;
+}
+
+.ir-card-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+}
+
+.ir-card-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 14px;
+}
+
+.ir-read-more {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    padding: 0;
+}
+
+/* ── Skills ── */
+.ir-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 14px;
+}
+
+.ir-skill-tag {
+    padding: 4px 10px;
+    border-radius: var(--r-xs);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--accent-mid);
+}
+
+/* ── Meta ── */
+.ir-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.ir-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ── Footer ── */
+.ir-card-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-hover);
+}
+
+/* ── Type toggle ── */
+.ir-type-toggle {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ir-type-btn {
+    padding: 8px 14px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: var(--tr-fast);
+}
+
+.ir-type-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ir-type-btn.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── Modal ── */
+.ir-modal {
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .ir-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ir-card-header-right {
+        align-items: flex-start;
+    }
+
+    .ir-meta {
+        gap: 10px;
+    }
+
+    .ir-type-toggle {
+        flex-direction: column;
+    }
+
+    .ir-type-btn {
+        width: 100%;
+        text-align: left;
+    }
+}
