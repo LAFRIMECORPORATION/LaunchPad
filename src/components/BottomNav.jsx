@@ -6,25 +6,23 @@ import { useApp } from "../context/AppContext";
 import "./BottomNav.css";
 
 export default function BottomNav() {
-    const { currentPage, currentUser, navigate, unreadMessages, unreadCount } = useApp();
+    const { currentPage, currentUser, navigate } = useApp();
 
     if (!currentUser) return null;
 
     const studentTabs = [
         { id: "dashboard-student", icon: "🏠", label: "Home" },
         { id: "explore", icon: "🔍", label: "Explorer" },
-        { id: "publish", icon: "➕", label: "Publier" },
-        { id: "collaboration", icon: "🤝", label: "Collab" },
-        { id: "investor-requests", icon: "📋", label: "Offres investisseurs" },
-        { id: "messages", icon: "💬", label: "Messages", badge: unreadMessages },
+        { id: "publish", icon: "✏️", label: "Publier" },
+        { id: "collaboration", icon: "👥", label: "Collab" },
+        { id: "investor-requests", icon: "💼", label: "Offres" },
     ];
 
     const investorTabs = [
         { id: "dashboard-investor", icon: "🏠", label: "Home" },
         { id: "explore", icon: "🔍", label: "Explorer" },
-        { id: "investor-requests", icon: "📋", label: "Offres" },
-        { id: "saved-projects", icon: "⭐", label: "Sauvegardés" },
-        { id: "messages", icon: "💬", label: "Messages", badge: unreadMessages },
+        { id: "investor-requests", icon: "💰", label: "Offres" },
+        { id: "saved-projects", icon: "❤️", label: "Sauvegardés" },
     ];
 
     const adminTabs = [

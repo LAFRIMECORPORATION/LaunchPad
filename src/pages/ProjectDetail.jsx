@@ -12,13 +12,22 @@ import "./Projects.css";
 export default function ProjectDetail() {
     const { navigate, selProject, currentUser, projects } = useApp();
 
-    const pct = Math.round((project.raised / project.goal) * 100);
+    const liveProject = projects.find(p => p.id === selProject?.id) || selProject || projects[0];
+    const project = liveProject;
+    const pct = project?.goal ? Math.round((project.raised / project.goal) * 100) : 0;
     const daysLeft = 14;
 
     {/* gestion de like et de commentaire*/ }
 
-    const liveProject = projects.find(p => p.id === (selProject?.id)) || selProject || projects[0]
-    const project = liveProject;
+    if (!project) {
+        return (
+            <div className="animate-fadeUp" style={{ padding: 32, color: "var(--text-muted)" }}>
+                <h2>Projet introuvable</h2>
+                <p>Veuillez retourner à la page d'exploration et sélectionnez un projet.</p>
+                <button className="btn btn-primary" onClick={() => navigate("explore")}>Retour aux projets</button>
+            </div>
+        );
+    }
 
     return (
         <div className="animate-fadeUp">

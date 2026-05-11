@@ -4,7 +4,7 @@ import { PROJECTS } from "..//data/mockData";
 import "./Home.css";
 
 export default function Home() {
-    const { navigate } = useApp;
+    const { navigate } = useApp();
 
     return (
 
