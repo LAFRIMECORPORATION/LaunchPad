@@ -114,7 +114,6 @@ export default function InvestorRequests() {
                         setShowForm(false);
                         showToast("Offre publiée avec succès !", "success");
                     }}
-                    showToast={showToast}
                 />
             )}
         </div>
@@ -205,7 +204,7 @@ function RequestCard({ request, isInvestor, hasApplied, onApply }) {
 }
 
 /* ── Modal publication d'offre ── */
-function PublishRequestModal({ onClose, onSubmit, showToast }) {
+function PublishRequestModal({ onClose, onSubmit }) {
     const [form, setForm] = useState({
         type: "job",
         title: "",
@@ -226,13 +225,8 @@ function PublishRequestModal({ onClose, onSubmit, showToast }) {
                 : [...f.skills, s],
         }));
 
-    const isSubmitDisabled = !form.title.trim() || !form.description.trim();
-
     function handleSubmit() {
-        if (isSubmitDisabled) {
-            showToast("Veuillez renseigner le titre et la description.", "error");
-            return;
-        }
+        if (!form.title || !form.description) return;
         onSubmit(form);
     }
 
@@ -258,20 +252,16 @@ function PublishRequestModal({ onClose, onSubmit, showToast }) {
                         {/* Type */}
                         <div className="form-group">
                             <label className="form-label">Type d'offre</label>
-                            <div className="ir-type-grid">
+                            <div className="ir-type-toggle">
                                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
                                     <button
                                         key={k}
-                                        className={`ir-type-btn type-${k} ${form.type === k ? "active" : ""}`}
+                                        className={`ir-type-btn${form.type === k ? " active" : ""}`}
                                         onClick={() => upd("type", k)}
                                     >
-                                        <span>{v.icon}</span>
-                                        <span>{v.label}</span>
+                                        {v.icon} {v.label}
                                     </button>
                                 ))}
-                            </div>
-                            <div className="ir-type-note">
-                                Choisissez un format clair : emploi, mission freelance ou collaboration. Chaque type se distingue visuellement dans le marketplace.
                             </div>
                         </div>
 
@@ -365,7 +355,7 @@ function PublishRequestModal({ onClose, onSubmit, showToast }) {
                     <button className="btn btn-secondary" onClick={onClose}>
                         Annuler
                     </button>
-                    <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitDisabled}>
+                    <button className="btn btn-primary" onClick={handleSubmit}>
                         🚀 Publier l'offre
                     </button>
                 </div>
