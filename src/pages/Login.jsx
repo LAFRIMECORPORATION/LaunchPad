@@ -64,15 +64,14 @@ export default function Login() {
                     <div className="auth-form">
 
                         {/* role toggle*/}
-                        <div className="auth-role-toggle" >
-
+                        <div className="auth-role-toggle">
                             {[["student", "🎓 Étudiant"], ["investor", "💼 Investisseur"], ["admin", "⚙️ Admin"]].map(([r, l]) => (
-                                <button key={r} className={`auth-role-btn$ {role === r ? "active" : "" } `}
-                                    onClick={() => setRole(r)}  >
+                                <button key={r} className={`auth-role-btn${role === r ? " active" : ""}`}
+                                    onClick={() => setRole(r)}
+                                >
                                     {l}
                                 </button>
                             ))}
-
                         </div>
 
                         {/* email */}

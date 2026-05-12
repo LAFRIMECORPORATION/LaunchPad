@@ -123,30 +123,38 @@
 /* Role toggle */
 .auth-role-toggle {
     display: flex;
-    background: var(--bg-input);
+    gap: 10px;
+    background: transparent;
     border-radius: var(--r-sm);
-    padding: 3px;
-    border: 1px solid var(--border);
+    padding: 0;
+    border: none;
 }
 
 .auth-role-btn {
     flex: 1;
-    padding: 8px 10px;
-    border-radius: var(--r-xs);
-    border: none;
-    background: transparent;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 600;
     font-family: var(--font-body);
     cursor: pointer;
     transition: var(--tr-fast);
+    text-align: center;
+}
+
+.auth-role-btn:hover {
+    border-color: var(--accent-mid);
+    background: var(--bg-hover);
 }
 
 .auth-role-btn.active {
-    background: var(--bg-card);
+    background: var(--accent-light);
     color: var(--accent);
-    box-shadow: var(--shadow-xs);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(91, 115, 245, 0.12);
 }
 
 /* Role card (register) */
