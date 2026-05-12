@@ -348,7 +348,7 @@ export function Toast() {
 
 /* ── NAVBAR ── */
 export function Navbar() {
-    const { currentUser, navigate, currentPage, unreadCount, unreadMessages } = useApp();
+    const { currentUser, navigate, currentPage, unreadCount, unreadMessages, logout } = useApp();
 
     const studentLinks = [["dashboard-student", "Dashboard"], ["explore", "Explorer"], ["publish", "Publier"]];
     const investorLinks = [["dashboard-investor", "Dashboard"], ["explore", "Explorer"]];
@@ -359,6 +359,16 @@ export function Navbar() {
     return (
         <header className="navbar">
             <span className="navbar-logo" onClick={() => navigate("home")}>  ← Launchpad</span>
+
+            {currentUser && (
+                <button
+                    className="navbar-icon-btn navbar-logout-btn"
+                    onClick={logout}
+                    title="Déconnexion"
+                >
+                    🚪
+                </button>
+            )}
 
             <nav className="navbar-links">
                 {links.map(([id, label]) => (
