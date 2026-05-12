@@ -194,17 +194,31 @@
     border-color: currentColor;
 }
 
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
 .modal {
     width: min(100%, 720px);
     background: var(--bg-card);
     border-radius: var(--r-xl);
     box-shadow: 0 38px 110px rgba(15, 23, 42, 0.16);
     border: 1px solid rgba(15, 23, 42, 0.04);
+    position: relative;
 }
 
 .ir-modal {
     max-width: 680px;
-    max-height: 92vh;
+    max-height: 86vh;
     overflow-y: auto;
 }
 
