@@ -258,16 +258,20 @@ function PublishRequestModal({ onClose, onSubmit, showToast }) {
                         {/* Type */}
                         <div className="form-group">
                             <label className="form-label">Type d'offre</label>
-                            <div className="ir-type-toggle">
+                            <div className="ir-type-grid">
                                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
                                     <button
                                         key={k}
-                                        className={`ir-type-btn${form.type === k ? " active" : ""}`}
+                                        className={`ir-type-btn type-${k} ${form.type === k ? "active" : ""}`}
                                         onClick={() => upd("type", k)}
                                     >
-                                        {v.icon} {v.label}
+                                        <span>{v.icon}</span>
+                                        <span>{v.label}</span>
                                     </button>
                                 ))}
+                            </div>
+                            <div className="ir-type-note">
+                                Choisissez un format clair : emploi, mission freelance ou collaboration. Chaque type se distingue visuellement dans le marketplace.
                             </div>
                         </div>
 
