@@ -162,6 +162,25 @@
 }
 
 /* ── Modal ── */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.62);
+    z-index: 999;
+}
+
+.modal {
+    width: min(100%, 640px);
+    background: var(--bg);
+    border-radius: var(--r-2xl);
+    box-shadow: 0 32px 90px rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .ir-modal {
     max-width: 580px;
     max-height: 90vh;

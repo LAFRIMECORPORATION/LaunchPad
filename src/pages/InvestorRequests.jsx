@@ -114,6 +114,7 @@ export default function InvestorRequests() {
                         setShowForm(false);
                         showToast("Offre publiée avec succès !", "success");
                     }}
+                    showToast={showToast}
                 />
             )}
         </div>
@@ -204,7 +205,7 @@ function RequestCard({ request, isInvestor, hasApplied, onApply }) {
 }
 
 /* ── Modal publication d'offre ── */
-function PublishRequestModal({ onClose, onSubmit }) {
+function PublishRequestModal({ onClose, onSubmit, showToast }) {
     const [form, setForm] = useState({
         type: "job",
         title: "",
@@ -225,8 +226,13 @@ function PublishRequestModal({ onClose, onSubmit }) {
                 : [...f.skills, s],
         }));
 
+    const isSubmitDisabled = !form.title.trim() || !form.description.trim();
+
     function handleSubmit() {
-        if (!form.title || !form.description) return;
+        if (isSubmitDisabled) {
+            showToast("Veuillez renseigner le titre et la description.", "error");
+            return;
+        }
         onSubmit(form);
     }
 
@@ -355,7 +361,7 @@ function PublishRequestModal({ onClose, onSubmit }) {
                     <button className="btn btn-secondary" onClick={onClose}>
                         Annuler
                     </button>
-                    <button className="btn btn-primary" onClick={handleSubmit}>
+                    <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitDisabled}>
                         🚀 Publier l'offre
                     </button>
                 </div>
