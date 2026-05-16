@@ -117,16 +117,16 @@ function FoundScreen({ onRequest, onSkip }) {
                         </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                         <button
-                            className="btn btn-primary"
-                            style={{ flex: 1 }}
+                            className="btn btn-primary btn-full"
+                            style={{ minWidth: "calc(100% - 120px)" }}
                             onClick={() => onRequest(sp)}
                         >
                             🤝 Demander une collaboration
                         </button>
-                        <button className="btn btn-secondary btn-sm">
-                            👁️ Voir le projet
+                        <button className="btn btn-secondary btn-sm btn-full" style={{ minWidth: "100px" }}>
+                            👁️ Voir
                         </button>
                     </div>
                 </div>

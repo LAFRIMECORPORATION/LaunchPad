@@ -143,7 +143,7 @@ export default function Home() {
                     <p className="home-cta-sub">
                         regoignez des milliers d etudiants qui transforment leurs ides en startups financées.
                     </p>
-                    <button className="btn btn-primary btn-xl" onClick={() => navigate("register")}>
+                    <button className="btn btn-primary btn-lg" onClick={() => navigate("register")} style={{ maxWidth: "100%", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         commencer maintenant - c est gratuit
                     </button>
                 </div>

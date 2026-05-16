@@ -369,6 +369,17 @@
     }
 }
 
+@media (max-width: 640px) {
+    .collab-project-card {
+        padding: 14px;
+    }
+
+    .collab-project-card button {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}
+
 @media (max-width: 480px) {
     .collab-detecting {
         padding: 24px 16px;
