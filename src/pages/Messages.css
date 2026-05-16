@@ -7,6 +7,7 @@
     height: calc(100vh - var(--nav-h));
     margin: -28px -32px;
     overflow: hidden;
+    min-width: 0;
 }
 
 /* ── Conversations list ── */
@@ -17,6 +18,31 @@
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
+}
+
+@media (max-width: 900px) {
+    .conv-list {
+        width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .conv-list {
+        width: 100%;
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .messages-layout {
+        flex-direction: column;
+        height: auto;
+        margin: 0;
+    }
+
+    .chat-area {
+        min-width: 0;
+    }
 }
 
 .conv-list-header {

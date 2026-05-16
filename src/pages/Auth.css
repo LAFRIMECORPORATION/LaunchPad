@@ -5,6 +5,7 @@
 .auth-layout {
     display: flex;
     min-height: 100vh;
+    flex-wrap: wrap;
 }
 
 /* ── Panneau décoratif gauche ── */
@@ -70,6 +71,7 @@
 /* ── Panneau formulaire droite ── */
 .auth-panel {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,7 +215,11 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+    .auth-layout {
+        flex-direction: column;
+    }
+
     .auth-deco {
         display: none;
     }
@@ -224,5 +230,29 @@
 
     .auth-title {
         font-size: 26px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-panel {
+        padding: 18px 12px;
+    }
+
+    .auth-form {
+        padding: 20px;
+    }
+
+    .auth-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 375px) {
+    .auth-panel {
+        padding: 16px 12px;
+    }
+
+    .auth-title {
+        font-size: 22px;
     }
 }

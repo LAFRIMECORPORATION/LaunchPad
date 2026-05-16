@@ -431,6 +431,38 @@
     }
 }
 
+@media (max-width: 640px) {
+    .profile-stats-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-stat {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+
+    .profile-stat:last-child {
+        border-bottom: none;
+    }
+
+    .profile-header-bar {
+        padding-left: 0;
+        padding-top: 40px;
+    }
+
+    .portfolio-detail-header,
+    .portfolio-detail-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .portfolio-detail-header span:nth-child(3),
+    .portfolio-detail-row span:nth-child(3) {
+        display: none;
+    }
+}
+
 @media (max-width: 480px) {
     .profile-stats-strip {
         grid-template-columns: 1fr 1fr;

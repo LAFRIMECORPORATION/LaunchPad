@@ -2,7 +2,8 @@
 .explore-search-wrap {
     position: relative;
     flex: 1;
-    min-width: 200px;
+    min-width: min(100%, 200px);
+    width: 100%;
 }
 
 .explore-search-icon {
@@ -20,7 +21,7 @@
 
 /* ── Publish ── */
 .publish-wrap {
-    max-width: 720px;
+    max-width: calc(100% - 32px);
     margin: 0 auto;
 }
 
@@ -179,6 +180,14 @@
 }
 
 @media (max-width: 480px) {
+    .project-detail-title {
+        font-size: 18px;
+    }
+
+    .project-detail-lead {
+        font-size: 13px;
+    }
+
     .project-cover {
         height: 120px;
         font-size: 40px;

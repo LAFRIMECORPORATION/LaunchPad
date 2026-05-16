@@ -46,7 +46,7 @@ export default function Explore() {
                 <div className="page-header-actions">
                     <select
                         className="form-input form-select"
-                        style={{ width: 180 }}
+                        style={{ width: "min(100%, 180px)" }}
                         value={sort}
                         onChange={e => setSort(e.target.value)}
                     >
@@ -70,7 +70,7 @@ export default function Explore() {
                 </div>
                 <select
                     className="form-input form-select"
-                    style={{ width: 200 }}
+                    style={{ width: "min(100%, 200px)" }}
                     value={stage}
                     onChange={e => setStage(e.target.value)}
                 >
