@@ -5,7 +5,8 @@
 .social-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 /* ── Bouton de base ── */
@@ -24,6 +25,7 @@
     cursor: pointer;
     transition: var(--tr-fast);
     white-space: nowrap;
+    min-width: 0;
 }
 
 .social-btn:hover {
@@ -74,15 +76,16 @@
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
-    .social-btn-count {
-        display: none;
-    }
-
     .social-btn {
-        padding: 7px;
+        padding: 6px 10px;
+        font-size: 12px;
     }
 
     .social-btn-sm {
-        padding: 5px;
+        padding: 5px 8px;
+    }
+
+    .social-btn-count {
+        display: inline-flex;
     }
 }

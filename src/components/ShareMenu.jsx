@@ -45,17 +45,15 @@ export default function ShareMenu({ project, onClose }) {
     function handleShareInMessages() {
         incrementShare(project.id);
         navigate("messages");
-        showToast(`Partagez"${project.title}" dans vos conversations., "info"`);
+        showToast(`Partagez "${project.title}" dans vos conversations.`, "info");
         onClose();
     }
 
     // ── Partager sur X (Twitter) ──
     function handleShareX() {
-        const text = encodeURIComponent(`
-      🚀 Découvrez "${project.title}" sur Launchpad — ${project.tagline}
-   ` );
+        const text = encodeURIComponent(`🚀 Découvrez "${project.title}" sur Launchpad — ${project.tagline}`);
         const url = encodeURIComponent(projectUrl);
-        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}, "_blank"`);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
         incrementShare(project.id);
         onClose();
     }
@@ -63,7 +61,7 @@ export default function ShareMenu({ project, onClose }) {
     // ── Partager sur LinkedIn ──
     function handleShareLinkedIn() {
         const url = encodeURIComponent(projectUrl);
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}, "_blank"`);
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, "_blank");
         incrementShare(project.id);
         onClose();
     }
