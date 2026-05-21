@@ -15,7 +15,7 @@ export default function SocialActions({
     size = "normal",   // "normal" | "sm"
     className = "",
 }) {
-    const { toggleLike, currentUser } = useApp();
+    const { toggleLike } = useApp();
     const [shareOpen, setShareOpen] = useState(false);
     const shareRef = useRef(null);
 
@@ -41,6 +41,7 @@ export default function SocialActions({
 
             {/* ── Like ── */}
             <button
+                type="button"
                 className={`${btnClass}${project.likedByMe ? " liked" : ""}`}
                 onClick={handleLike}
                 title={project.likedByMe ? "Retirer le like" : "Liker ce projet"}
@@ -54,6 +55,7 @@ export default function SocialActions({
             {/* ── Comment ── */}
             {showCommentCount && (
                 <button
+                    type="button"
                     className={btnClass}
                     onClick={handleComment}
                     title="Voir les commentaires"
@@ -68,6 +70,7 @@ export default function SocialActions({
             {/* ── Share ── */}
             <div className="social-share-wrap" ref={shareRef}>
                 <button
+                    type="button"
                     className={`${btnClass}${shareOpen ? " active" : ""}`}
                     onClick={handleShare}
                     title="Partager ce projet"
