@@ -487,7 +487,7 @@ export default function Collaboration() {
                     <FoundScreen onRequest={handleRequest} onSkip={handleSkip} />
                     <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate("dashboard-student")}>
-                            ← Retour au dashboard
+                            ← Retour
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setLocalStep("team")}>
                             🏠 Voir l'espace équipe (démo)

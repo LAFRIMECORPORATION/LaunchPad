@@ -203,6 +203,32 @@
     flex-shrink: 0;
 }
 
+/* Action group: overlay small 'Voir' button on mobile to save de la place */
+.collab-action-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.collab-action-group .collab-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.collab-action-group .collab-view-btn {
+    flex: 0 0 auto;
+}
+
+/* Demo team button: allow shrinking and ellipsis to avoid breaking layout */
+.team-demo-btn {
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ── Request form ── */
 .collab-form-wrap {
     max-width: 680px;
@@ -385,7 +411,77 @@
         padding: 24px 16px;
     }
 
+    /* On small screens, overlay the 'Voir' button on top-right of the primary button */
+    .collab-action-group {
+        padding-top: 6px;
+    }
+
+    .collab-action-group .collab-view-btn {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        z-index: 5;
+        margin-left: 0;
+    }
+
+    /* Give primary button extra right padding so text doesn't hide under the overlay */
+    .collab-action-group .collab-primary {
+        padding-right: 72px;
+    }
+
+    /* Make demo team button full width on very small screens */
+    .team-demo-btn {
+        width: 100%;
+        max-width: none;
+    }
+
     .collab-success {
         padding: 32px 20px;
+    }
+}
+
+/* Footer overlay: superpose 'Retour' et 'Voir l'espace équipe (démo)' on small screens */
+.footer-action-wrap {
+    margin-top: 16px;
+    display: flex;
+}
+
+.overlay-btns {
+    position: relative;
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.overlay-btns .collab-back-btn {
+    position: relative;
+}
+
+.overlay-btns .collab-demo-btn {
+    position: relative;
+}
+
+@media (max-width: 640px) {
+    .overlay-btns {
+        width: 100%;
+    }
+
+    .overlay-btns .collab-back-btn {
+        width: 100%;
+    }
+
+    .overlay-btns .collab-demo-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    /* ensure primary back button text isn't hidden behind overlay (visual balance) */
+    .overlay-btns .collab-back-btn {
+        padding-right: 18px;
     }
 }
