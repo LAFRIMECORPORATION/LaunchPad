@@ -251,6 +251,32 @@
     flex-shrink: 0;
 }
 
+.collab-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.collab-form-actions .btn {
+    flex: 0 1 auto;
+    min-width: 140px;
+    max-width: 280px;
+}
+
+@media (max-width: 520px) {
+    .collab-form-actions {
+        flex-direction: column;
+    }
+
+    .collab-form-actions .btn {
+        width: 100%;
+    }
+}
+
 /* ── Success screen ── */
 .collab-success {
     display: flex;

@@ -274,11 +274,11 @@ function RequestScreen({ target, onSend, onBack }) {
 
                 </div>
 
-                <div style={{ display: "flex", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onBack}>
+                <div className="collab-form-actions">
+                    <button className="btn btn-secondary" onClick={onBack}>
                         Annuler
                     </button>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setSent(true)}>
+                    <button className="btn btn-primary" onClick={() => setSent(true)}>
                         🚀 Envoyer la demande
                     </button>
                 </div>
