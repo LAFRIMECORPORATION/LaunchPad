@@ -2,22 +2,28 @@
 // LAUNCHPAD — Messages Page
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar, ChatMessage } from "../components/UI";
 import "./Messages.css";
 
 export default function Messages() {
-    const { conversations, activeConvId, setActiveConvId, sendMessage } = useApp();
+    const { conversations, activeConvId, setActiveConvId, sendMessage, teamContact, setTeamContact } = useApp();
     const [draft, setDraft] = useState("");
     const [chatOpen, setChatOpen] = useState(false);
 
-    const activeConv = conversations.find(c => c.id === activeConvId);
+    // Si un contact d'équipe est défini, afficher sa conversation
+    const activeConv = teamContact || conversations.find(c => c.id === activeConvId);
 
     function handleSend() {
         if (!draft.trim()) return;
-        sendMessage(activeConvId, draft.trim());
-        setDraft("");
+        if (teamContact) {
+            // Contact d'équipe — envoyer le message
+            setDraft("");
+        } else {
+            sendMessage(activeConvId, draft.trim());
+            setDraft("");
+        }
     }
 
     function handleKeyDown(e) {
@@ -28,6 +34,7 @@ export default function Messages() {
     }
 
     function handleSelectConv(id) {
+        setTeamContact(null);
         setActiveConvId(id);
         setChatOpen(true);
     }
@@ -50,7 +57,7 @@ export default function Messages() {
                     {conversations.map(conv => (
                         <div
                             key={conv.id}
-                            className={`conv-item${activeConvId === conv.id ? " active" : ""}`}
+                            className={`conv-item${activeConvId === conv.id && !teamContact ? " active" : ""}`}
                             onClick={() => handleSelectConv(conv.id)}
                         >
                             {/* Avatar + online dot */}
@@ -93,14 +100,14 @@ export default function Messages() {
                         </button>
 
                         <div style={{ position: "relative" }}>
-                            <Avatar label={activeConv.with.avatar} size="md" />
-                            {activeConv.with.online && <div className="online-dot" />}
+                            <Avatar label={activeConv.avatar || activeConv.with?.avatar} size="md" />
+                            {activeConv.with?.online && <div className="online-dot" />}
                         </div>
 
                         <div>
-                            <div className="chat-header-name">{activeConv.with.name}</div>
-                            <div className={`chat-header-status ${activeConv.with.online ? "online" : "offline"}`}>
-                                {activeConv.with.online ? "● En ligne" : "Hors ligne"}
+                            <div className="chat-header-name">{activeConv.name || activeConv.with?.name}</div>
+                            <div className={`chat-header-status ${activeConv.with?.online ? "online" : "offline"}`}>
+                                {activeConv.with?.online ? "● En ligne" : activeConv.avatar ? "📞 Équipe du projet" : "Hors ligne"}
                             </div>
                         </div>
 
@@ -114,13 +121,19 @@ export default function Messages() {
                     {/* Messages */}
                     <div className="chat-messages">
                         <div className="chat-date-separator">Aujourd'hui</div>
-                        {activeConv.messages.map(msg => (
-                            <ChatMessage
-                                key={msg.id}
-                                message={msg}
-                                senderLabel={activeConv.with.avatar}
-                            />
-                        ))}
+                        {activeConv.messages ? (
+                            activeConv.messages.map(msg => (
+                                <ChatMessage
+                                    key={msg.id}
+                                    message={msg}
+                                    senderLabel={activeConv.with?.avatar || activeConv.avatar}
+                                />
+                            ))
+                        ) : (
+                            <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                                Début de la conversation avec {activeConv.name}
+                            </div>
+                        )}
                     </div>
 
                     {/* Input */}

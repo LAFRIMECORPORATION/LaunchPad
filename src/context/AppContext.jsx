@@ -44,6 +44,7 @@ export function AppProvider({ children }) {
   // ─── Interface Utilisateur (UI) & Feedbacks ───────────────
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toast, setToast] = useState(null);
+  const [teamContact, setTeamContact] = useState(null);
 
   // ─── Navigation Logic ─────────────────────────────────────
   const navigate = useCallback((page, opts = {}) => {
@@ -54,6 +55,7 @@ export function AppProvider({ children }) {
     if (opts.collabStep !== undefined) setCollabStep(opts.collabStep);
     if (opts.target)            setCollabTarget(opts.target);
     if (opts.collabTarget)      setCollabTarget(opts.collabTarget);
+    if (opts.teamContact)       setTeamContact(opts.teamContact);
     window.scrollTo(0, 0);
   }, [currentPage]);
 
@@ -141,8 +143,6 @@ export function AppProvider({ children }) {
   // ─── Authentification Logic ───────────────────────────────
   const login = useCallback((role) => {
     const cleanRole = role?.toString().trim().toLowerCase();
-    console.log("login() reçu :", role);
-    console.log("login() nettoyé :", cleanRole);
 
     const validRoles = ["student", "investor", "admin"];
     if (!validRoles.includes(cleanRole)) {
@@ -314,6 +314,8 @@ export function AppProvider({ children }) {
     setSidebarOpen,
     toast,
     showToast,
+    teamContact,
+    setTeamContact,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

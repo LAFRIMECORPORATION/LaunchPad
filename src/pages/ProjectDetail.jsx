@@ -184,12 +184,13 @@ export default function ProjectDetail() {
                                 <button
                                     className="btn btn-primary btn-full btn-lg"
                                     style={{ marginBottom: 10 }}
+                                    onClick={() => navigate("payment", { project })}
                                 >
                                     💰 Investir dans ce projet
                                 </button>
                                 <button
                                     className="btn btn-secondary btn-full"
-                                    onClick={() => navigate("messages")}
+                                    onClick={() => navigate("messages", { teamContact: { name: `Équipe ${project.title}`, avatar: "TM", projectId: project.id } })}
                                 >
                                     💬 Contacter l'équipe
                                 </button>
@@ -197,7 +198,7 @@ export default function ProjectDetail() {
                         ) : (
                             <button
                                 className="btn btn-secondary btn-full"
-                                onClick={() => navigate("messages")}
+                                onClick={() => navigate("messages", { teamContact: { name: `Équipe ${project.title}`, avatar: "TM", projectId: project.id } })}
                             >
                                 💬 Envoyer un message
                             </button>

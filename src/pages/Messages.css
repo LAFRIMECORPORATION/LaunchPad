@@ -4,8 +4,7 @@
 
 .messages-layout {
     display: flex;
-    height: calc(100vh - var(--nav-h));
-    margin: -28px -32px;
+    height: 100%;
     overflow: hidden;
     min-width: 0;
 }
@@ -255,11 +254,10 @@
     line-height: 1.6;
 }
 
-/* ── Responsive ── */
 @media (max-width: 768px) {
     .messages-layout {
-        margin: -16px;
-        height: calc(100vh - var(--nav-h));
+        margin: 0;
+        height: 100%;
     }
 
     .conv-list {

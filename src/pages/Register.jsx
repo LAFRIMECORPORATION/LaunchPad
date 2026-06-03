@@ -73,9 +73,7 @@ export default function Register() {
                                     <div
                                         key={r}
                                         className={`auth-role-card${role === r ? " active" : ""}`}
-                                        onClick={() => {
-                                            console.log("role selectionné :", r); setRole(r);
-                                        }}
+                                        onClick={() => setRole(r)}
                                     >
                                         <span className="auth-role-icon">{ico}</span>
                                         <div>
@@ -169,10 +167,7 @@ export default function Register() {
                                     Continuer →
                                 </button>
                             ) : (
-                                <button className="btn btn-primary" style={{ flex: 1, padding: 11 }} onClick={() => {
-                                    console.log("valeur exacte du role  :", JSON.stringify(role));
-                                    console.log("type :", typeof role); login(role)
-                                }}>
+                                <button className="btn btn-primary" style={{ flex: 1, padding: 11 }} onClick={() => login(role)}>
                                     🚀 Créer mon compte
                                 </button>
                             )}
