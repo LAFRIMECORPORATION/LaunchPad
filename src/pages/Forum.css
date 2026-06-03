@@ -1,0 +1,55 @@
+/* ============================================================
+   LAUNCHPAD — Forum.css  🆕 NOUVEAU
+   Chemin : src/pages/Forum.css
+   ============================================================ */
+
+/* Stats bar */
+.forum-stats {
+  display: flex;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.forum-stat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-right: 1px solid var(--border);
+}
+
+.forum-stat:last-child { border-right: none; }
+
+.forum-stat__icon { font-size: 22px; }
+.forum-stat__val  { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--text-primary); }
+.forum-stat__lbl  { font-size: 12px; color: var(--text-secondary); }
+
+/* Posts list */
+.forum-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Textarea */
+.forum-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: var(--font-body);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .forum-stats        { flex-direction: column; }
+  .forum-stat         { border-right: none; border-bottom: 1px solid var(--border); }
+  .forum-stat:last-child { border-bottom: none; }
+}
+
+@media (max-width: 480px) {
+  .forum-post__stats  { display: none; }
+}

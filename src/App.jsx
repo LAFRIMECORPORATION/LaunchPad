@@ -19,6 +19,14 @@ import Admin from "./pages/Admin"
 import SavedProjects from "./pages/SavedProjects";
 import InvestorRequests from "./pages/InvestorRequests";
 import BottomNav from "./components/BottomNav";
+import KycVerification   from "./pages/KycVerification";
+import FeedPage          from "./pages/FeedPage";
+import BadgesPage        from "./pages/BadgesPage";
+import AppointmentsPage  from "./pages/AppointmentsPage";
+import PaymentPage       from "./pages/PaymentPage";
+import DueDiligencePage  from "./pages/DueDiligencePage";
+import ForumPage         from "./pages/ForumPage";
+import AcademyPage       from "./pages/AcademyPage";
 
 // route map//
 const ROUTES = {
@@ -38,7 +46,15 @@ const ROUTES = {
   "profile-investor": ProfileInvestor,
   "saved-projects": SavedProjects,
   "investor-requests": InvestorRequests,
-  "admin": Admin
+  "admin": Admin,
+  "kyc-verification":   KycVerification,
+  "feed":               FeedPage,
+  "badges":             BadgesPage,
+  "appointments":       AppointmentsPage,
+  "payment":            PaymentPage,
+  "due-diligence":      DueDiligencePage,
+  "forum":              ForumPage,
+  "academy":            AcademyPage,
 };
 // pages sans navbar //
 const AUTH_PAGES = ["login", "register"];
@@ -92,11 +108,11 @@ export default function App() {
 
       <Navbar />
 
-      <div className="app-body">
+      <div className="app-body" >
         {showSidebar && <Sidebar />}
 
-        <main className="app-main" styles={isFullBleed ? { padding: 0 } : {}} >
-          <PageComponent />
+        <main className="app-main" style={isFullBleed ? { padding: 0 } : {}} >
+          <PageComponent /> 
         </main>
 
       </div>

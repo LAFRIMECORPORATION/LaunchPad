@@ -1,5 +1,6 @@
 // ============================================================
 // LAUNCHPAD — Profile Investor Page
+// Chemin : src/pages/ProfileInvestor.jsx
 // ============================================================
 
 import { useApp } from "../context/AppContext";
@@ -9,10 +10,7 @@ import "./OtherPages.css";
 
 export default function ProfileInvestor() {
     const { navigate, currentUser } = useApp();
-    const user = currentUser;
-    console.log("USERS=", USERS)
-    console.log("Investor = ", USERS.investor)
-    console.log("STATS =", user.stats)
+    const user = currentUser || USERS.investor; // Fallback sécurisé vers les mocks si pas connecté
 
     return (
         <div className="animate-fadeUp">
@@ -38,7 +36,29 @@ export default function ProfileInvestor() {
                     <div>
                         <div className="profile-name">{user.name}</div>
                         <div className="profile-sub">Partner @ {user.company} · {user.location}</div>
+                        
+                        {/* KYC Status Badge */}
+                        <div style={{ marginTop: 10 }}>
+                            {currentUser?.kycValidated ? (
+                                <span className="kyc-badge kyc-badge--verified">
+                                    ✅ Compte vérifié
+                                </span>
+                            ) : currentUser?.kycStatus === "submitted" ? (
+                                <span className="kyc-badge kyc-badge--submitted">
+                                    ⏳ Vérification en cours
+                                </span>
+                            ) : (
+                                <button
+                                    className="kyc-badge kyc-badge--pending"
+                                    onClick={() => navigate("kyc-verification")}
+                                    style={{ cursor: "pointer", border: "none", fontFamily: "inherit" }}
+                                >
+                                    ⚠️ Vérifier mon compte →
+                                </button>
+                            )}
+                        </div>
                     </div>
+                    
                     <button className="btn btn-primary" onClick={() => navigate("messages")}>
                         💬 Contacter
                     </button>
@@ -56,10 +76,17 @@ export default function ProfileInvestor() {
                     ].map(([ico, v, l]) => (
                         <div key={l} className="profile-stat">
                             <div className="profile-stat-icon">{ico}</div>
-                            <div className="profile-stat-value">{v}</div>
+                            <div className="profile-stat-value">{v || 0}</div>
                             <div className="profile-stat-label">{l}</div>
                         </div>
                     ))}
+                    
+                    {/* Stat Additionnelle : Score Réputation */}
+                    <div className="profile-stat">
+                        <div className="profile-stat-icon">🛡️</div>
+                        <div className="profile-stat-value">{currentUser?.kycValidated ? "40" : "0"}</div>
+                        <div className="profile-stat-label">Score réputation</div>
+                    </div>
                 </div>
             </div>
 
@@ -72,7 +99,7 @@ export default function ProfileInvestor() {
                         <div className="section-title" style={{ marginBottom: 12 }}>À propos</div>
                         <p className="profile-about-text">{user.bio}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {user.interests.map(s => (
+                            {(user.interests || []).map(s => (
                                 <Badge key={s} color="green">{s}</Badge>
                             ))}
                         </div>
@@ -89,7 +116,7 @@ export default function ProfileInvestor() {
                                     <span key={h}>{h}</span>
                                 ))}
                             </div>
-                            {user.portfolio.map((item, i) => {
+                            {(user.portfolio || []).map((item, i) => {
                                 const project = PROJECTS.find(p => p.title === item.name);
                                 const isUp = item.return.startsWith("+");
                                 return (
@@ -114,26 +141,26 @@ export default function ProfileInvestor() {
                 {/* ── Sidebar ── */}
                 <div className="two-col-side">
 
-                    {/* Critères */}
+                    {/* Critères d'investissement */}
                     <div className="card" style={{ padding: 20 }}>
                         <div className="section-title" style={{ marginBottom: 14 }}>
                             Critères d'investissement
                         </div>
                         {[
-                            ["💰", "Ticket minimum", user.criteria.minTicket],
-                            ["📈", "Ticket maximum", user.criteria.maxTicket],
-                            ["📊", "Stade minimum", user.criteria.stage],
-                            ["🌍", "Zone géographique", user.criteria.region],
+                            ["💰", "Ticket minimum", user.criteria?.minTicket],
+                            ["📈", "Ticket maximum", user.criteria?.maxTicket],
+                            ["📊", "Stade minimum", user.criteria?.stage],
+                            ["🌍", "Zone géographique", user.criteria?.region],
                         ].map(([ico, label, value]) => (
                             <div key={label} className="profile-info-row">
                                 <span>{ico}</span>
                                 <span className="profile-info-key">{label}</span>
-                                <span className="profile-info-value">{value}</span>
+                                <span className="profile-info-value">{value || "Non spécifié"}</span>
                             </div>
                         ))}
                     </div>
 
-                    {/* Infos */}
+                    {/* Informations générales */}
                     <div className="card" style={{ padding: 20 }}>
                         <div className="section-title" style={{ marginBottom: 12 }}>Informations</div>
                         {[
@@ -149,12 +176,33 @@ export default function ProfileInvestor() {
                         ))}
                     </div>
 
-                    <button
-                        className="btn btn-primary btn-full"
-                        onClick={() => navigate("messages")}
-                    >
-                        💬 Envoyer un message
-                    </button>
+                    {/* Accès rapide (Verrouillé ou non selon KYC) */}
+                    <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                        <div className="section-title" style={{ marginBottom: 14 }}>
+                            ⚡ Accès rapide
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {[
+                                { icon: "💰", label: "Investir",          id: "payment",        locked: !currentUser?.kycValidated },
+                                { icon: "🤖", label: "Due Diligence IA",  id: "due-diligence",  locked: !currentUser?.kycValidated },
+                                { icon: "📅", label: "Mes rendez-vous",   id: "appointments",   locked: !currentUser?.kycValidated },
+                                { icon: "📰", label: "Feed",              id: "feed",           locked: false },
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    className="btn btn-secondary"
+                                    style={{ justifyContent: "flex-start", gap: 10, opacity: item.locked ? .6 : 1 }}
+                                    onClick={() => item.locked ? navigate("kyc-verification") : navigate(item.id)}
+                                >
+                                    <span>{item.icon}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 500 }}>
+                                        {item.locked ? `${item.label} (KYC requis)` : item.label}
+                                    </span>
+                                    {item.locked && <span style={{ marginLeft: "auto" }}>🔐</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                 </div>
             </div>

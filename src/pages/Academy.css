@@ -1,0 +1,139 @@
+/* ============================================================
+   LAUNCHPAD — Academy.css  🆕 NOUVEAU
+   Chemin : src/pages/Academy.css
+   ============================================================ */
+
+/* Hero banner */
+.academy-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, rgba(91,115,245,.08), rgba(139,92,246,.06));
+  border: 1px solid rgba(91,115,245,.15);
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.academy-hero__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.academy-hero__icon  { font-size: 48px; flex-shrink: 0; }
+
+.academy-hero__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.academy-hero__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.academy-hero__stats {
+  display: flex;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.academy-hero__stat      { text-align: center; }
+.academy-hero__stat-val  { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--accent); }
+.academy-hero__stat-lbl  { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Progress section */
+.academy-progress { padding: 22px; margin-bottom: 22px; }
+
+.academy-progress__list { display: flex; flex-direction: column; gap: 14px; }
+
+.academy-progress__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.academy-progress__item-info  { flex: 1; min-width: 0; }
+.academy-progress__item-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+
+/* Academy modal */
+.academy-modal {
+  max-width: 520px;
+  overflow: hidden;
+}
+
+.academy-modal__cover {
+  height: 100px;
+  background: linear-gradient(135deg, var(--accent-light), var(--purple-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+}
+
+.academy-modal__stats {
+  display: flex;
+  gap: 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.academy-modal__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
+.academy-modal__includes       { border-top: 1px solid var(--border); padding-top: 14px; }
+.academy-modal__includes-title { font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 10px; }
+
+.academy-modal__includes-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 5px 0;
+}
+
+/* Coming soon */
+.academy-coming-soon {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  margin-top: 24px;
+  background: linear-gradient(135deg, rgba(91,115,245,.04), rgba(139,92,246,.03));
+  border-color: rgba(91,115,245,.12);
+}
+
+.academy-coming-soon__icon  { font-size: 36px; flex-shrink: 0; }
+.academy-coming-soon__title { font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px; }
+.academy-coming-soon__desc  { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .academy-hero        { flex-direction: column; align-items: flex-start; }
+  .academy-hero__stats { gap: 16px; }
+}
+
+@media (max-width: 480px) {
+  .academy-hero__left        { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .academy-hero__icon        { font-size: 36px; }
+  .academy-hero__title       { font-size: 17px; }
+  .academy-progress__item    { flex-wrap: wrap; }
+  .academy-progress__item .btn { width: 100%; justify-content: center; margin-top: 6px; }
+  .academy-coming-soon       { flex-direction: column; }
+}

@@ -1,7 +1,3 @@
-// ============================================================
-// LAUNCHPAD — Publish Page (wizard 4 étapes)
-// ============================================================
-
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { StepIndicator } from "../components/UI";
@@ -13,7 +9,7 @@ const STAGES = ["Idée", "Prototype", "MVP", "Beta", "Commercialisé"];
 const ALL_TAGS = ["IA", "Web3", "Mobile", "API", "B2B", "B2C", "SaaS", "Open Source", "Hardware", "Blockchain"];
 
 export default function Publish() {
-    const { navigate, setCollabStep, showToast } = useApp();
+    const { navigate, currentUser, setCollabStep, showToast } = useApp();
     const [step, setStep] = useState(1);
     const [selTags, setSelTags] = useState([]);
     const [form, setForm] = useState({
@@ -34,10 +30,51 @@ export default function Publish() {
         }, 1200);
     }
 
+    // 🛡️ KYC gate — bloquer la publication si non vérifié
+    if (!currentUser?.kycValidated) {
+        return (
+            <div className="page-wrapper animate-fadeUp">
+                <div className="page-header">
+                    <div>
+                        <h1 className="page-title">➕ Publier un projet</h1>
+                        <p className="page-subtitle">Partagez votre idée avec les investisseurs</p>
+                    </div>
+                </div>
+                <div className="kyc-gate-full">
+                    <div className="kyc-gate-full__icon">➕</div>
+                    <h2 className="kyc-gate-full__title">Vérification requise</h2>
+                    <p className="kyc-gate-full__desc">
+                        Pour publier un projet sur Launchpad, vous devez confirmer votre
+                        statut d'étudiant dans un établissement camerounais reconnu.
+                        Cela protège les investisseurs et crédibilise votre démarche.
+                    </p>
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+                        <button
+                            className="btn btn-primary btn-lg"
+                            onClick={() => navigate("kyc-verification")}
+                        >
+                            🛡️ Vérifier mon compte →
+                        </button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate("dashboard-student")}
+                        >
+                            Retour au tableau de bord
+                        </button>
+                    </div>
+                    <div className="kyc-gate-full__note">
+                        ⏱️ La vérification prend 24 à 48h. Une fois validé, vous aurez
+                        accès à toutes les fonctionnalités de la plateforme.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fadeUp">
 
-            {/* ── Header ── */}
+            {/* ── HEADER ── */}
             <div className="page-header">
                 <div className="page-header-left">
                     <button
@@ -53,16 +90,16 @@ export default function Publish() {
             </div>
 
             <div className="publish-wrap">
-                <div className="publish-steps">
+                <div className="publish-steps" style={{ marginBottom: 20 }}>
                     <StepIndicator steps={STEPS} currentStep={step} />
                 </div>
 
                 <div className="card" style={{ padding: 32 }}>
 
-                    {/* ── STEP 1 : Infos de base ── */}
+                    {/* ── STEP 1 : INFOS DE BASE ── */}
                     {step === 1 && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700 }}>
+                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
                                 Informations de base
                             </h2>
                             <div className="form-group">
@@ -113,15 +150,15 @@ export default function Publish() {
                         </div>
                     )}
 
-                    {/* ── STEP 2 : Description détaillée ── */}
+                    {/* ── STEP 2 : DESCRIPTION DÉTAILLÉE ── */}
                     {step === 2 && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700 }}>
+                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
                                 Description détaillée
                             </h2>
                             <div className="form-group">
                                 <label className="form-label">Problème résolu <span className="required">*</span></label>
-                                <textarea className="form-input form-textarea" placeholder="Quel problème concret résolvez-vous ?" value={form.problem} onChange={e => upd("problem", e.target.value)} />
+                                <textarea className="form-input form-textarea" placeholder="Quel problème concret résolvez-vous au Cameroun ?" value={form.problem} onChange={e => upd("problem", e.target.value)} />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Solution proposée <span className="required">*</span></label>
@@ -129,15 +166,15 @@ export default function Publish() {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Modèle économique</label>
-                                <textarea className="form-input form-textarea" placeholder="Comment générez-vous des revenus ?" value={form.model} onChange={e => upd("model", e.target.value)} />
+                                <textarea className="form-input form-textarea" placeholder="Comment générez-vous des revenus (abonnements, commissions Mobile Money, etc.) ?" value={form.model} onChange={e => upd("model", e.target.value)} />
                             </div>
                         </div>
                     )}
 
-                    {/* ── STEP 3 : Médias ── */}
+                    {/* ── STEP 3 : MÉDIAS ── */}
                     {step === 3 && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700 }}>
+                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
                                 Médias & documents
                             </h2>
                             <div className="form-group">
@@ -173,20 +210,22 @@ export default function Publish() {
                         </div>
                     )}
 
-                    {/* ── STEP 4 : Financement ── */}
+                    {/* ── STEP 4 : FINANCEMENT ── */}
                     {step === 4 && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700 }}>
+                            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
                                 Objectif de financement
                             </h2>
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label className="form-label">Objectif total (€) <span className="required">*</span></label>
-                                    <input className="form-input" type="number" placeholder="120 000" value={form.goal} onChange={e => upd("goal", e.target.value)} />
+                                    <label className="form-label">Objectif total (XAF) <span className="required">*</span></label>
+                                    <input className="form-input" type="number" placeholder="15000000" value={form.goal} onChange={e => upd("goal", e.target.value)} />
+                                    <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, display: "block" }}>Ex: 15 000 000 XAF</span>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Ticket minimum (€)</label>
-                                    <input className="form-input" type="number" placeholder="5 000" value={form.minTicket} onChange={e => upd("minTicket", e.target.value)} />
+                                    <label className="form-label">Ticket minimum (XAF)</label>
+                                    <input className="form-input" type="number" placeholder="250000" value={form.minTicket} onChange={e => upd("minTicket", e.target.value)} />
+                                    <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, display: "block" }}>Ex: 250 000 XAF</span>
                                 </div>
                             </div>
                             <div className="form-row">
@@ -194,7 +233,7 @@ export default function Publish() {
                                     <label className="form-label">Type de contrepartie</label>
                                     <select className="form-input form-select" value={form.equityType} onChange={e => upd("equityType", e.target.value)}>
                                         <option>Equity (parts sociales)</option>
-                                        <option>Revenu partagé</option>
+                                        <option>Revenu partagé (Royalty)</option>
                                         <option>Prêt convertible</option>
                                         <option>Don sans contrepartie</option>
                                     </select>
@@ -209,12 +248,12 @@ export default function Publish() {
                                 <input className="form-input" type="date" value={form.deadline} onChange={e => upd("deadline", e.target.value)} />
                             </div>
                             <div style={{ padding: 14, borderRadius: "var(--r-md)", background: "var(--accent-light)", border: "1px solid var(--accent-mid)", fontSize: 13, color: "var(--text-secondary)" }}>
-                                🤖 <strong>Détection IA automatique :</strong> après publication, notre algorithme détectera des projets similaires et proposera des collaborations pertinentes.
+                                🤖 <strong>Détection IA automatique :</strong> après publication, notre algorithme analysera votre dossier pour vous mettre en relation avec des investisseurs et d'autres profils étudiants complémentaires.
                             </div>
                         </div>
                     )}
 
-                    {/* ── Navigation buttons ── */}
+                    {/* ── NAVIGATION BUTTONS ── */}
                     <div style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
                         {step > 1 && (
                             <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setStep(s => s - 1)}>

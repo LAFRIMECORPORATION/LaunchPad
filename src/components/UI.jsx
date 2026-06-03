@@ -1,5 +1,6 @@
 // ============================================================
 // LAUNCHPAD — UI Components (bibliothèque partagée)
+// Version v2 entièrement synchronisée (KYC Flow + Menus Enrichis)
 // ============================================================
 
 import { useApp } from "../context/AppContext";
@@ -94,12 +95,7 @@ export function StatCard({ icon, value, label, delta, color = "#5B73F5", bgColor
 }
 
 /* ── PROJECT CARD ── */
-
-// Ajoute cet import en haut de UI.jsx
-// (isProjectSaved et toggleSave viennent du context)
-
 export function ProjectCard({ project, onClick, compact = false }) {
-
     const { toggleSave, isProjectSaved } = useApp();
     const pct = Math.round((project.raised / project.goal) * 100);
     const saved = isProjectSaved(project.id);
@@ -126,7 +122,7 @@ export function ProjectCard({ project, onClick, compact = false }) {
                     {project.emoji}
                 </div>
 
-                {/* ── Bookmark button ── */}
+                {/* Bookmark button */}
                 <button
                     onClick={e => { e.stopPropagation(); toggleSave(project.id); }}
                     style={{
@@ -184,7 +180,6 @@ export function ProjectCard({ project, onClick, compact = false }) {
                 </div>
             )}
         </div>
-
     );
 }
 
@@ -234,7 +229,8 @@ export function NotificationItem({ notif, onClick }) {
                 alignItems: "flex-start",
             }}
         >
-            <><span style={{ fontSize: 22, flexShrink: 0 }}>{notif.icon}</span><div style={{ flex: 1 }}>
+            <span style={{ fontSize: 22, flexShrink: 0 }}>{notif.icon}</span>
+            <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                     <span style={{ fontWeight: 600, fontSize: 13.5 }}>{notif.title}</span>
                     <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0, marginLeft: 8 }}>
@@ -245,16 +241,12 @@ export function NotificationItem({ notif, onClick }) {
                     {notif.desc}
                 </p>
             </div>
-            </>
-            {
-                notif.unread && (
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", flexShrink: 0, marginTop: 4 }} />
-                )
-            }
-        </div >
+            {notif.unread && (
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", flexShrink: 0, marginTop: 4 }} />
+            )}
+        </div>
     );
 }
-
 
 /* ── CHAT MESSAGE ── */
 export function ChatMessage({ message, senderLabel }) {
@@ -372,7 +364,6 @@ export function Navbar() {
 
             <nav className="navbar-links">
                 {links.map(([id, label]) => (
-
                     <button
                         key={id}
                         className={`navbar-link${currentPage === id ? " active" : ""}`}
@@ -380,9 +371,6 @@ export function Navbar() {
                     >
                         {label}
                     </button>
-
-
-
                 ))}
             </nav>
 
@@ -448,23 +436,35 @@ export function Sidebar() {
     const { currentUser, currentPage, navigate, logout, unreadMessages, unreadCount } = useApp();
     if (!currentUser) return null;
 
+    // Tableaux de navigation v2 enrichis
     const studentItems = [
-        { id: "dashboard-student", icon: "🏠", label: "Tableau de bord" },
-        { id: "explore", icon: "🔍", label: "Explorer" },
-        { id: "publish", icon: "➕", label: "Publier un projet" },
-        { id: "collaboration", icon: "🤝", label: "Collaborations" },
-        { id: "investor-requests", icon: "📋", label: "Offres investisseurs" },
-        { id: "messages", icon: "💬", label: "Messages", badge: unreadMessages },
-        { id: "notifications", icon: "🔔", label: "Notifications", badge: unreadCount },
-        { id: "profile-student", icon: "👤", label: "Mon profil" },
+        { icon: "🏠", label: "Tableau de bord", id: "dashboard-student" },
+        { icon: "🔍", label: "Explorer",         id: "explore"           },
+        { icon: "➕", label: "Publier",           id: "publish"           },
+        { icon: "🤝", label: "Collaborations",    id: "collaboration"     },
+        { icon: "📋", label: "Offres investisseurs", id: "investor-requests" },
+        { icon: "📰", label: "Feed",             id: "feed"              },
+        { icon: "🏆", label: "Badges",           id: "badges"            },
+        { icon: "📅", label: "Rendez-vous",      id: "appointments"      },
+        { icon: "💬", label: "Forum",            id: "forum"             },
+        { icon: "📚", label: "Academy",          id: "academy"           },
+        { icon: "💬", label: "Messages",         id: "messages",      badge: unreadMessages },
+        { icon: "🔔", label: "Notifications",    id: "notifications", badge: unreadCount },
+        { icon: "👤", label: "Mon profil",       id: "profile-student"   },
     ];
+
     const investorItems = [
-        { id: "dashboard-investor", icon: "🏠", label: "Tableau de bord" },
-        { id: "explore", icon: "🔍", label: "Explorer" },
-        { id: "messages", icon: "💬", label: "Messages", badge: unreadMessages },
-        { id: "notifications", icon: "🔔", label: "Notifications", badge: unreadCount },
-        { id: "profile-investor", icon: "👤", label: "Mon profil" },
+        { icon: "🏠", label: "Tableau de bord", id: "dashboard-investor" },
+        { icon: "🔍", label: "Explorer",         id: "explore"            },
+        { icon: "💰", label: "Investir",         id: "payment"            },
+        { icon: "🤖", label: "Due Diligence IA", id: "due-diligence"      },
+        { icon: "📅", label: "Rendez-vous",      id: "appointments"       },
+        { icon: "💬", label: "Forum",            id: "forum"              },
+        { icon: "💬", label: "Messages",         id: "messages",      badge: unreadMessages },
+        { icon: "🔔", label: "Notifications",    id: "notifications", badge: unreadCount },
+        { icon: "👤", label: "Mon profil",       id: "profile-investor"   },
     ];
+
     const adminItems = [
         { id: "admin", icon: "📊", label: "Vue d'ensemble" },
         { id: "explore", icon: "📦", label: "Projets" },
@@ -478,6 +478,40 @@ export function Sidebar() {
 
     return (
         <aside className="sidebar">
+            {/* Insertion dynamique de la bannière KYC selon l'état de l'utilisateur */}
+            {currentUser && currentUser.role !== "admin" && !currentUser.kycValidated && (
+                <button
+                    className={`kyc-sidebar-banner${
+                        currentUser.kycStatus === "submitted" ? " submitted" : ""
+                    }`}
+                    onClick={() => navigate("kyc-verification")}
+                    style={{ width: "100%", border: "none", textAlign: "left", cursor: "pointer" }}
+                >
+                    <span className="kyc-sidebar-banner__icon">
+                        {currentUser.kycStatus === "submitted" ? "⏳" : "⚠️"}
+                    </span>
+                    <div className="kyc-sidebar-banner__text">
+                        <div className="kyc-sidebar-banner__title">
+                            {currentUser.kycStatus === "submitted"
+                                ? "Vérification en cours"
+                                : "Vérifier mon compte"}
+                        </div>
+                        <div className="kyc-sidebar-banner__sub">
+                            {currentUser.kycStatus === "submitted"
+                                ? "Résultat sous 24h"
+                                : "Débloquez toutes les fonctionnalités"}
+                        </div>
+                    </div>
+                </button>
+            )}
+
+            {currentUser && currentUser.role !== "admin" && currentUser.kycValidated && (
+                <div className="kyc-sidebar-verified" style={{ display: "flex", gap: 8, padding: "10px 14px", alignItems: "center" }}>
+                    <span>✅</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Compte vérifié</span>
+                </div>
+            )}
+
             {items.map(item => (
                 <button
                     key={item.id}
@@ -530,6 +564,85 @@ export function BackButton({ onClick, label = "Retour" }) {
         >
             ← {label}
         </button>
+    );
+}
+
+/* ── KYC ALERT ── */
+export function KycAlert({ compact = false }) {
+    const { currentUser, navigate } = useApp();
+
+    if (!currentUser || currentUser.kycValidated || currentUser.role === "admin") return null;
+
+    const isSubmitted = currentUser.kycStatus === "submitted";
+
+    return (
+        <div
+            className={`kyc-alert${isSubmitted ? " kyc-alert--info" : " kyc-alert--warning"}${compact ? " kyc-alert--compact" : ""}`}
+            style={{ marginBottom: 20 }}
+        >
+            <span className="kyc-alert__icon">{isSubmitted ? "⏳" : "⚠️"}</span>
+            <div className="kyc-alert__body">
+                <div className="kyc-alert__title">
+                    {isSubmitted ? "Vérification KYC en cours…" : "Compte non vérifié"}
+                </div>
+                {!compact && (
+                    <div className="kyc-alert__desc">
+                        {isSubmitted
+                            ? "Votre dossier est en cours d'examen. Vous serez notifié dès validation (24–48h)."
+                            : "Vérifiez votre compte pour accéder à toutes les fonctionnalités de la plateforme."}
+                    </div>
+                )}
+            </div>
+            {!isSubmitted && (
+                <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => navigate("kyc-verification")}
+                >
+                    Vérifier →
+                </button>
+            )}
+        </div>
+    );
+}
+
+/* ── KYC GATE ── */
+export function KycGate({ children }) {
+    const { currentUser, navigate } = useApp();
+
+    const isBlocked =
+        currentUser &&
+        currentUser.role !== "admin" &&
+        !currentUser.kycValidated;
+
+    if (!isBlocked) return children;
+
+    const isSubmitted = currentUser.kycStatus === "submitted";
+
+    return (
+        <div className="kyc-gate">
+            <div className="kyc-gate__blur" aria-hidden="true">
+                {children}
+            </div>
+            <div className="kyc-gate__overlay">
+                <span className="kyc-gate__icon">{isSubmitted ? "⏳" : "🔐"}</span>
+                <div className="kyc-gate__title">
+                    {isSubmitted ? "Vérification en cours" : "Accès restreint"}
+                </div>
+                <p className="kyc-gate__desc">
+                    {isSubmitted
+                        ? "Votre dossier est examiné par notre équipe. Résultat sous 24–48h."
+                        : "Cette fonctionnalité nécessite la validation de votre compte (KYC)."}
+                </p>
+                {!isSubmitted && (
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => navigate("kyc-verification")}
+                    >
+                        Vérifier mon compte →
+                    </button>
+                )}
+            </div>
+        </div>
     );
 }
 

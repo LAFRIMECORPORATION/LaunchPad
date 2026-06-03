@@ -1,0 +1,140 @@
+/* ============================================================
+   LAUNCHPAD — DueDiligence.css  🆕 NOUVEAU
+   Chemin : src/pages/DueDiligence.css
+   ============================================================ */
+
+/* Intro banner */
+.dd-intro-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, rgba(91,115,245,.06), rgba(139,92,246,.04));
+  border: 1px solid rgba(91,115,245,.15);
+  margin-bottom: 22px;
+}
+
+.dd-intro-banner__icon { font-size: 28px; flex-shrink: 0; }
+.dd-intro-banner__text { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+/* Project card in selector */
+.dd-project-card { padding: 18px; }
+
+.dd-project-card__emoji   { font-size: 36px; margin-bottom: 10px; }
+.dd-project-card__name    { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 3px; }
+.dd-project-card__meta    { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.dd-project-card__tagline { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px; }
+
+/* Layout analysis */
+.dd-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .dd-layout { grid-template-columns: 1fr; }
+  .dd-side   { order: -1; }
+}
+
+/* Project header inside analysis */
+.dd-project-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dd-project-header__name { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--text-primary); }
+.dd-project-header__meta { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+/* CTA */
+.dd-cta {
+  text-align: center;
+  padding: 48px 20px;
+}
+
+.dd-cta__icon  { font-size: 56px; margin-bottom: 14px; }
+.dd-cta__title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.dd-cta__desc  { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
+
+/* Result sections */
+.dd-result { display: flex; flex-direction: column; gap: 16px; }
+
+/* Detail rows */
+.dd-detail-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dd-detail-row:last-child   { border-bottom: none; }
+.dd-detail-row__title { font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 4px; }
+.dd-detail-row__text  { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+/* Red flags */
+.dd-red-flags {
+  padding: 20px;
+  border-color: rgba(239,68,68,.2);
+  background: rgba(239,68,68,.03);
+}
+
+.dd-red-flags__title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+
+.dd-red-flags__item {
+  display: flex;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.dd-red-flags__item:last-child { border-bottom: none; }
+.dd-red-flags__dot { color: var(--danger); flex-shrink: 0; font-weight: 700; }
+
+/* Questions */
+.dd-question {
+  display: flex;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.dd-question:last-child { border-bottom: none; }
+.dd-question__num { font-weight: 800; color: var(--accent); flex-shrink: 0; }
+
+/* Actions */
+.dd-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.dd-actions .btn { flex: 1; justify-content: center; }
+
+/* Sidebar rows */
+.dd-side-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.dd-side-row:last-child { border-bottom: none; }
+.dd-side-row__key { color: var(--text-secondary); }
+.dd-side-row__val { font-weight: 700; color: var(--text-primary); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .dd-actions      { flex-direction: column; }
+  .dd-intro-banner { flex-direction: column; gap: 10px; }
+  .dd-cta          { padding: 32px 16px; }
+}

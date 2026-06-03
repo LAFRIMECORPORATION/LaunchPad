@@ -1,7 +1,3 @@
-// ============================================================
-// LAUNCHPAD — Admin Dashboard Page
-// ============================================================
-
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, Badge } from "../components/UI";
@@ -12,6 +8,7 @@ const TABS = [
     { id: "overview", icon: "📊", label: "Vue d'ensemble" },
     { id: "projects", icon: "📦", label: "Projets" },
     { id: "users", icon: "👥", label: "Utilisateurs" },
+    { id: "kyc", icon: "🛡️", label: `KYC (${ADMIN_DATA.stats.kycPending})` },
     { id: "reports", icon: "🚨", label: "Signalements" },
 ];
 
@@ -20,10 +17,11 @@ export default function Admin() {
     const [tab, setTab] = useState("overview");
 
     function handleApprove(title) {
-        showToast(`"${title}" a été approuvé avec succès., "success"`);
+        showToast(`"${title}" a été approuvé avec succès.`, "success");
     }
+    
     function handleReject(title) {
-        showToast(` "${title}" a été refusé., "error" `);
+        showToast(`"${title}" a été refusé.`, "error");
     }
 
     return (
@@ -45,7 +43,7 @@ export default function Admin() {
             </div>
 
             {/* ── Stats globales ── */}
-            <div className="grid-4" style={{ marginBottom: 24 }}>
+            <div className="grid-5" style={{ marginBottom: 24, display: "grid", gap: 16 }}>
                 <StatCard
                     icon="👥"
                     value={ADMIN_DATA.stats.users.toLocaleString()}
@@ -65,9 +63,16 @@ export default function Admin() {
                 <StatCard
                     icon="⏳"
                     value={ADMIN_DATA.stats.pending}
-                    label="En attente de validation"
+                    label="En attente de projet"
                     color="#F59E0B"
                     bgColor="#FFFBEB"
+                />
+                <StatCard
+                    icon="🛡️"
+                    value={ADMIN_DATA.stats.kycPending}
+                    label="KYC en attente"
+                    color="#var(--accent)"
+                    bgColor="rgba(91,115,245,.1)"
                 />
                 <StatCard
                     icon="🚨"
@@ -83,7 +88,7 @@ export default function Admin() {
                 {TABS.map(t => (
                     <button
                         key={t.id}
-                        className={`admin - tab${tab === t.id ? " active" : ""} `}
+                        className={`admin-tab${tab === t.id ? " active" : ""}`}
                         onClick={() => setTab(t.id)}
                     >
                         {t.icon} {t.label}
@@ -144,7 +149,7 @@ export default function Admin() {
                                         <div className="report-row-title">{r.reason}</div>
                                         <div className="report-row-target">{r.target}</div>
                                     </div>
-                                    <span className={`report - severity ${r.severity} `}>
+                                    <span className={`report-severity ${r.severity}`}>
                                         {r.severity === "urgent" ? "🔴 Urgent" : r.severity === "medium" ? "🟡 Moyen" : "🟢 Faible"}
                                     </span>
                                     <button className="btn btn-secondary btn-sm">Examiner</button>
@@ -212,7 +217,7 @@ export default function Admin() {
                                 ["📈", "Taux de validation", "94%"],
                                 ["⏱️", "Délai moy. modération", "2.4h"],
                                 ["🌟", "Satisfaction globale", "4.7/5"],
-                                ["💰", "Volume financé total", "€2.4M"],
+                                ["💰", "Volume financé total", "1,5MM XAF"],
                             ].map(([ico, label, value]) => (
                                 <div key={label} className="profile-info-row">
                                     <span>{ico}</span>
@@ -226,8 +231,80 @@ export default function Admin() {
                 </div>
             )}
 
-            {/* ── Autres tabs (placeholder) ── */}
-            {tab !== "overview" && (
+            {/* ── Section KYC ── */}
+            {tab === "kyc" && (
+                <div className="admin-section">
+                    <div className="section-title" style={{ marginBottom: 16, fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700 }}>
+                        🛡️ Dossiers KYC en attente de validation
+                    </div>
+
+                    {ADMIN_DATA.pendingKyc && ADMIN_DATA.pendingKyc.length === 0 ? (
+                        <div className="empty-state" style={{ textAlign: "center", padding: "40px 20px" }}>
+                            <div className="empty-state__icon" style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                            <div className="empty-state__title" style={{ color: "var(--text-muted)" }}>Aucun dossier en attente</div>
+                        </div>
+                    ) : (
+                        <div className="admin-kyc-list">
+                            {(ADMIN_DATA.pendingKyc || []).map(item => (
+                                <div key={item.id} className="admin-kyc-card card">
+
+                                    <div className="admin-kyc-card__header">
+                                        <div className="admin-kyc-card__avatar">
+                                            {item.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                                        </div>
+                                        <div className="admin-kyc-card__info">
+                                            <div className="admin-kyc-card__name">{item.name}</div>
+                                            <div className="admin-kyc-card__meta">
+                                                {item.role} ·{" "}
+                                                {item.university || item.company} ·{" "}
+                                                {item.docs} documents soumis
+                                            </div>
+                                            <div className="admin-kyc-card__date">Soumis : {item.date}</div>
+                                        </div>
+                                        <Badge color="yellow">⏳ En attente</Badge>
+                                    </div>
+
+                                    <div className="admin-kyc-card__docs">
+                                        {(item.role === "Étudiant" || item.role === "Étudiante"
+                                            ? ["🪪 Pièce d'identité (CNI)", "📸 Selfie CNI", "🎓 Certificat scolarité", "🆔 Carte étudiante"]
+                                            : ["🪪 Pièce d'identité (CNI/Passeport)", "🏠 Justificatif de domicile", "📋 Registre du commerce (RCCM)"]
+                                        ).map(doc => (
+                                            <div key={doc} className="admin-kyc-card__doc">
+                                                <span>{doc}</span>
+                                                <Badge color="blue">Soumis</Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="admin-kyc-card__actions">
+                                        <button
+                                            className="btn btn-success btn-sm"
+                                            onClick={() => showToast(`✅ KYC de ${item.name} validé !`, "success")}
+                                        >
+                                            ✅ Valider le KYC
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => showToast("Demande de documents complémentaires envoyée", "info")}
+                                        >
+                                            📋 Demander documents
+                                        </button>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => showToast(`❌ KYC de ${item.name} rejeté`, "error")}
+                                        >
+                                            ❌ Rejeter
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── Autres onglets en jachère ── */}
+            {tab !== "overview" && tab !== "kyc" && (
                 <div className="card" style={{ padding: 60, textAlign: "center", color: "var(--text-muted)" }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>🚧</div>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, marginBottom: 6 }}>

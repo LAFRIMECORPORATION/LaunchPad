@@ -1,5 +1,6 @@
 // ============================================================
 // LAUNCHPAD — Profile Student Page
+// Chemin : src/pages/ProfileStudent.jsx
 // ============================================================
 
 import { useApp } from "../context/AppContext";
@@ -32,7 +33,29 @@ export default function ProfileStudent() {
                     <div>
                         <div className="profile-name">{user.name}</div>
                         <div className="profile-sub">{user.university} · {user.location}</div>
+                        
+                        {/* KYC Status Badge */}
+                        <div style={{ marginTop: 10 }}>
+                            {currentUser?.kycValidated ? (
+                                <span className="kyc-badge kyc-badge--verified">
+                                    ✅ Compte vérifié
+                                </span>
+                            ) : currentUser?.kycStatus === "submitted" ? (
+                                <span className="kyc-badge kyc-badge--submitted">
+                                    ⏳ Vérification en cours
+                                </span>
+                            ) : (
+                                <button
+                                    className="kyc-badge kyc-badge--pending"
+                                    onClick={() => navigate("kyc-verification")}
+                                    style={{ cursor: "pointer", border: "none", fontFamily: "inherit" }}
+                                >
+                                    ⚠️ Vérifier mon compte →
+                                </button>
+                            )}
+                        </div>
                     </div>
+                    
                     <div style={{ display: "flex", gap: 10 }}>
                         {isOwn ? (
                             <button className="btn btn-secondary">✏️ Modifier le profil</button>
@@ -65,6 +88,13 @@ export default function ProfileStudent() {
                             <div className="profile-stat-label">{l}</div>
                         </div>
                     ))}
+                    
+                    {/* Stat Additionnelle : Score Réputation */}
+                    <div className="profile-stat">
+                        <div className="profile-stat-icon">🛡️</div>
+                        <div className="profile-stat-value">{currentUser?.kycValidated ? "40" : "0"}</div>
+                        <div className="profile-stat-label">Score réputation</div>
+                    </div>
                 </div>
             </div>
 
@@ -119,7 +149,7 @@ export default function ProfileStudent() {
                         ))}
                     </div>
 
-                    {/* Infos */}
+                    {/* Infos de base */}
                     <div className="card" style={{ padding: 20 }}>
                         <div className="section-title" style={{ marginBottom: 12 }}>Informations</div>
                         {[
@@ -133,6 +163,50 @@ export default function ProfileStudent() {
                                 <span className="profile-info-value">{value}</span>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Badges obtenus */}
+                    <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                        <div className="section-title" style={{ marginBottom: 14 }}>
+                            🏆 Badges obtenus
+                        </div>
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            {[
+                                { icon: "🌱", label: "Premier projet", earned: true  },
+                                { icon: "🔥", label: "Trending",       earned: true  },
+                                { icon: "🤝", label: "Collaborateur",  earned: false },
+                                { icon: "💰", label: "Financement",    earned: false },
+                            ].map(b => (
+                                <div
+                                    key={b.label}
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        padding: "10px 14px",
+                                        borderRadius: "var(--r-md)",
+                                        border: "1px solid var(--border)",
+                                        background: b.earned ? "var(--accent-light)" : "var(--bg-card)",
+                                        opacity: b.earned ? 1 : 0.5,
+                                        flex: "1 1 calc(50% - 5px)",
+                                        minWidth: 75,
+                                    }}
+                                >
+                                    <span style={{ fontSize: 24, filter: b.earned ? "none" : "grayscale(1)" }}>{b.icon}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textAlign: "center" }}>
+                                        {b.label}
+                                    </span>
+                                </div>
+                            ))}
+                            <button
+                                className="btn btn-secondary btn-sm btn-full"
+                                onClick={() => navigate("badges")}
+                                style={{ marginTop: 6 }}
+                            >
+                                Voir tous →
+                            </button>
+                        </div>
                     </div>
 
                 </div>

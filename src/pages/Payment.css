@@ -1,0 +1,129 @@
+/* ============================================================
+   LAUNCHPAD — Payment.css  🆕 NOUVEAU
+   Chemin : src/pages/Payment.css
+   ============================================================ */
+
+/* Layout 2-col */
+.pay-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .pay-layout { grid-template-columns: 1fr; }
+}
+
+/* Project option */
+.project-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 8px;
+  transition: var(--tr-normal);
+  font-family: var(--font-body);
+}
+
+.project-option:hover   { border-color: var(--accent-mid); background: var(--bg-hover); }
+.project-option.selected { border-color: var(--accent); background: var(--accent-light); }
+
+.project-option__emoji { font-size: 24px; flex-shrink: 0; }
+.project-option__info  { flex: 1; min-width: 0; }
+.project-option__name  { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.project-option__meta  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.project-option__check { font-size: 20px; color: var(--accent); flex-shrink: 0; }
+
+/* Method badge (inside form) */
+.pay-method-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid;
+  margin-bottom: 18px;
+}
+
+.pay-method-badge__name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.pay-method-badge__sub  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Summary */
+.pay-summary {
+  background: var(--bg-hover);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.pay-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.pay-summary__row:last-child { border-bottom: none; }
+.pay-summary__key { color: var(--text-secondary); }
+.pay-summary__val { font-weight: 700; color: var(--text-primary); }
+
+/* Confirm step */
+.pay-confirm       { animation: fadeUp .25s ease both; }
+.pay-confirm__title { font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+.pay-confirm__sub   { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+
+.pay-confirm__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pay-confirm__actions .btn { flex: 1; justify-content: center; }
+
+/* Recap card */
+.pay-recap { padding: 18px 20px; }
+.pay-recap__title { font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 12px; }
+.pay-recap__row   { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.pay-recap__row:last-child { border-bottom: none; }
+.pay-recap__key   { color: var(--text-secondary); }
+.pay-recap__val   { font-weight: 600; color: var(--text-primary); }
+
+/* Success */
+.pay-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+  gap: 14px;
+}
+
+.pay-success__icon  { font-size: 72px; }
+.pay-success__title { font-family: var(--font-display); font-size: 30px; font-weight: 800; color: var(--text-primary); }
+.pay-success__desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.65; max-width: 400px; }
+
+.pay-success .pay-recap {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  margin-bottom: 4px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .pay-confirm__actions { flex-direction: column; }
+  .pay-success          { padding: 40px 16px; }
+  .pay-success__icon    { font-size: 56px; }
+}
