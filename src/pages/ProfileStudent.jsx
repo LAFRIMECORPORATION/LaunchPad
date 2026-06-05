@@ -56,15 +56,15 @@ export default function ProfileStudent() {
                         </div>
                     </div>
                     
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                         {isOwn ? (
-                            <button className="btn btn-secondary">✏️ Modifier le profil</button>
+                            <button className="btn btn-secondary" style={{ minWidth: 0 }}>✏️ Modifier</button>
                         ) : (
                             <>
                                 <button className="btn btn-secondary" onClick={() => navigate("messages")}>
                                     💬 Message
                                 </button>
-                                <button className="btn btn-primary" onClick={() => navigate("collaboration")}>
+                                <button className="btn btn-primary" onClick={() => navigate("collaboration")} style={{ whiteSpace: "nowrap" }}>
                                     🤝 Collaborer
                                 </button>
                             </>

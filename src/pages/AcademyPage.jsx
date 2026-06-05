@@ -64,8 +64,13 @@ function CourseModal({ course, onClose, onEnroll }) {
           <button
             className={`btn ${course.premium ? "btn-warning" : "btn-primary"}`}
             onClick={() => onEnroll(course)}
+            style={{ whiteSpace: "normal", wordBreak: "break-word" }}
           >
-            {course.premium ? "⭐ Accès Premium — 6 000 XAF/mois" : "▶️ Commencer gratuitement"}
+            {course.premium ? (
+              <>⭐ Accès<br />Premium</>
+            ) : (
+              <>▶️ Commencer<br />gratuitement</>
+            )}
           </button>
         </div>
       </div>

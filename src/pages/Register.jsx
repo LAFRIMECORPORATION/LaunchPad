@@ -11,9 +11,10 @@ const STEPS = ["Votre rôle", "Informations", "Centres d'intérêt"];
 const ALL_TAGS = ["IA & ML", "FinTech", "HealthTech", "GreenTech", "EdTech", "Cybersécurité", "Robotique", "Web3", "SaaS", "Marketplace", "AgriTech", "Mobilité"];
 
 export default function Register() {
-    const { navigate, login } = useApp();
+    const { navigate, registerAccount, showToast } = useApp();
     const [step, setStep] = useState(1);
     const [role, setRole] = useState("student");
+    const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
         firstName: "", lastName: "", email: "",
         university: "", company: "", password: "",
@@ -22,6 +23,35 @@ export default function Register() {
 
     const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const toggleTag = tag => setTags(t => t.includes(tag) ? t.filter(x => x !== tag) : [...t, tag]);
+
+    async function handleRegister() {
+        if (!form.firstName || !form.lastName || !form.email || !form.password) {
+            showToast("Veuillez remplir tous les champs obligatoires.", "error");
+            return;
+        }
+        if (form.password.length < 8) {
+            showToast("Le mot de passe doit contenir au moins 8 caractères.", "error");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await registerAccount({
+                email: form.email,
+                password: form.password,
+                role,
+                firstName: form.firstName,
+                lastName: form.lastName,
+                university: form.university,
+                company: form.company,
+                skills: tags,
+            });
+        } catch (err) {
+            showToast(err.message || "Inscription impossible.", "error");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <div className="auth-layout">
@@ -167,8 +197,8 @@ export default function Register() {
                                     Continuer →
                                 </button>
                             ) : (
-                                <button className="btn btn-primary" style={{ flex: 1, padding: 11 }} onClick={() => login(role)}>
-                                    🚀 Créer mon compte
+                                <button className="btn btn-primary" style={{ flex: 1, padding: 11 }} onClick={handleRegister} disabled={loading}>
+                                    {loading ? "Création…" : "🚀 Créer mon compte"}
                                 </button>
                             )}
                         </div>

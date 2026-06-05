@@ -2,17 +2,30 @@
 // LAUNCHPAD — Project Detail Page
 // ============================================================
 
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge, ProgressBar, AIBadge } from "../components/UI";
-import { PROJECTS, SIMILAR_PROJECTS } from "../data/mockData";
+import { SIMILAR_PROJECTS } from "../data/mockData";
 import SocialActions from "../components/SocialActions";
 import CommentSection from "../components/CommentSection";
 import "./Projects.css";
 
 export default function ProjectDetail() {
-    const { navigate, selProject, currentUser, projects } = useApp();
+    const { id } = useParams();
+    const { navigate, selProject, setSelectedProject, currentUser, projects } = useApp();
 
-    const liveProject = projects.find(p => p.id === selProject?.id) || selProject || projects[0];
+    useEffect(() => {
+        if (!id) return;
+        const fromUrl = projects.find(p => String(p.id) === String(id));
+        if (fromUrl) setSelectedProject(fromUrl);
+    }, [id, projects, setSelectedProject]);
+
+    const liveProject =
+        projects.find(p => String(p.id) === String(id)) ||
+        projects.find(p => p.id === selProject?.id) ||
+        selProject ||
+        projects[0];
     const project = liveProject;
     const pct = project?.goal ? Math.round((project.raised / project.goal) * 100) : 0;
     const daysLeft = 14;

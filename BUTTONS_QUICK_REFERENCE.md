@@ -772,9 +772,364 @@ ATTEINDRE 100% (75M levés):
 
 ---
 
-**PROCHAINES ÉTAPES**:
-1. Créer les endpoints de la section "TRÈS URGENT"
-2. Implémenter les intégrations Payment (Stripe, MTN, Orange)
-3. Valider les flux d'utilisateurs end-to-end
-4. Tester et déployer Phase 1
+# 🐛 PROBLÈMES CONNUS & SOLUTIONS
+
+## PROBLÈMES RESPONSIVE (FIXES APPLIQUÉES ✅)
+
+### ✅ CORRIGÉS
+```
+✅ AcademyPage - Bouton "Commencer gratuitement" trop long
+   → Réparé: Texte sur 2 lignes avec <br/>
+   
+✅ ProfileStudent - Bouton "Collaborer" cassait responsive
+   → Réparé: Texte raccourci "Collaborer", flexWrap ajouté
+   
+✅ Messages.css - Long message cassait le layout
+   → Réparé: min-width: 0 + overflow handling ajouté
+```
+
+### ⚠️ À CORRIGER CÔTÉ CSS
+
+#### Publish.jsx - Formulaire responsive
+```css
+/* Problème: form-row ne se stack pas sur petit écran */
+/* Solution: Ajouter breakpoint à 1024px */
+
+@media (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Ou: Chips (tags) cassent le ligne */
+.chip-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .chip-row {
+    justify-content: center;
+  }
+}
+```
+
+#### Academy.css - "Voir tous les cours" button
+```css
+/* Problème: Bouton trop long casse layout */
+/* Solution: Ajouter responsive */
+
+@media (max-width: 768px) {
+  .academy-hero__stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+```
+
+---
+
+## PROBLÈMES DE NAVIGATION (À IMPLÉMENTER CÔTÉ BACKEND)
+
+### 🔴 Problème 1: Collaboration → Chat d'équipe
+```
+ACTUELLEMENT:
+  Student: "🤝 Demander une collaboration" 
+  → Clic "💬 Chat d'équipe"
+  → navigate("messages")
+  → ❌ Dirige vers messagerie GÉNÉRALE
+
+DEVRAIT ÊTRE:
+  → navigate("messages", { teamId: project.teamId })
+  → ✅ Ouvre conversation avec l'équipe du projet
+```
+
+**Solution Backend**:
+```javascript
+// Messages.jsx
+const handleTeamChat = () => {
+  navigate("messages", { 
+    targetType: "team",
+    targetId: project.id,
+    targetName: project.title + " Team"
+  });
+};
+
+// Messages.jsx - Créer conversation d'équipe si n'existe pas
+async function getOrCreateTeamConversation(projectId) {
+  // GET /conversations/team/:projectId
+  // Si n'existe pas → POST /conversations/create-team
+  // Retourner convId
+}
+```
+
+**Endpoints requis**:
+```
+POST /conversations/create-team
+  Params: { project_id, user_id }
+  Return: { conversation_id, team_members[] }
+
+GET /conversations/team/:project_id
+  Return: { conversation_id, messages[], team[] }
+```
+
+---
+
+### 🔴 Problème 2: Lien "Étudiant" → Messagerie
+```
+ACTUELLEMENT:
+  Investor: Voir profil de Student Alice
+  → Clic "💬 Message"
+  → navigate("messages")
+  → ❌ Dirige vers messagerie GÉNÉRALE avec première conversation
+
+DEVRAIT ÊTRE:
+  → navigate("messages", { userId: alice.id })
+  → ✅ Ouvre conversation PRIVÉE avec Alice
+```
+
+**Solution Backend**:
+```javascript
+// ProjectDetail.jsx ou ProfileStudent.jsx
+const handleMessageStudent = (studentId, studentName) => {
+  navigate("messages", { 
+    targetType: "user",
+    targetId: studentId,
+    targetName: studentName
+  });
+};
+
+// Messages.jsx - Créer/récupérer conversation directe
+async function getOrCreateDirectMessage(userId) {
+  // GET /conversations/direct/:userId
+  // Si n'existe pas → POST /conversations/create-direct
+  // Retourner convId et définir comme actif
+}
+```
+
+**Endpoints requis**:
+```
+POST /conversations/create-direct
+  Params: { user_id_1, user_id_2 }
+  Return: { conversation_id, first_message_preview }
+
+GET /conversations/direct/:user_id
+  Return: { conversation_id, messages[], is_read }
+```
+
+---
+
+### 🔴 Problème 3: Bouton "Plus Badges" d'Étudiant
+```
+ACTUELLEMENT:
+  On profil Student Alice
+  → Clic "Voir tous →" (badges)
+  → navigate("badges")
+  → ❌ Affiche TOUS les badges de tous les utilisateurs
+
+DEVRAIT ÊTRE:
+  → navigate("badges", { userId: alice.id })
+  → ✅ Affiche SEULEMENT les badges d'Alice
+```
+
+**Solution Frontend**:
+```javascript
+// ProfileStudent.jsx ligne 202-207
+<button 
+  onClick={() => navigate("badges", { userId: user.id })}
+>
+  Voir tous →
+</button>
+
+// BadgesPage.jsx
+export default function BadgesPage() {
+  const { navigate } = useApp();
+  const params = new URLSearchParams(window.location.search);
+  const userId = params.get("userId");  // Récupérer param
+  
+  const badges = userId 
+    ? BADGES_DATA.filter(b => b.userId === userId)
+    : BADGES_DATA;  // Tous si pas de param
+    
+  return (
+    <div>
+      {userId && (
+        <button onClick={() => navigate("badges")}>
+          ← Voir tous les badges
+        </button>
+      )}
+      {/* Afficher badges filtrés */}
+    </div>
+  );
+}
+```
+
+**Note**: Ce problème est surtout frontend, mais besoin de vérifier la structure des URLs.
+
+---
+
+## 🔴 PROBLÈME CRITIQUE: Bouton Back du Téléphone
+
+### Problème Décrit
+```
+User: Je clique sur le bouton retour du téléphone (Android/iOS)
+  ou je clique sur "Retour" d'une page
+  → 🔴 Sort COMPLÈTEMENT du site
+  → ❌ Perd la section et le contexte
+  → ❌ Pas de bouton retour apparent
+```
+
+### Root Cause
+```
+Le problème vient de AppContext.jsx:
+
+goBack() {
+  setPageHistory(h => {
+    if (!h.length) return h;
+    setCurrentPage(h[h.length - 1]);
+    return h.slice(0, -1);
+  });
+}
+
+❌ Problème 1: PageHistory commence vide
+   → Clic retour page 1 → sort du site
+
+❌ Problème 2: Pas de "home guard"
+   → Pas de page par défaut si history vide
+   
+❌ Problème 3: Pas de gestion du retour physique (Android/iOS)
+   → window.history.back() non géré
+```
+
+### Solution 1: Améliorer goBack() (Frontend)
+```javascript
+// src/context/AppContext.jsx
+
+const goBack = useCallback(() => {
+  setPageHistory(h => {
+    if (!h.length) {
+      // ✅ FIX: Si pas d'historique, aller à home/dashboard
+      const defaultPage = currentUser?.role === "student" 
+        ? "dashboard-student"
+        : currentUser?.role === "investor"
+        ? "dashboard-investor"
+        : "home";
+      
+      setCurrentPage(defaultPage);
+      return h;
+    }
+    
+    const previousPage = h[h.length - 1];
+    setCurrentPage(previousPage);
+    return h.slice(0, -1);
+  });
+}, [currentUser?.role]);
+
+// Écouter le bouton back du téléphone
+useEffect(() => {
+  const handlePopState = () => {
+    goBack();
+  };
+  
+  window.addEventListener('popstate', handlePopState);
+  return () => window.removeEventListener('popstate', handlePopState);
+}, [goBack]);
+```
+
+### Solution 2: Ajouter Bouton Retour Visible
+```javascript
+// Dans App.jsx ou chaque page
+// Afficher toujours un bouton retour sauf à la home
+
+{currentPage !== "home" && (
+  <button 
+    className="btn btn-ghost btn-sm"
+    onClick={() => goBack()}
+    style={{ position: "fixed", bottom: 20, left: 20, zIndex: 100 }}
+  >
+    ← Retour
+  </button>
+)}
+```
+
+### Solution 3: Gérer History avec Browser History API (IMPORTANT!)
+```javascript
+// Quand navigate(), ajouter un état à window.history
+
+const navigate = useCallback((page, opts = {}) => {
+  setPageHistory(h => [...h, currentPage]);
+  setCurrentPage(page);
+  
+  // ✅ Synchroniser avec browser history
+  window.history.pushState({ page }, `Launchpad - ${page}`, `?page=${page}`);
+  
+  if (opts.project) setSelProject(opts.project);
+  if (opts.collab) setCollabStep(opts.collab);
+  if (opts.target) setCollabTarget(opts.target);
+  window.scrollTo(0, 0);
+}, [currentPage]);
+```
+
+### Solution 4: CSS - Afficher Bouton Retour sur Mobile
+```css
+/* Afficher toujours back button sur mobile */
+@media (max-width: 768px) {
+  .btn-ghost {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg-card);
+    margin-bottom: 10px;
+  }
+}
+```
+
+---
+
+## 📋 CHECKLIST: FIXES
+
+### Responsive (Frontend) ✅ DONE
+```
+[✅] AcademyPage - Bouton multi-ligne
+[✅] ProfileStudent - Bouton plus court
+[✅] Messages.css - Gestion overflow
+[ ] Publish.jsx - Ajouter breakpoint 1024px
+[ ] Academy.css - Hero stats responsive
+```
+
+### Navigation (Backend) 🔴 TODO
+```
+[ ] POST /conversations/create-team - Créer conversation équipe
+[ ] GET /conversations/team/:project_id - Récupérer team conv
+[ ] POST /conversations/create-direct - Créer conversation directe  
+[ ] GET /conversations/direct/:user_id - Récupérer DM
+[ ] Adapter Messages.jsx pour accepter targetType param
+[ ] BadgesPage.jsx - Filtrer par userId si fourni
+```
+
+### Back Button (Frontend + Browser History) 🔴 TODO
+```
+[ ] Améliorer goBack() avec fallback à home/dashboard
+[ ] Ajouter window.history.pushState() à navigate()
+[ ] Écouter window.popstate pour retour physique
+[ ] Ajouter bouton retour visible sur mobile
+[ ] Tester retour physique (Android/iOS)
+[ ] Tester ← Retour button sur chaque page
+```
+
+---
+
+## 🔧 PRIORITÉ DE CORRECTION
+
+| # | Problème | Urgence | Temps Est. |
+|---|----------|---------|-----------|
+| 1 | Back button sort du site | 🔴 TRÈS URGENT | 2-3 heures |
+| 2 | Navigation conversations | 🔴 URGENT | 3-4 heures |
+| 3 | Badges d'étudiant | 🟠 MOYEN | 1-2 heures |
+| 4 | Responsive Publish | 🟡 UTILE | 30 min |
+| 5 | Responsive Academy | 🟡 UTILE | 30 min |
+
+---
+
+Generated: June 3, 2026
 

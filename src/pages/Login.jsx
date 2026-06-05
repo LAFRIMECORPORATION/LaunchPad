@@ -3,20 +3,28 @@ import { useApp } from "../context/AppContext";
 import "./Auth.css"
 
 export default function Login() {
-    const { navigate, login } = useApp();
+    const { navigate, loginWithCredentials } = useApp();
     const [role, setRole] = useState("student");
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    function handlesubmit() {
+    async function handlesubmit() {
         if (!email || !password) {
             setError("veuillez remplir tous les champs.");
             return;
         }
-        // login gere maintenant la redirection automatique
 
-        login(role);
+        setLoading(true);
+        setError("");
+        try {
+            await loginWithCredentials({ email, password, role });
+        } catch (err) {
+            setError(err.message || "Connexion impossible.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -101,9 +109,9 @@ export default function Login() {
 
                         {error && <p style={{ fontSize: 12, color: "var (--danger) " }}> {error} </p>}
 
-                        <button className="btn btn-primary btn-full btn-lg" onClick={handlesubmit}>
+                        <button className="btn btn-primary btn-full btn-lg" onClick={handlesubmit} disabled={loading}>
 
-                            se connecter
+                            {loading ? "Connexion…" : "se connecter"}
 
                         </button>
                         <div className="divider-text">ou</div>
@@ -112,7 +120,9 @@ export default function Login() {
 
                     </div>
 
-                    <p className="auth-footer-text"> pas encore de compte? {""} <span className="auth-link" onClick={() => navigate("register")}></span> s inscrire gratuitement </p>
+                    <p className="auth-footer-text"> pas encore de compte?{" "}
+                        <span className="auth-link" onClick={() => navigate("register")}>s inscrire gratuitement</span>
+                    </p>
                 </div>
             </div>
 
