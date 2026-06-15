@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { authApi, kycApi, setAccessToken, clearAccessToken } from "../utils/api";
 import {
   NOTIFICATIONS,
   CONVERSATIONS,
@@ -15,9 +16,7 @@ import {
 import {
   getPathForPage,
   getPageFromPath,
-  getDashboardPathForRole,
 } from "../config/routes";
-import { authApi, setToken, clearToken, getToken } from "../services/api";
 
 const AppContext = createContext(null);
 
@@ -60,21 +59,13 @@ export function AppProvider({ children }) {
   const [toast, setToast] = useState(null);
   const [teamContact, setTeamContact] = useState(null);
 
-  // ─── Restauration de session au démarrage ────────────────
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setAuthLoading(false);
-      return;
-    }
-
-    authApi.me()
-      .then(({ user }) => setCurrentUser(user))
-      .catch(() => clearToken())
-      .finally(() => setAuthLoading(false));
+  // ─── Toast System ─────────────────────────────────────────
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // ─── Navigation (compatible avec l'ancien navigate("explore")) ──
+  // ─── Navigation ───────────────────────────────────────────
   const navigate = useCallback((page, opts = {}) => {
     if (opts.project) setSelectedProject(opts.project);
     if (opts.collab !== undefined) setCollabStep(opts.collab);
@@ -91,59 +82,129 @@ export function AppProvider({ children }) {
     routerNavigate(-1);
   }, [routerNavigate]);
 
-  // ─── Toast System ─────────────────────────────────────────
-  const showToast = useCallback((message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  }, []);
+  // ─── 5. AJOUTÉ : Réhydrater la session au chargement ──────
+  useEffect(() => {
+    const rehydrateSession = async () => {
+      const refreshToken = localStorage.getItem("launchpad_refresh_token");
+      if (!refreshToken) {
+        setAuthLoading(false);
+        return;
+      }
 
-  // ─── Authentification API ─────────────────────────────────
-  const loginWithCredentials = useCallback(async ({ email, password, role }) => {
-    const { user, token } = await authApi.login({ email, password, role });
-    setToken(token);
-    setCurrentUser(user);
-    routerNavigate(getDashboardPathForRole(user.role));
-    window.scrollTo(0, 0);
-    showToast(`Bienvenue ${user.firstName} !`, "success");
-    return user;
-  }, [routerNavigate, showToast]);
+      try {
+        const response = await authApi.refresh(refreshToken);
+        const { user, accessToken, refreshToken: newRefresh } = response.data;
 
-  const registerAccount = useCallback(async (payload) => {
-    const { user, token } = await authApi.register(payload);
-    setToken(token);
-    setCurrentUser(user);
-    routerNavigate(getDashboardPathForRole(user.role));
-    window.scrollTo(0, 0);
-    showToast("Compte créé avec succès !", "success");
-    return user;
-  }, [routerNavigate, showToast]);
+        setAccessToken(accessToken);
+        localStorage.setItem("launchpad_refresh_token", newRefresh);
+        setCurrentUser(user);
 
-  /** Rétrocompatibilité demo — préférer loginWithCredentials */
-  const login = useCallback(async (roleOrPayload) => {
-    if (typeof roleOrPayload === "string") {
-      showToast("Utilisez email + mot de passe pour vous connecter.", "info");
-      return;
+        // Rediriger vers le dashboard si sur la page home
+        if (window.location.pathname === "/" || currentPage === "home") {
+          const dashMap = {
+            student:  "dashboard-student",
+            investor: "dashboard-investor",
+            admin:    "admin",
+          };
+          navigate(dashMap[user.role] || "home");
+        }
+      } catch {
+        // Token invalide ou expiré → déconnexion silencieuse
+        localStorage.removeItem("launchpad_refresh_token");
+        clearAccessToken();
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    rehydrateSession();
+  }, [currentPage, navigate]);
+
+  // ─── 2. REMPLACÉ : Fonction login() v2 ────────────────────
+  const login = useCallback(async (credentials) => {
+    try {
+      // Si on reçoit une string (role) → mode démo (mockData)
+      if (typeof credentials === "string") {
+        // Mode démo fictif basé sur le rôle pour ne pas bloquer l'interface
+        setCurrentUser({ role: credentials, name: `Démo ${credentials}`, kycValidated: true });
+        const dashMap = {
+          student:  "dashboard-student",
+          investor: "dashboard-investor",
+          admin:    "admin",
+        };
+        navigate(dashMap[credentials] || "home");
+        showToast(`Mode démo : Connecté en tant que ${credentials}`, "info");
+        return;
+      }
+
+      // Appel API réel
+      const response = await authApi.login(credentials);
+      const { user, accessToken, refreshToken } = response.data;
+
+      // Stocker les tokens
+      setAccessToken(accessToken);
+      localStorage.setItem("launchpad_refresh_token", refreshToken);
+
+      // Mettre à jour le state
+      setCurrentUser(user);
+      showToast(`Ravi de vous revoir !`, "success");
+
+      // Rediriger
+      const dashMap = {
+        student:  "dashboard-student",
+        investor: "dashboard-investor",
+        admin:    "admin",
+      };
+      navigate(dashMap[user.role] || "home");
+
+    } catch (error) {
+      showToast(error.message || "Erreur de connexion.", "error");
+      throw error;
     }
-    return loginWithCredentials(roleOrPayload);
-  }, [loginWithCredentials, showToast]);
+  }, [navigate, showToast]);
 
+  // ─── AJOUTÉ : registerAccount branché sur les jetons v2 ───
+  const registerAccount = useCallback(async (payload) => {
+    try {
+      const response = await authApi.register(payload);
+      const { user, accessToken, refreshToken } = response.data;
+
+      setAccessToken(accessToken);
+      localStorage.setItem("launchpad_refresh_token", refreshToken);
+      setCurrentUser(user);
+
+      const dashMap = {
+        student:  "dashboard-student",
+        investor: "dashboard-investor",
+        admin:    "admin",
+      };
+      navigate(dashMap[user.role] || "home");
+      showToast("Compte créé avec succès !", "success");
+      return user;
+    } catch (error) {
+      showToast(error.message || "Erreur lors de la création du compte.", "error");
+      throw error;
+    }
+  }, [navigate, showToast]);
+
+  // ─── 3. REMPLACÉ : Fonction logout() ─────────────────────
   const logout = useCallback(async () => {
     try {
-      if (getToken()) await authApi.logout();
+      await authApi.logout();
     } catch {
-      // Déconnexion locale même si l'API échoue
+      // Ignorer les erreurs de logout (token déjà expiré, etc.)
     } finally {
-      clearToken();
+      clearAccessToken();
+      localStorage.removeItem("launchpad_refresh_token");
       setCurrentUser(null);
       setCollabStep("found");
       setCollabTarget(null);
       setSavedProjects([]);
-      routerNavigate("/");
-      window.scrollTo(0, 0);
+      navigate("home");
     }
-  }, [routerNavigate]);
+  }, [navigate]);
 
-  // ─── Flux d'Interactions Projets ──────────────────────────
+  // ─── Flux d'Interactions Projets (Conservé) ───────────────
   const toggleLike = useCallback((projectId) => {
     setProjects(prev => prev.map(p => {
       if (p.id !== projectId) return p;
@@ -192,7 +253,7 @@ export function AppProvider({ children }) {
 
   const isSaved = isProjectSaved;
 
-  // ─── Investor Requests ────────────────────────────────────
+  // ─── Investor Requests (Conservé) ─────────────────────────
   const addInvestorRequest = useCallback((request, user) => {
     setInvestorRequests(prev => [{
       id: Date.now(),
@@ -215,11 +276,30 @@ export function AppProvider({ children }) {
     showToast("Votre candidature a bien été envoyée à l'investisseur !", "success");
   }, [showToast]);
 
-  // ─── KYC ──────────────────────────────────────────────────
-  const submitKyc = useCallback((docs) => {
-    setKycDocs(docs);
-    setCurrentUser(u => ({ ...u, kycStatus: "submitted" }));
-    showToast("Documents envoyés ! L'administrateur examine votre dossier sous 24–48h.", "info");
+  // ─── 4. REMPLACÉ : submitKyc() avec FormData ──────────────
+  const submitKyc = useCallback(async (docs) => {
+    try {
+      // Construire le FormData pour l'upload (Utile pour Cloudinary)
+      const formData = new FormData();
+      Object.entries(docs).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (value) {
+          formData.append(key, value);
+        }
+      });
+
+      await kycApi.submit(formData);
+
+      // Mettre à jour l'état local
+      setKycDocs(docs);
+      setCurrentUser(u => ({ ...u, kycStatus: "submitted" }));
+      showToast("Documents envoyés ! Résultat sous 24–48h.", "info");
+
+    } catch (error) {
+      showToast(error.message || "Erreur lors de la soumission.", "error");
+      throw error;
+    }
   }, [showToast]);
 
   const approveKyc = useCallback(() => {
@@ -235,13 +315,13 @@ export function AppProvider({ children }) {
     return true;
   }, [currentUser, navigate]);
 
-  // ─── Notifications ────────────────────────────────────────
+  // ─── Notifications (Conservé) ─────────────────────────────
   const unreadCount = notifications.filter(n => n.unread).length;
   const markAllRead = useCallback(() => {
     setNotifications(n => n.map(x => ({ ...x, unread: false })));
   }, []);
 
-  // ─── Messagerie ───────────────────────────────────────────
+  // ─── Messagerie (Conservé) ────────────────────────────────
   const unreadMessages = conversations.reduce((acc, c) => acc + c.unread, 0);
 
   const sendMessage = useCallback((convId, text) => {
@@ -257,7 +337,7 @@ export function AppProvider({ children }) {
     ));
   }, []);
 
-  // ─── Collaboration ────────────────────────────────────────
+  // ─── Collaboration (Conservé) ─────────────────────────────
   const startCollabFlow = useCallback(() => {
     setCollabStep("detecting");
     setTimeout(() => setCollabStep("found"), 2000);
@@ -285,7 +365,6 @@ export function AppProvider({ children }) {
     navigate,
     goBack,
     login,
-    loginWithCredentials,
     registerAccount,
     logout,
 
@@ -342,7 +421,6 @@ export function AppProvider({ children }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within AppProvider");
