@@ -11,7 +11,7 @@
 //   - Base URL depuis les variables d'environnement Vite
 // ============================================================
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // ── Stockage des tokens en mémoire ───────────────────────
 // NE PAS utiliser localStorage pour l'access token (XSS)
