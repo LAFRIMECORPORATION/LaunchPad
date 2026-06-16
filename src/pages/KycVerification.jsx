@@ -1,9 +1,9 @@
 // ============================================================
-// LAUNCHPAD — KycVerification.jsx  🆕 NOUVELLE PAGE
+// LAUNCHPAD — KycVerification.jsx 
 // Chemin : src/pages/KycVerification.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import "./KycVerification.css";
 
@@ -66,51 +66,146 @@ function StepIndicator({ steps, current }) {
   );
 }
 
-// ── Upload zone ───────────────────────────────────────────
-function UploadZone({ icon, label, sub, value, onUpload }) {
-  if (value) {
-    return (
-      <div className="upload-zone upload-zone--done">
-        <div className="upload-zone__icon">✅</div>
-        <div className="upload-zone__done">{value}</div>
-      </div>
-    );
-  }
+// ── Upload zone réutilisable (Gestion des fichiers réels) ──
+function UploadZone({ docType, icon, label, sub, value, onFileSelect }) {
+  const inputRef = useRef(null);
+
+  const handleChange = (e) => {
+    const file = e.target.files[0];
+    if (file) onFileSelect(docType, file);
+  };
+
   return (
-    <div className="upload-zone" role="button" tabIndex={0}
-      onClick={onUpload}
-      onKeyDown={e => e.key === "Enter" && onUpload()}
+    <div
+      className={`upload-zone${value ? " upload-zone--done" : ""}`}
+      onClick={() => inputRef.current?.click()}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === "Enter" && inputRef.current?.click()}
     >
-      <div className="upload-zone__icon">{icon}</div>
-      <div className="upload-zone__label">{label}</div>
-      <div className="upload-zone__sub">{sub}</div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        style={{ display: "none" }}
+        onChange={handleChange}
+      />
+      {value ? (
+        <>
+          <div className="upload-zone__icon">✅</div>
+          <div className="upload-zone__done">{value.name}</div>
+          <div className="upload-zone__sub">{(value.size / 1024 / 1024).toFixed(2)} MB</div>
+        </>
+      ) : (
+        <>
+          <div className="upload-zone__icon">{icon}</div>
+          <div className="upload-zone__label">{label}</div>
+          <div className="upload-zone__sub">{sub}</div>
+        </>
+      )}
     </div>
   );
 }
 
 // ── Page principale ───────────────────────────────────────
 export default function KycVerification() {
-  const { currentUser, navigate, submitKyc, approveKyc } = useApp();
+  const { currentUser, navigate, submitKyc, approveKyc, getAccessToken, showToast } = useApp();
 
   const isStudent   = currentUser?.role === "student";
   const isSubmitted = currentUser?.kycStatus === "submitted";
   const isApproved  = currentUser?.kycValidated;
 
   const [step, setStep] = useState(1);
-  const [docs, setDocs] = useState({
-    // student
-    cniNumber: "", cniFile: "", selfie: "", certifScol: "", carteEtu: "", university: "", level: "",
-    // investor
-    repName: "", repCni: "", repCniFile: "", domicile: "", entityName: "", entityType: "", rccm: "", rccmFile: "",
+  const [loading, setLoading] = useState(false);
+
+  // States pour les champs texte
+  const [textData, setTextData] = useState({
+    cniNumber: "",
+    university: "",
+    matricule: "",
+    level: "",
+    repName: "",
+    repCni: "",
+    entityName: "",
+    entityType: "",
+    rccm: "",
   });
 
-  const setDoc = (key, val) => setDocs(d => ({ ...d, [key]: val }));
+  // State dynamique pour stocker les vrais objets File
+  const [files, setFiles] = useState({});
+
+  const handleTextChange = (key, val) => {
+    setTextData(prev => ({ ...prev, [key]: val }));
+  };
+
+  const handleFileSelect = (docType, file) => {
+    setFiles(prev => ({ ...prev, [docType]: file }));
+  };
 
   const STEPS_S = ["Identité", "Scolarité", "Confirmation"];
   const STEPS_I = ["Identité", "Entreprise", "Confirmation"];
   const steps   = isStudent ? STEPS_S : STEPS_I;
 
-  // ── Approved ──────────────────────────────────────────
+  // ── Fonction de soumission réelle vers l'API Backend ─────
+  const handleSubmitKyc = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+
+      // 1. Injection de tous les fichiers réels sélectionnés
+      Object.entries(files).forEach(([docType, file]) => {
+        formData.append(docType, file);
+      });
+
+      // 2. Injection des données textuelles selon le profil utilisateur
+      if (isStudent) {
+        formData.append("cniNumber",  textData.cniNumber);
+        formData.append("university", textData.university);
+        formData.append("matricule",  textData.matricule);
+        formData.append("level",      textData.level);
+      } else {
+        formData.append("repName",    textData.repName);
+        formData.append("repCni",     textData.repCni);
+        formData.append("entityName", textData.entityName);
+        formData.append("entityType", textData.entityType);
+        formData.append("rccm",       textData.rccm || "");
+      }
+
+      // 3. Requête HTTP multipart/form-data
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/kyc/submit`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+            // Le navigateur se charge lui-même de mettre le Content-Type avec le bon boundary
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erreur lors de la soumission du dossier.");
+      }
+
+      // 4. Notification et mise à jour de l'état contextuel global
+      if (typeof showToast === "function") showToast("Dossier KYC envoyé avec succès !", "success");
+      submitKyc(files); 
+
+    } catch (error) {
+      if (typeof showToast === "function") {
+        showToast(error.message, "error");
+      } else {
+        alert(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Rendu Écran : Approved (Compte Vérifié) ──────────────
   if (isApproved) return (
     <div className="kyc-page">
       <div className="kyc-success">
@@ -130,7 +225,7 @@ export default function KycVerification() {
     </div>
   );
 
-  // ── Submitted — en attente ─────────────────────────────
+  // ── Rendu Écran : Submitted (Dossier en attente) ──────────
   if (isSubmitted) return (
     <div className="kyc-page">
       <div className="kyc-success">
@@ -155,7 +250,7 @@ export default function KycVerification() {
           ))}
         </div>
 
-        {/* Simulation admin — démo uniquement */}
+        {/* Bouton de simulation Dev/Démo */}
         <div className="kyc-demo-box">
           <div className="kyc-demo-box__label">🛠️ Démo uniquement — Simuler la validation admin</div>
           <button className="btn btn-success btn-sm btn-full" onClick={approveKyc}>
@@ -173,7 +268,7 @@ export default function KycVerification() {
     </div>
   );
 
-  // ── Why KYC banner ────────────────────────────────────
+  // ── Composant Bannière d'information ────────────────────
   const WhyBanner = () => (
     <div className="kyc-why-box">
       <div className="kyc-why-box__icon">🔐</div>
@@ -194,23 +289,22 @@ export default function KycVerification() {
     <div className="kyc-form">
       <h2 className="kyc-form__title">🪪 Preuve d'identité</h2>
       <p className="kyc-form__desc">
-        Fournissez une pièce d'identité officielle camerounaise valide
-        (CNI, passeport ou permis de conduire).
+        Fournissez une pièce d'identité officielle camerounaise valide (CNI, passeport ou permis de conduire).
       </p>
       <div className="form-group">
         <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
         <input className="form-input" placeholder="Ex : 123456789A"
-          value={docs.cniNumber} onChange={e => setDoc("cniNumber", e.target.value)} />
+          value={textData.cniNumber} onChange={e => handleTextChange("cniNumber", e.target.value)} />
       </div>
       <div className="form-group">
         <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
-        <UploadZone icon="🪪" label="Glissez ou cliquez pour choisir" sub="JPG, PNG, PDF — max 5 MB"
-          value={docs.cniFile} onUpload={() => setDoc("cniFile", "cni_recto.jpg")} />
+        <UploadZone docType="cniFile" icon="🪪" label="Glissez ou cliquez pour choisir" sub="JPG, PNG, PDF — max 5 MB"
+          value={files.cniFile} onFileSelect={handleFileSelect} />
       </div>
       <div className="form-group">
         <label className="form-label">Selfie en tenant la pièce d'identité <span className="req">*</span></label>
-        <UploadZone icon="📸" label="Photo nette, éclairage correct" sub="Tenez votre CNI à côté de votre visage"
-          value={docs.selfie} onUpload={() => setDoc("selfie", "selfie_cni.jpg")} />
+        <UploadZone docType="selfie" icon="📸" label="Photo nette, éclairage correct" sub="Tenez votre CNI à côté de votre visage"
+          value={files.selfie} onFileSelect={handleFileSelect} />
       </div>
     </div>
   );
@@ -225,7 +319,7 @@ export default function KycVerification() {
       <div className="form-group">
         <label className="form-label">Établissement <span className="req">*</span></label>
         <select className="form-input form-select"
-          value={docs.university} onChange={e => setDoc("university", e.target.value)}
+          value={textData.university} onChange={e => handleTextChange("university", e.target.value)}
         >
           <option value="">Choisir un établissement…</option>
           {Object.entries(UNIVERSITIES).map(([group, list]) => (
@@ -239,12 +333,12 @@ export default function KycVerification() {
         <div className="form-group">
           <label className="form-label">Numéro matricule <span className="req">*</span></label>
           <input className="form-input" placeholder="Ex : 20A0001"
-            value={docs.matricule} onChange={e => setDoc("matricule", e.target.value)} />
+            value={textData.matricule} onChange={e => handleTextChange("matricule", e.target.value)} />
         </div>
         <div className="form-group">
           <label className="form-label">Niveau d'études <span className="req">*</span></label>
           <select className="form-input form-select"
-            value={docs.level} onChange={e => setDoc("level", e.target.value)}
+            value={textData.level} onChange={e => handleTextChange("level", e.target.value)}
           >
             <option value="">Choisir…</option>
             {["Licence 1","Licence 2","Licence 3","Master 1","Master 2","Doctorat","BTS 1","BTS 2","DUT","Classe préparatoire"].map(l =>
@@ -255,17 +349,17 @@ export default function KycVerification() {
       </div>
       <div className="form-group">
         <label className="form-label">Certificat de scolarité en cours de validité <span className="req">*</span></label>
-        <UploadZone icon="🎓"
+        <UploadZone docType="certifScol" icon="🎓"
           label="Certificat de scolarité — année académique en cours"
           sub="Document officiel signé et tamponné par votre établissement — PDF, JPG"
-          value={docs.certifScol} onUpload={() => setDoc("certifScol", "certificat_scolarite.pdf")} />
+          value={files.certifScol} onFileSelect={handleFileSelect} />
       </div>
       <div className="form-group">
         <label className="form-label">Carte d'étudiant <span className="req">*</span></label>
-        <UploadZone icon="🆔"
+        <UploadZone docType="carteEtu" icon="🆔"
           label="Recto de votre carte étudiante en cours de validité"
           sub="Photo nette, texte lisible — JPG, PNG"
-          value={docs.carteEtu} onUpload={() => setDoc("carteEtu", "carte_etudiant.jpg")} />
+          value={files.carteEtu} onFileSelect={handleFileSelect} />
       </div>
     </div>
   );
@@ -280,25 +374,25 @@ export default function KycVerification() {
       <div className="form-group">
         <label className="form-label">Nom complet du représentant <span className="req">*</span></label>
         <input className="form-input" placeholder="Jean-Paul Mbarga"
-          value={docs.repName} onChange={e => setDoc("repName", e.target.value)} />
+          value={textData.repName} onChange={e => handleTextChange("repName", e.target.value)} />
       </div>
       <div className="form-group">
         <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
         <input className="form-input" placeholder="Ex : 123456789A"
-          value={docs.repCni} onChange={e => setDoc("repCni", e.target.value)} />
+          value={textData.repCni} onChange={e => handleTextChange("repCni", e.target.value)} />
       </div>
       <div className="form-group">
         <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
-        <UploadZone icon="🪪" label="CNI ou passeport — recto visible"
+        <UploadZone docType="repCniFile" icon="🪪" label="CNI ou passeport — recto visible"
           sub="JPG, PNG, PDF — max 5 MB"
-          value={docs.repCniFile} onUpload={() => setDoc("repCniFile", "cni_representant.jpg")} />
+          value={files.repCniFile} onFileSelect={handleFileSelect} />
       </div>
       <div className="form-group">
         <label className="form-label">Justificatif de domicile (moins de 3 mois)</label>
-        <UploadZone icon="🏠"
+        <UploadZone docType="domicile" icon="🏠"
           label="Facture eau, électricité ou relevé bancaire"
           sub="Moins de 3 mois — PDF, JPG"
-          value={docs.domicile} onUpload={() => setDoc("domicile", "justif_domicile.pdf")} />
+          value={files.domicile} onFileSelect={handleFileSelect} />
       </div>
     </div>
   );
@@ -314,13 +408,13 @@ export default function KycVerification() {
       <div className="form-group">
         <label className="form-label">Nom de l'entité investisseuse <span className="req">*</span></label>
         <input className="form-input" placeholder="Cameroon Tech Ventures SARL"
-          value={docs.entityName} onChange={e => setDoc("entityName", e.target.value)} />
+          value={textData.entityName} onChange={e => handleTextChange("entityName", e.target.value)} />
       </div>
       <div className="form-row">
         <div className="form-group">
           <label className="form-label">Type de structure</label>
           <select className="form-input form-select"
-            value={docs.entityType} onChange={e => setDoc("entityType", e.target.value)}
+            value={textData.entityType} onChange={e => handleTextChange("entityType", e.target.value)}
           >
             <option value="">Choisir…</option>
             {INVEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -329,19 +423,19 @@ export default function KycVerification() {
         <div className="form-group">
           <label className="form-label">Numéro RCCM</label>
           <input className="form-input" placeholder="RC/DLA/2020/B/0001"
-            value={docs.rccm} onChange={e => setDoc("rccm", e.target.value)} />
+            value={textData.rccm} onChange={e => handleTextChange("rccm", e.target.value)} />
         </div>
       </div>
       <div className="form-group">
         <label className="form-label">Registre du Commerce (RCCM) <span className="req">*</span></label>
-        <UploadZone icon="📋"
+        <UploadZone docType="rccmFile" icon="📋"
           label="Document RCCM officiel ou statuts de l'entreprise"
           sub="PDF signé par le greffe du tribunal — max 10 MB"
-          value={docs.rccmFile} onUpload={() => setDoc("rccmFile", "rccm_certifie.pdf")} />
+          value={files.rccmFile} onFileSelect={handleFileSelect} />
       </div>
       <div className="kyc-angel-note">
         💡 <strong>Particulier sans entreprise ?</strong> Vous pouvez investir en tant que Business Angel.
-        Fournissez simplement votre CNI et un relevé bancaire récent.
+        Fournissez simplement votre CNI macro et un relevé bancaire récent.
       </div>
     </div>
   );
@@ -349,15 +443,15 @@ export default function KycVerification() {
   // ── STEP 3 — Confirmation ─────────────────────────────
   const StepConfirmation = () => {
     const studentItems = [
-      ["🪪", "Pièce d'identité (CNI / Passeport)", docs.cniFile],
-      ["📸", "Selfie avec la pièce d'identité",    docs.selfie],
-      ["🎓", "Certificat de scolarité",            docs.certifScol],
-      ["🆔", "Carte étudiante",                    docs.carteEtu],
+      ["🪪", "Pièce d'identité (CNI / Passeport)", files.cniFile],
+      ["📸", "Selfie avec la pièce d'identité",    files.selfie],
+      ["🎓", "Certificat de scolarité",            files.certifScol],
+      ["🆔", "Carte étudiante",                    files.carteEtu],
     ];
     const investorItems = [
-      ["🪪", "Pièce d'identité du représentant", docs.repCniFile],
-      ["🏠", "Justificatif de domicile",          docs.domicile],
-      ["📋", "Registre du Commerce (RCCM)",       docs.rccmFile],
+      ["🪪", "Pièce d'identité du représentant", files.repCniFile],
+      ["🏠", "Justificatif de domicile",          files.domicile],
+      ["📋", "Registre du Commerce (RCCM)",       files.rccmFile],
     ];
     const items = isStudent ? studentItems : investorItems;
 
@@ -392,7 +486,7 @@ export default function KycVerification() {
     );
   };
 
-  // ── Render steps ──────────────────────────────────────
+  // ── Sélection de l'étape à afficher ────────────────────
   const renderStep = () => {
     if (isStudent) {
       if (step === 1) return <StepStudentIdentity />;
@@ -437,7 +531,7 @@ export default function KycVerification() {
         {/* Navigation buttons */}
         <div className="kyc-form__nav">
           {step > 1 && (
-            <button className="btn btn-secondary" onClick={() => setStep(s => s - 1)}>
+            <button className="btn btn-secondary" disabled={loading} onClick={() => setStep(s => s - 1)}>
               ← Étape précédente
             </button>
           )}
@@ -448,9 +542,18 @@ export default function KycVerification() {
           ) : (
             <button
               className="btn btn-primary"
-              onClick={() => submitKyc(docs)}
+              style={{ flex: 1, justifyContent: "center" }}
+              disabled={loading}
+              onClick={handleSubmitKyc}
             >
-              📤 Envoyer mon dossier KYC
+              {loading ? (
+                <>
+                  <div className="spinner" style={{ width: 18, height: 18, marginRight: 8 }} />
+                  Envoi en cours...
+                </>
+              ) : (
+                "📤 Envoyer mon dossier KYC"
+              )}
             </button>
           )}
         </div>
