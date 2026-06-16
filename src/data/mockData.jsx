@@ -251,7 +251,7 @@ export const USERS = {
     name: "Alice Mboumba",
     firstName: "Alice",
     role: "student",
-    avatar: "AL",
+    avatar: "NC",
     university: "Université de Yaoundé I",
     location: "Yaoundé, Cameroun",
     bio: "Étudiante en Master IA et développement durable à l'UY1. Fondatrice d'EcoDeliv. Passionnée par la tech au service de l'environnement africain.",
