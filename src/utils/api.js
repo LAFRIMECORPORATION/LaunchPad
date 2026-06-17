@@ -1,4 +1,3 @@
-// client HTTP pour le FRONTEND
 // ============================================================
 // LAUNCHPAD FRONTEND — src/utils/api.js
 // Client HTTP centralisé — Version Sécurisée Anti-Boucle & Anti-Doublon
@@ -24,9 +23,13 @@ export function clearAccessToken() {
 // ── Helper fetch avec gestion auto du token ───────────────
 async function fetchWithAuth(url, options = {}) {
   const headers = {
-    "Content-Type": "application/json",
     ...(options.headers || {}),
   };
+
+  // Si aucun Content-Type n'est défini et qu'on n'envoie pas un FormData, on met du JSON par défaut
+  if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`;
@@ -166,6 +169,15 @@ export const api = {
     return parseResponse(response);
   },
 
+  // ✅ Nouvelle méthode dédiée pour l'envoi transparent de formulaires de fichiers (FormData)
+  async postFormData(url, formData) {
+    const response = await fetchWithAuth(url, {
+      method: "POST",
+      body: formData, // Le navigateur injecte automatiquement le bon Content-Type + Boundary !
+    });
+    return parseResponse(response);
+  },
+
   async upload(url, file, fieldName = "file", extraFields = {}) {
     const formData = new FormData();
     if (file) formData.append(fieldName, file);
@@ -206,7 +218,8 @@ export const usersApi = {
 
 export const kycApi = {
   getStatus:     ()          => api.get("/kyc/status"),
-  submit:        (formData)  => api.upload("/kyc/submit", null, null, formData),
+  // ✅ Corrigé pour utiliser la nouvelle méthode postFormData
+  submit:        (formData)  => api.postFormData("/kyc/submit", formData),
   getPending:    (params)    => api.get("/admin/kyc/pending", params),
   approve:       (userId)    => api.put(`/admin/kyc/${userId}/approve`),
   reject:        (userId, reason) => api.put(`/admin/kyc/${userId}/reject`, { reason }),

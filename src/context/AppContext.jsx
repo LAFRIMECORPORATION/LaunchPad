@@ -82,7 +82,7 @@ export function AppProvider({ children }) {
     routerNavigate(-1);
   }, [routerNavigate]);
 
-  // ─── 5. AJOUTÉ : Réhydrater la session au chargement ──────
+  // ─── Réhydrater la session au chargement ───────────────────
   useEffect(() => {
     const rehydrateSession = async () => {
       const refreshToken = localStorage.getItem("launchpad_refresh_token");
@@ -120,12 +120,11 @@ export function AppProvider({ children }) {
     rehydrateSession();
   }, [currentPage, navigate]);
 
-  // ─── 2. REMPLACÉ : Fonction login() v2 ────────────────────
+  // ─── Fonction login() branchée sur l'API ───────────────────
   const login = useCallback(async (credentials) => {
     try {
       // Si on reçoit une string (role) → mode démo (mockData)
       if (typeof credentials === "string") {
-        // Mode démo fictif basé sur le rôle pour ne pas bloquer l'interface
         setCurrentUser({ role: credentials, name: `Démo ${credentials}`, kycValidated: true });
         const dashMap = {
           student:  "dashboard-student",
@@ -163,7 +162,7 @@ export function AppProvider({ children }) {
     }
   }, [navigate, showToast]);
 
-  // ─── AJOUTÉ : registerAccount branché sur les jetons v2 ───
+  // ─── Enregistrement de compte branché sur l'API ─────────────
   const registerAccount = useCallback(async (payload) => {
     try {
       const response = await authApi.register(payload);
@@ -187,7 +186,7 @@ export function AppProvider({ children }) {
     }
   }, [navigate, showToast]);
 
-  // ─── 3. REMPLACÉ : Fonction logout() ─────────────────────
+  // ─── Fonction de déconnexion ──────────────────────────────
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -204,7 +203,7 @@ export function AppProvider({ children }) {
     }
   }, [navigate]);
 
-  // ─── Flux d'Interactions Projets (Conservé) ───────────────
+  // ─── Flux d'Interactions Projets ───────────────────────────
   const toggleLike = useCallback((projectId) => {
     setProjects(prev => prev.map(p => {
       if (p.id !== projectId) return p;
@@ -253,7 +252,7 @@ export function AppProvider({ children }) {
 
   const isSaved = isProjectSaved;
 
-  // ─── Investor Requests (Conservé) ─────────────────────────
+  // ─── Annonces Investisseurs ───────────────────────────────
   const addInvestorRequest = useCallback((request, user) => {
     setInvestorRequests(prev => [{
       id: Date.now(),
@@ -276,28 +275,46 @@ export function AppProvider({ children }) {
     showToast("Votre candidature a bien été envoyée à l'investisseur !", "success");
   }, [showToast]);
 
-  // ─── 4. REMPLACÉ : submitKyc() avec FormData ──────────────
+  // ─── Soumission KYC via FormData sécurisé ──────────────────
+ // ─── Soumission KYC via FormData sécurisé et clés mappées ───
   const submitKyc = useCallback(async (docs) => {
     try {
-      // Construire le FormData pour l'upload (Utile pour Cloudinary)
       const formData = new FormData();
+      
+      // Dictionnaire de correspondance Frontend (camelCase) -> Backend (snake_case)
+      const keyMapping = {
+        cniFile: "cni_file",
+        selfieFile: "selfie", // Aligne-le selon le nom de ton state frontend (ex: selfie ou selfieFile)
+        certifScol: "certif_scol",
+        carteEtu: "carte_etu",
+        // Clés investisseurs au cas où :
+        repCniFile: "rep_cni_file",
+        domicile: "domicile",
+        rccmFile: "rccm_file"
+      };
+
       Object.entries(docs).forEach(([key, value]) => {
+        // On récupère le nom attendu par le backend, sinon on garde la clé d'origine
+        const backendKey = keyMapping[key] || key;
+
         if (value instanceof File) {
-          formData.append(key, value);
-        } else if (value) {
-          formData.append(key, value);
+          formData.append(backendKey, value);
+        } else if (value !== undefined && value !== null) {
+          formData.append(backendKey, String(value));
         }
       });
 
+      // L'appel utilise à présent api.postFormData de manière native et sécurisée
       await kycApi.submit(formData);
 
-      // Mettre à jour l'état local
+      // Mettre à jour l'état local si le serveur valide la requête
       setKycDocs(docs);
       setCurrentUser(u => ({ ...u, kycStatus: "submitted" }));
       showToast("Documents envoyés ! Résultat sous 24–48h.", "info");
 
     } catch (error) {
-      showToast(error.message || "Erreur lors de la soumission.", "error");
+      const serverMessage = error.data?.message || error.message;
+      showToast(serverMessage || "Erreur lors de la soumission.", "error");
       throw error;
     }
   }, [showToast]);
@@ -315,13 +332,13 @@ export function AppProvider({ children }) {
     return true;
   }, [currentUser, navigate]);
 
-  // ─── Notifications (Conservé) ─────────────────────────────
+  // ─── Notifications ────────────────────────────────────────
   const unreadCount = notifications.filter(n => n.unread).length;
   const markAllRead = useCallback(() => {
     setNotifications(n => n.map(x => ({ ...x, unread: false })));
   }, []);
 
-  // ─── Messagerie (Conservé) ────────────────────────────────
+  // ─── Messagerie ───────────────────────────────────────────
   const unreadMessages = conversations.reduce((acc, c) => acc + c.unread, 0);
 
   const sendMessage = useCallback((convId, text) => {
@@ -337,7 +354,7 @@ export function AppProvider({ children }) {
     ));
   }, []);
 
-  // ─── Collaboration (Conservé) ─────────────────────────────
+  // ─── Collaboration ────────────────────────────────────────
   const startCollabFlow = useCallback(() => {
     setCollabStep("detecting");
     setTimeout(() => setCollabStep("found"), 2000);

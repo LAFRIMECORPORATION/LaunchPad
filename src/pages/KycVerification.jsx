@@ -66,7 +66,7 @@ function StepIndicator({ steps, current }) {
   );
 }
 
-// ── Upload zone réutilisable (Gestion des fichiers réels) ──
+// ── Upload zone réutilisable ──────────────────────────────
 function UploadZone({ docType, icon, label, sub, value, onFileSelect }) {
   const inputRef = useRef(null);
 
@@ -109,7 +109,7 @@ function UploadZone({ docType, icon, label, sub, value, onFileSelect }) {
 
 // ── Page principale ───────────────────────────────────────
 export default function KycVerification() {
-  const { currentUser, navigate, submitKyc, approveKyc, getAccessToken, showToast } = useApp();
+  const { currentUser, navigate, submitKyc, showToast } = useApp();
 
   const isStudent   = currentUser?.role === "student";
   const isSubmitted = currentUser?.kycStatus === "submitted";
@@ -118,7 +118,6 @@ export default function KycVerification() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // States pour les champs texte
   const [textData, setTextData] = useState({
     cniNumber: "",
     university: "",
@@ -131,7 +130,6 @@ export default function KycVerification() {
     rccm: "",
   });
 
-  // State dynamique pour stocker les vrais objets File
   const [files, setFiles] = useState({});
 
   const handleTextChange = (key, val) => {
@@ -146,74 +144,49 @@ export default function KycVerification() {
   const STEPS_I = ["Identité", "Entreprise", "Confirmation"];
   const steps   = isStudent ? STEPS_S : STEPS_I;
 
-  // ── Fonction de soumission réelle vers l'API Backend ─────
   const handleSubmitKyc = async () => {
     setLoading(true);
     try {
-      const formData = new FormData();
+      const payload = {
+        ...files,
+        ...(isStudent 
+          ? {
+              cniNumber:  textData.cniNumber,
+              university: textData.university,
+              matricule:  textData.matricule,
+              level:      textData.level,
+            }
+          : {
+              repName:    textData.repName,
+              repCni:     textData.repCni,
+              entityName: textData.entityName,
+              entityType: textData.entityType,
+              rccm:       textData.rccm || "",
+            }
+        )
+      };
 
-      // 1. Injection de tous les fichiers réels sélectionnés
-      Object.entries(files).forEach(([docType, file]) => {
-        formData.append(docType, file);
-      });
-
-      // 2. Injection des données textuelles selon le profil utilisateur
-      if (isStudent) {
-        formData.append("cniNumber",  textData.cniNumber);
-        formData.append("university", textData.university);
-        formData.append("matricule",  textData.matricule);
-        formData.append("level",      textData.level);
-      } else {
-        formData.append("repName",    textData.repName);
-        formData.append("repCni",     textData.repCni);
-        formData.append("entityName", textData.entityName);
-        formData.append("entityType", textData.entityType);
-        formData.append("rccm",       textData.rccm || "");
-      }
-
-      // 3. Requête HTTP multipart/form-data
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/kyc/submit`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-            // Le navigateur se charge lui-même de mettre le Content-Type avec le bon boundary
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Erreur lors de la soumission du dossier.");
-      }
-
-      // 4. Notification et mise à jour de l'état contextuel global
-      if (typeof showToast === "function") showToast("Dossier KYC envoyé avec succès !", "success");
-      submitKyc(files); 
+      await submitKyc(payload);
 
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || "Erreur lors de la soumission du dossier.";
       if (typeof showToast === "function") {
-        showToast(error.message, "error");
+        showToast(errorMsg, "error");
       } else {
-        alert(error.message);
+        alert(errorMsg);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Rendu Écran : Approved (Compte Vérifié) ──────────────
   if (isApproved) return (
     <div className="kyc-page">
       <div className="kyc-success">
         <div className="kyc-success__icon">✅</div>
         <h1 className="kyc-success__title">Compte vérifié !</h1>
         <p className="kyc-success__desc">
-          Votre identité a été confirmée. Vous avez maintenant accès à
-          toutes les fonctionnalités de Launchpad.
+          Votre identité a été confirmée. Vous avez maintenant accès à toutes les fonctionnalités.
         </p>
         <button
           className="btn btn-primary btn-lg"
@@ -225,15 +198,13 @@ export default function KycVerification() {
     </div>
   );
 
-  // ── Rendu Écran : Submitted (Dossier en attente) ──────────
   if (isSubmitted) return (
     <div className="kyc-page">
       <div className="kyc-success">
         <div className="kyc-success__icon">⏳</div>
         <h1 className="kyc-success__title">Dossier en cours d'examen</h1>
         <p className="kyc-success__desc">
-          Votre dossier KYC a été transmis à notre équipe. Résultat attendu
-          sous <strong>24 à 48 heures ouvrées</strong>.
+          Votre dossier KYC a été transmis. Résultat attendu sous 24 à 48 heures ouvrées.
         </p>
 
         <div className="recap-list" style={{ textAlign:"left", width:"100%", maxWidth:440 }}>
@@ -250,16 +221,9 @@ export default function KycVerification() {
           ))}
         </div>
 
-        {/* Bouton de simulation Dev/Démo */}
-        <div className="kyc-demo-box">
-          <div className="kyc-demo-box__label">🛠️ Démo uniquement — Simuler la validation admin</div>
-          <button className="btn btn-success btn-sm btn-full" onClick={approveKyc}>
-            ✅ Valider le KYC (Admin)
-          </button>
-        </div>
-
         <button
           className="btn btn-secondary"
+          style={{ marginTop: 24 }}
           onClick={() => navigate(isStudent ? "dashboard-student" : "dashboard-investor")}
         >
           Retour au tableau de bord
@@ -268,240 +232,20 @@ export default function KycVerification() {
     </div>
   );
 
-  // ── Composant Bannière d'information ────────────────────
-  const WhyBanner = () => (
-    <div className="kyc-why-box">
-      <div className="kyc-why-box__icon">🔐</div>
-      <div>
-        <div className="kyc-why-box__title">Pourquoi vérifier votre compte ?</div>
-        <div className="kyc-why-box__desc">
-          {isStudent
-            ? <>La vérification confirme que vous êtes bien un <strong>étudiant inscrit dans un établissement camerounais</strong>. Elle donne de la crédibilité à vos projets et rassure les investisseurs. Une fois vérifié, vous pouvez <strong>publier des projets, accéder au marketplace et collaborer</strong>.</>
-            : <>La vérification confirme que votre <strong>entreprise ou fonds d'investissement existe légalement</strong>. Elle rassure les étudiants et sécurise les transactions financières. Une fois vérifié, vous pouvez <strong>investir, accéder à la Due Diligence IA et planifier des RDV</strong>.</>
-          }
-        </div>
-      </div>
-    </div>
-  );
-
-  // ── STEP 1 Étudiant — Identité ────────────────────────
-  const StepStudentIdentity = () => (
-    <div className="kyc-form">
-      <h2 className="kyc-form__title">🪪 Preuve d'identité</h2>
-      <p className="kyc-form__desc">
-        Fournissez une pièce d'identité officielle camerounaise valide (CNI, passeport ou permis de conduire).
-      </p>
-      <div className="form-group">
-        <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
-        <input className="form-input" placeholder="Ex : 123456789A"
-          value={textData.cniNumber} onChange={e => handleTextChange("cniNumber", e.target.value)} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
-        <UploadZone docType="cniFile" icon="🪪" label="Glissez ou cliquez pour choisir" sub="JPG, PNG, PDF — max 5 MB"
-          value={files.cniFile} onFileSelect={handleFileSelect} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Selfie en tenant la pièce d'identité <span className="req">*</span></label>
-        <UploadZone docType="selfie" icon="📸" label="Photo nette, éclairage correct" sub="Tenez votre CNI à côté de votre visage"
-          value={files.selfie} onFileSelect={handleFileSelect} />
-      </div>
-    </div>
-  );
-
-  // ── STEP 2 Étudiant — Scolarité ───────────────────────
-  const StepStudentScolarite = () => (
-    <div className="kyc-form">
-      <h2 className="kyc-form__title">🎓 Preuve de scolarité</h2>
-      <p className="kyc-form__desc">
-        Justifiez votre statut d'étudiant dans un établissement camerounais reconnu par le MINESUP.
-      </p>
-      <div className="form-group">
-        <label className="form-label">Établissement <span className="req">*</span></label>
-        <select className="form-input form-select"
-          value={textData.university} onChange={e => handleTextChange("university", e.target.value)}
-        >
-          <option value="">Choisir un établissement…</option>
-          {Object.entries(UNIVERSITIES).map(([group, list]) => (
-            <optgroup key={group} label={group}>
-              {list.map(u => <option key={u} value={u}>{u}</option>)}
-            </optgroup>
-          ))}
-        </select>
-      </div>
-      <div className="form-row">
-        <div className="form-group">
-          <label className="form-label">Numéro matricule <span className="req">*</span></label>
-          <input className="form-input" placeholder="Ex : 20A0001"
-            value={textData.matricule} onChange={e => handleTextChange("matricule", e.target.value)} />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Niveau d'études <span className="req">*</span></label>
-          <select className="form-input form-select"
-            value={textData.level} onChange={e => handleTextChange("level", e.target.value)}
-          >
-            <option value="">Choisir…</option>
-            {["Licence 1","Licence 2","Licence 3","Master 1","Master 2","Doctorat","BTS 1","BTS 2","DUT","Classe préparatoire"].map(l =>
-              <option key={l} value={l}>{l}</option>
-            )}
-          </select>
-        </div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Certificat de scolarité en cours de validité <span className="req">*</span></label>
-        <UploadZone docType="certifScol" icon="🎓"
-          label="Certificat de scolarité — année académique en cours"
-          sub="Document officiel signé et tamponné par votre établissement — PDF, JPG"
-          value={files.certifScol} onFileSelect={handleFileSelect} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Carte d'étudiant <span className="req">*</span></label>
-        <UploadZone docType="carteEtu" icon="🆔"
-          label="Recto de votre carte étudiante en cours de validité"
-          sub="Photo nette, texte lisible — JPG, PNG"
-          value={files.carteEtu} onFileSelect={handleFileSelect} />
-      </div>
-    </div>
-  );
-
-  // ── STEP 1 Investisseur — Identité ────────────────────
-  const StepInvestorIdentity = () => (
-    <div className="kyc-form">
-      <h2 className="kyc-form__title">🪪 Identité du représentant</h2>
-      <p className="kyc-form__desc">
-        En tant que représentant de l'entité investisseuse, fournissez votre pièce d'identité personnelle.
-      </p>
-      <div className="form-group">
-        <label className="form-label">Nom complet du représentant <span className="req">*</span></label>
-        <input className="form-input" placeholder="Jean-Paul Mbarga"
-          value={textData.repName} onChange={e => handleTextChange("repName", e.target.value)} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
-        <input className="form-input" placeholder="Ex : 123456789A"
-          value={textData.repCni} onChange={e => handleTextChange("repCni", e.target.value)} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
-        <UploadZone docType="repCniFile" icon="🪪" label="CNI ou passeport — recto visible"
-          sub="JPG, PNG, PDF — max 5 MB"
-          value={files.repCniFile} onFileSelect={handleFileSelect} />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Justificatif de domicile (moins de 3 mois)</label>
-        <UploadZone docType="domicile" icon="🏠"
-          label="Facture eau, électricité ou relevé bancaire"
-          sub="Moins de 3 mois — PDF, JPG"
-          value={files.domicile} onFileSelect={handleFileSelect} />
-      </div>
-    </div>
-  );
-
-  // ── STEP 2 Investisseur — Entreprise ──────────────────
-  const StepInvestorEntreprise = () => (
-    <div className="kyc-form">
-      <h2 className="kyc-form__title">🏢 Preuve d'entreprise</h2>
-      <p className="kyc-form__desc">
-        Confirmez que votre structure existe légalement.
-        Accepté : entreprise, fonds, association, ou particulier Business Angel.
-      </p>
-      <div className="form-group">
-        <label className="form-label">Nom de l'entité investisseuse <span className="req">*</span></label>
-        <input className="form-input" placeholder="Cameroon Tech Ventures SARL"
-          value={textData.entityName} onChange={e => handleTextChange("entityName", e.target.value)} />
-      </div>
-      <div className="form-row">
-        <div className="form-group">
-          <label className="form-label">Type de structure</label>
-          <select className="form-input form-select"
-            value={textData.entityType} onChange={e => handleTextChange("entityType", e.target.value)}
-          >
-            <option value="">Choisir…</option>
-            {INVEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Numéro RCCM</label>
-          <input className="form-input" placeholder="RC/DLA/2020/B/0001"
-            value={textData.rccm} onChange={e => handleTextChange("rccm", e.target.value)} />
-        </div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Registre du Commerce (RCCM) <span className="req">*</span></label>
-        <UploadZone docType="rccmFile" icon="📋"
-          label="Document RCCM officiel ou statuts de l'entreprise"
-          sub="PDF signé par le greffe du tribunal — max 10 MB"
-          value={files.rccmFile} onFileSelect={handleFileSelect} />
-      </div>
-      <div className="kyc-angel-note">
-        💡 <strong>Particulier sans entreprise ?</strong> Vous pouvez investir en tant que Business Angel.
-        Fournissez simplement votre CNI macro et un relevé bancaire récent.
-      </div>
-    </div>
-  );
-
-  // ── STEP 3 — Confirmation ─────────────────────────────
-  const StepConfirmation = () => {
-    const studentItems = [
-      ["🪪", "Pièce d'identité (CNI / Passeport)", files.cniFile],
-      ["📸", "Selfie avec la pièce d'identité",    files.selfie],
-      ["🎓", "Certificat de scolarité",            files.certifScol],
-      ["🆔", "Carte étudiante",                    files.carteEtu],
-    ];
-    const investorItems = [
-      ["🪪", "Pièce d'identité du représentant", files.repCniFile],
-      ["🏠", "Justificatif de domicile",          files.domicile],
-      ["📋", "Registre du Commerce (RCCM)",       files.rccmFile],
-    ];
-    const items = isStudent ? studentItems : investorItems;
-
-    return (
-      <div className="kyc-form">
-        <h2 className="kyc-form__title">✅ Récapitulatif & envoi</h2>
-
-        <div className="recap-list">
-          <div className="recap-list__title">Documents à envoyer</div>
-          {items.map(([ico, lbl, val]) => (
-            <div key={lbl} className="recap-list__item">
-              <span>{ico}</span>
-              <span className="recap-list__label">{lbl}</span>
-              <span className={`badge ${val ? "badge-success" : "badge-danger"}`}>
-                {val ? "✅ Prêt" : "⚠️ Manquant"}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="kyc-privacy-note">
-          🔒 <strong>Confidentialité garantie :</strong> Vos documents sont chiffrés et accessibles
-          uniquement à notre équipe de vérification. Conformité RGPD et loi camerounaise sur la
-          protection des données personnelles (Loi n°2010/012).
-        </div>
-
-        <div className="kyc-delay-note">
-          ⏱️ <strong>Délai de traitement :</strong> 24 à 48 heures ouvrées.
-          Vous recevrez une notification dès que votre dossier est examiné.
-        </div>
-      </div>
-    );
-  };
-
-  // ── Sélection de l'étape à afficher ────────────────────
   const renderStep = () => {
     if (isStudent) {
-      if (step === 1) return <StepStudentIdentity />;
-      if (step === 2) return <StepStudentScolarite />;
-      if (step === 3) return <StepConfirmation />;
+      if (step === 1) return <StepStudentIdentity textData={textData} handleTextChange={handleTextChange} files={files} handleFileSelect={handleFileSelect} />;
+      if (step === 2) return <StepStudentScolarite textData={textData} handleTextChange={handleTextChange} files={files} handleFileSelect={handleFileSelect} />;
+      if (step === 3) return <StepConfirmation isStudent={isStudent} files={files} />;
     } else {
-      if (step === 1) return <StepInvestorIdentity />;
-      if (step === 2) return <StepInvestorEntreprise />;
-      if (step === 3) return <StepConfirmation />;
+      if (step === 1) return <StepInvestorIdentity textData={textData} handleTextChange={handleTextChange} files={files} handleFileSelect={handleFileSelect} />;
+      if (step === 2) return <StepInvestorEntreprise textData={textData} handleTextChange={handleTextChange} files={files} handleFileSelect={handleFileSelect} />;
+      if (step === 3) return <StepConfirmation isStudent={isStudent} files={files} />;
     }
   };
 
   return (
     <div className="kyc-page">
-      {/* Header */}
       <div className="page-header">
         <div>
           <button className="btn btn-ghost btn-sm"
@@ -512,23 +256,18 @@ export default function KycVerification() {
           </button>
           <h1 className="page-title">Vérification de compte 🛡️</h1>
           <p className="page-subtitle">
-            Étape {step} / {steps.length} —{" "}
-            {isStudent ? "Vérification étudiant" : "Vérification investisseur"}
+            Étape {step} / {steps.length} — {isStudent ? "Vérification étudiant" : "Vérification investisseur"}
           </p>
         </div>
       </div>
 
-      {/* Why KYC */}
-      <WhyBanner />
+      <WhyBanner isStudent={isStudent} />
 
-      {/* Step indicator */}
       <StepIndicator steps={steps} current={step} />
 
-      {/* Form card */}
       <div className="card" style={{ padding: 28, marginTop: 24 }}>
         {renderStep()}
 
-        {/* Navigation buttons */}
         <div className="kyc-form__nav">
           {step > 1 && (
             <button className="btn btn-secondary" disabled={loading} onClick={() => setStep(s => s - 1)}>
@@ -557,6 +296,225 @@ export default function KycVerification() {
             </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 💡 COMPOSANTS EXTERNES CONSERVÉS À L'IDENTIQUE ───────────────────────
+
+function WhyBanner({ isStudent }) {
+  return (
+    <div className="kyc-why-box">
+      <div className="kyc-why-box__icon">🔐</div>
+      <div>
+        <div className="kyc-why-box__title">Pourquoi vérifier votre compte ?</div>
+        <div className="kyc-why-box__desc">
+          {isStudent ? (
+            <>La vérification confirme que vous êtes bien un <strong>étudiant inscrit dans un établissement camerounais</strong>. Elle donne de la crédibilité à vos projets et rassure les investisseurs. Une fois vérifié, vous pouvez <strong>publier des projets, accéder au marketplace et collaborer</strong>.</>
+          ) : (
+            <>La vérification confirme que votre <strong>entreprise ou fonds d'investissement existe légalement</strong>. Elle rassure les étudiants et sécurise les transactions financières. Une fois vérifié, vous pouvez <strong>investir, accéder à la Due Diligence IA et planifier des RDV</strong>.</>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepStudentIdentity({ textData, handleTextChange, files, handleFileSelect }) {
+  return (
+    <div className="kyc-form">
+      <h2 className="kyc-form__title">🪪 Preuve d'identité</h2>
+      <p className="kyc-form__desc">Fournissez une pièce d'identité officielle camerounaise valide (CNI, passeport ou permis de conduire).</p>
+      <div className="form-group">
+        <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
+        <input className="form-input" placeholder="Ex : 123456789A"
+          value={textData.cniNumber} onChange={e => handleTextChange("cniNumber", e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
+        <UploadZone docType="cniFile" icon="🪪" label="Glissez ou cliquez pour choisir" sub="JPG, PNG, PDF — max 5 MB"
+          value={files.cniFile} onFileSelect={handleFileSelect} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Selfie en tenant la pièce d'identité <span className="req">*</span></label>
+        <UploadZone docType="selfie" icon="📸" label="Photo nette, éclairage correct" sub="Tenez votre CNI à côté de votre visage"
+          value={files.selfie} onFileSelect={handleFileSelect} />
+      </div>
+    </div>
+  );
+}
+
+function StepStudentScolarite({ textData, handleTextChange, files, handleFileSelect }) {
+  return (
+    <div className="kyc-form">
+      <h2 className="kyc-form__title">🎓 Preuve de scolarité</h2>
+      <p className="kyc-form__desc">Justifiez votre statut d'étudiant dans un établissement camerounais reconnu par le MINESUP.</p>
+      
+      <div className="form-group">
+        <label className="form-label">Établissement <span className="req">*</span></label>
+        <select 
+          className="form-input form-select"
+          value={textData.university} 
+          onChange={e => handleTextChange("university", e.target.value)}
+        >
+          <option value="">Choisir un établissement…</option>
+          {Object.entries(UNIVERSITIES).map(([group, list]) => (
+            <optgroup key={group} label={group}>
+              {list.map(u => <option key={u} value={u}>{u}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Numéro matricule <span className="req">*</span></label>
+          <input 
+            className="form-input" 
+            placeholder="Ex : 20A0001"
+            value={textData.matricule} 
+            onChange={e => handleTextChange("matricule", e.target.value)} 
+          />
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">Niveau d'études <span className="req">*</span></label>
+          <select 
+            className="form-input form-select"
+            value={textData.level} 
+            onChange={e => handleTextChange("level", e.target.value)}
+          >
+            <option value="">Choisir…</option>
+            {["Licence 1","Licence 2","Licence 3","Master 1","Master 2","Doctorat","BTS 1","BTS 2","DUT","Classe préparatoire"].map(l =>
+              <option key={l} value={l}>{l}</option>
+            )}
+          </select>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Certificat de scolarité en cours de validité <span className="req">*</span></label>
+        <UploadZone 
+          docType="certifScol" 
+          icon="🎓"
+          label="Certificat de scolarité — année académique en cours"
+          sub="Document officiel signé et tamponné par votre établissement — PDF, JPG"
+          value={files.certifScol} 
+          onFileSelect={handleFileSelect} 
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Carte d'étudiant <span className="req">*</span></label>
+        <UploadZone 
+          docType="carteEtu" 
+          icon="🆔"
+          label="Recto de votre carte étudiante en cours de validité"
+          sub="Photo nette, texte lisible — JPG, PNG"
+          value={files.carteEtu} 
+          onFileSelect={handleFileSelect} 
+        />
+      </div>
+    </div>
+  );
+}
+
+function StepInvestorIdentity({ textData, handleTextChange, files, handleFileSelect }) {
+  return (
+    <div className="kyc-form">
+      <h2 className="kyc-form__title">🪪 Identité du représentant</h2>
+      <p className="kyc-form__desc">En tant que représentant de l'entité investisseuse, fournissez votre pièce d'identité personnelle.</p>
+      <div className="form-group">
+        <label className="form-label">Nom complet du représentant <span className="req">*</span></label>
+        <input className="form-input" placeholder="Jean-Paul Mbarga"
+          value={textData.repName} onChange={e => handleTextChange("repName", e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Numéro CNI / Passeport <span className="req">*</span></label>
+        <input className="form-input" placeholder="Ex : 123456789A"
+          value={textData.repCni} onChange={e => handleTextChange("repCni", e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Recto de la pièce d'identité <span className="req">*</span></label>
+        <UploadZone docType="repCniFile" icon="🪪" label="CNI ou passeport — recto visible" sub="JPG, PNG, PDF — max 5 MB"
+          value={files.repCniFile} onFileSelect={handleFileSelect} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Justificatif de domicile (moins de 3 mois)</label>
+        <UploadZone docType="domicile" icon="🏠" label="Facture eau, électricité ou relevé bancaire" sub="Moins de 3 mois — PDF, JPG"
+          value={files.domicile} onFileSelect={handleFileSelect} />
+      </div>
+    </div>
+  );
+}
+
+function StepInvestorEntreprise({ textData, handleTextChange, files, handleFileSelect }) {
+  return (
+    <div className="kyc-form">
+      <h2 className="kyc-form__title">🏢 Preuve d'entreprise</h2>
+      <p className="kyc-form__desc">Confirmez que votre structure existe légalement.</p>
+      <div className="form-group">
+        <label className="form-label">Nom de l'entité investisseuse <span className="req">*</span></label>
+        <input className="form-input" placeholder="Cameroon Tech Ventures SARL"
+          value={textData.entityName} onChange={e => handleTextChange("entityName", e.target.value)} />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Type de structure</label>
+          <select className="form-input form-select"
+            value={textData.entityType} onChange={e => handleTextChange("entityType", e.target.value)}
+          >
+            <option value="">Choisir…</option>
+            {INVEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Numéro RCCM</label>
+          <input className="form-input" placeholder="RC/DLA/2020/B/0001"
+            value={textData.rccm} onChange={e => handleTextChange("rccm", e.target.value)} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Registre du Commerce (RCCM) <span className="req">*</span></label>
+        <UploadZone docType="rccmFile" icon="📋" label="Document RCCM officiel ou statuts de l'entreprise" sub="PDF signé par le greffe du tribunal — max 10 MB"
+          value={files.rccmFile} onFileSelect={handleFileSelect} />
+      </div>
+      <div className="kyc-angel-note">
+        💡 <strong>Particulier sans entreprise ?</strong> Vous pouvez investir en tant que Business Angel.
+      </div>
+    </div>
+  );
+}
+
+function StepConfirmation({ isStudent, files }) {
+  const studentItems = [
+    ["🪪", "Pièce d'identité (CNI / Passeport)", files.cniFile],
+    ["📸", "Selfie avec la pièce d'identité",     files.selfie],
+    ["🎓", "Certificat de scolarité",            files.certifScol],
+    ["🆔", "Carte étudiante",                    files.carteEtu],
+  ];
+  const investorItems = [
+    ["🪪", "Pièce d'identité du représentant", files.repCniFile],
+    ["🏠", "Justificatif de domicile",          files.domicile],
+    ["📋", "Registre du Commerce (RCCM)",       files.rccmFile],
+  ];
+  const items = isStudent ? studentItems : investorItems;
+
+  return (
+    <div className="kyc-form">
+      <h2 className="kyc-form__title">✅ Récapitulatif & envoi</h2>
+      <div className="recap-list">
+        <div className="recap-list__title">Documents à envoyer</div>
+        {items.map(([ico, lbl, val]) => (
+          <div key={lbl} className="recap-list__item">
+            <span>{ico}</span>
+            <span className="recap-list__label">{lbl}</span>
+            <span className={`badge ${val ? "badge-success" : "badge-danger"}`}>
+              {val ? "✅ Prêt" : "⚠️ Manquant"}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
