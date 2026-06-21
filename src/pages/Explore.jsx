@@ -1,11 +1,11 @@
 // ============================================================
-// LAUNCHPAD — Explore Page
+// LAUNCHPAD — Explore Page (API Connectée — CORRIGÉE)
+// Fichier : src/pages/Explore.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { ProjectCard, Tag } from "../components/UI";
-import { PROJECTS } from "../data/mockData";
 import SocialActions from "../components/SocialActions";
 import "./Projects.css";
 
@@ -18,21 +18,91 @@ const SORT_OPTIONS = [
 ];
 
 export default function Explore() {
-    const { navigate, projects } = useApp();
+    // Récupération de l'application context
+    const appCtx = useApp();
+    const navigate = appCtx?.navigate;
+    const showToast = appCtx?.showToast;
+    
+    // Sécurisation de la récupération du Token d'authentification
+    const token = typeof appCtx?.getAccessToken === "function" 
+        ? appCtx.getAccessToken() 
+        : (appCtx?.token || appCtx?.accessToken || "");
+    
+    // ── États synchronisés avec la base de données ───────────────────────────
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+    
+    // ── États des filtres utilisateur ───────────────────────────────────────
     const [search, setSearch] = useState("");
     const [cat, setCat] = useState("Tous");
     const [stage, setStage] = useState("Tous les stades");
     const [sort, setSort] = useState("recent");
 
-    const filtered = projects.filter(p => {
-        const matchCat = cat === "Tous" || p.category === cat;
-        const matchStage = stage === "Tous les stades" || p.stage === stage;
-        const matchSearch = !search
-            || p.title.toLowerCase().includes(search.toLowerCase())
-            || p.category.toLowerCase().includes(search.toLowerCase())
-            || p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()));
-        return matchCat && matchStage && matchSearch;
-    });
+    // Mappage des labels français vers les enums minuscules de ton schema.prisma
+    const mapStageToEnum = (stageLabel) => {
+        switch (stageLabel) {
+            case "Idée": return "idea";
+            case "Prototype": return "prototype";
+            case "MVP": return "mvp";
+            case "Beta": return "beta";
+            case "Commercialisé": return "launched";
+            default: return undefined;
+        }
+    };
+
+    // ── Fonction de chargement dynamique ─────────────────────────────────────
+    const loadProjects = useCallback(async () => {
+        setLoading(true);
+        try {
+            const queryParams = new URLSearchParams({
+                status: "active",
+                sort: sort,
+                ...(cat !== "Tous" && { category: cat }),
+                ...(stage !== "Tous les stades" && { stage: mapStageToEnum(stage) }),
+                ...(search.trim() !== "" && { search: search.trim() })
+            });
+
+            const headers = {
+                "Content-Type": "application/json"
+            };
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            // FIX : Nettoyage drastique de l'URL pour supprimer définitivement le double /api/api
+            const envUrl = import.meta.env.VITE_API_URL || "";
+            const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+            const finalUrl = `${cleanBaseUrl}/api/projects?${queryParams.toString()}`;
+
+            const response = await fetch(finalUrl, {
+                method: "GET",
+                headers: headers
+            });
+
+            if (!response.ok) throw new Error("Échec du chargement des projets.");
+            const data = await response.json();
+            
+            // Adaptation à la structure renvoyée par ton API
+            setProjects(Array.isArray(data) ? data : data.data || []);
+        } catch (err) {
+            console.error("Erreur Explore:", err);
+            if (typeof showToast === "function") {
+                showToast("Erreur lors de la récupération du catalogue de projets", "error");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [cat, stage, search, sort, token, showToast]);
+
+    // Déclencheur à chaque changement de filtres
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            loadProjects();
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [loadProjects]);
 
     return (
         <div className="animate-fadeUp">
@@ -41,7 +111,9 @@ export default function Explore() {
             <div className="page-header">
                 <div className="page-header-left">
                     <h1 className="page-title">Explorer les projets</h1>
-                    <p className="page-subtitle">{filtered.length} projet{filtered.length > 1 ? "s" : ""} disponible{filtered.length > 1 ? "s" : ""}</p>
+                    <p className="page-subtitle">
+                        {loading ? "Mise à jour de la file..." : `${projects.length} projet${projects.length > 1 ? "s" : ""} disponible${projects.length > 1 ? "s" : ""}`}
+                    </p>
                 </div>
                 <div className="page-header-actions">
                     <select
@@ -57,7 +129,7 @@ export default function Explore() {
                 </div>
             </div>
 
-            {/* ── Search + Filters ── */}
+            {/* ── Recherche + Filtres ── */}
             <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
                 <div className="explore-search-wrap">
                     <span className="explore-search-icon">🔍</span>
@@ -78,23 +150,34 @@ export default function Explore() {
                 </select>
             </div>
 
-            {/* ── Category chips ── */}
+            {/* ── Liste de puces de catégories ── */}
             <div className="chip-row" style={{ marginBottom: 24 }}>
                 {CATEGORIES.map(c => (
                     <Tag key={c} active={cat === c} onClick={() => setCat(c)}>{c}</Tag>
                 ))}
             </div>
 
-            {/* ── Projects grid ── */}
-            {filtered.length > 0 ? (
+            {/* ── Grille de résultats ── */}
+            {loading ? (
+                <div className="loading-state" style={{ padding: "80px 0", textAlign: "center" }}>
+                    <div className="spinner" style={{ display: "inline-block", marginBottom: 12 }} />
+                    <div className="loading-state__title" style={{ color: "var(--text-muted)" }}>Interrogation de la base de données...</div>
+                </div>
+            ) : projects.length > 0 ? (
                 <div className="grid-auto">
-                    {filtered.map(p => (
+                    {projects.map(p => (
                         <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                             <ProjectCard
-                                project={p}
-                                onClick={() => navigate("project-detail", { project: p })}
+                                project={{
+                                    ...p,
+                                    emoji: p.emoji || "📦",
+                                    colorBg: p.colorBg || "rgba(91,115,245,0.1)",
+                                    raised: p.raisedAmount ? parseFloat(p.raisedAmount) : 0,
+                                    goal: p.goalAmount ? parseFloat(p.goalAmount) : 0,
+                                    desc: p.tagline || p.description
+                                }}
+                                onClick={() => navigate && navigate(`project-detail`, { id: p.id })}
                             />
-                            {/* Social actions sous chaque carte */}
                             <div style={{
                                 padding: "10px 14px",
                                 background: "var(--bg-card)",
@@ -107,7 +190,7 @@ export default function Explore() {
                                 <SocialActions
                                     project={p}
                                     size="sm"
-                                    onCommentClick={() => navigate("project-detail", { project: p })}
+                                    onCommentClick={() => navigate && navigate(`project-detail`, { id: p.id })}
                                 />
                             </div>
                         </div>
@@ -117,9 +200,9 @@ export default function Explore() {
                 <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
                     <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, marginBottom: 6 }}>
-                        Aucun projet trouvé
+                        Aucun projet trouvé en base de données
                     </div>
-                    <div style={{ fontSize: 14 }}>Essayez d'autres mots-clés ou catégories.</div>
+                    <div style={{ fontSize: 14 }}>Ajustez vos mots-clés ou modifiez les filtres de secteur.</div>
                     <button
                         className="btn btn-primary"
                         style={{ marginTop: 20 }}
@@ -128,9 +211,7 @@ export default function Explore() {
                         Réinitialiser les filtres
                     </button>
                 </div>
-            )
-            }
-
-        </div >
+            )}
+        </div>
     );
 }

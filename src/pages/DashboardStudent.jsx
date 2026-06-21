@@ -1,16 +1,30 @@
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, AIBadge, KycAlert } from "../components/UI";
 import { SIMILAR_PROJECTS } from "../data/mockData";
+import { projectsApi } from "../utils/api";
 import SocialActions from "../components/SocialActions";
 import "./Dashboard.css";
 
 export default function DashboardStudent() {
-    const { navigate, currentUser, setCollabStep, projects } = useApp();
+    const { navigate, currentUser, setCollabStep } = useApp();
+    const [myProjects, setMyProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Récupération dynamique des projets de l'étudiant connecté
-    const myProjects = projects.filter(p => p.authorId === currentUser?.id);
+    // Récupération dynamique des projets de l'étudiant connecté via l'API
+    useEffect(() => {
+        if (currentUser?.id) {
+            setLoading(true);
+            projectsApi.list({ authorId: currentUser.id })
+                .then(res => {
+                    const data = res.data?.data || res.data || res;
+                    setMyProjects(Array.isArray(data) ? data : []);
+                })
+                .catch(console.error)
+                .finally(() => setLoading(false));
+        }
+    }, [currentUser?.id]);
 
-    // Fonction de sécurité pour la publication de projet liée au KYC
     const handlePublishClick = () => {
         if (currentUser?.kycValidated) {
             navigate("publish");
@@ -68,7 +82,7 @@ export default function DashboardStudent() {
                         onKeyDown={e => e.key === "Enter" && navigate(item.id)}
                     >
                         <div className="quick-access-card__icon">{item.icon}</div>
-                        <div className="quick-access-card__label">{item.item || item.label}</div>
+                        <div className="quick-access-card__label">{item.label}</div>
                         <div className="quick-access-card__desc">{item.desc}</div>
                     </div>
                 ))}
@@ -106,13 +120,15 @@ export default function DashboardStudent() {
                             <span className="section-link" onClick={() => navigate("explore")}>Voir tout</span>
                         </div>
                         
-                        {myProjects.length === 0 ? (
+                        {loading ? (
+                            <div style={{ textAlign: "center", padding: "20px 0", fontSize: 13, color: "var(--text-muted)" }}>Chargement de vos projets...</div>
+                        ) : myProjects.length === 0 ? (
                             <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>
                                 Vous n'avez pas encore publié de projet. Utilisez l'accès rapide ou le bouton en haut pour commencer.
                             </p>
                         ) : (
                             myProjects.map(p => {
-                                const pct = Math.min(Math.round((p.raised / p.goal) * 100), 100);
+                                const pct = p.goal ? Math.min(Math.round((p.raised / p.goal) * 100), 100) : 0;
                                 return (
                                     <div key={p.id} style={{ marginBottom: 16 }}>
                                         <div
@@ -128,7 +144,7 @@ export default function DashboardStudent() {
                                                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--success)" }}>{pct}%</div>
                                                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>financé</div>
                                             </div>
-                                            <span className="kyc-badge kyc-badge--verified">En cours</span>
+                                            <span className="kyc-badge kyc-badge--verified">{p.status || "En cours"}</span>
                                         </div>
 
                                         <div style={{

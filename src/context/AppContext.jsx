@@ -59,6 +59,11 @@ export function AppProvider({ children }) {
   const [toast, setToast] = useState(null);
   const [teamContact, setTeamContact] = useState(null);
 
+  // ─── Token Helper sécurisé pour les requêtes natives ──────
+  const getAccessToken = useCallback(() => {
+    return localStorage.getItem("launchpad_access_token") || "";
+  }, []);
+
   // ─── Toast System ─────────────────────────────────────────
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -96,10 +101,10 @@ export function AppProvider({ children }) {
         const { user, accessToken, refreshToken: newRefresh } = response.data;
 
         setAccessToken(accessToken);
+        localStorage.setItem("launchpad_access_token", accessToken);
         localStorage.setItem("launchpad_refresh_token", newRefresh);
         setCurrentUser(user);
 
-        // Rediriger vers le dashboard si sur la page home
         if (window.location.pathname === "/" || currentPage === "home") {
           const dashMap = {
             student:  "dashboard-student",
@@ -109,8 +114,8 @@ export function AppProvider({ children }) {
           navigate(dashMap[user.role] || "home");
         }
       } catch {
-        // Token invalide ou expiré → déconnexion silencieuse
         localStorage.removeItem("launchpad_refresh_token");
+        localStorage.removeItem("launchpad_access_token");
         clearAccessToken();
       } finally {
         setAuthLoading(false);
@@ -123,7 +128,6 @@ export function AppProvider({ children }) {
   // ─── Fonction login() branchée sur l'API ───────────────────
   const login = useCallback(async (credentials) => {
     try {
-      // Si on reçoit une string (role) → mode démo (mockData)
       if (typeof credentials === "string") {
         setCurrentUser({ role: credentials, name: `Démo ${credentials}`, kycValidated: true });
         const dashMap = {
@@ -136,19 +140,16 @@ export function AppProvider({ children }) {
         return;
       }
 
-      // Appel API réel
       const response = await authApi.login(credentials);
       const { user, accessToken, refreshToken } = response.data;
 
-      // Stocker les tokens
       setAccessToken(accessToken);
+      localStorage.setItem("launchpad_access_token", accessToken);
       localStorage.setItem("launchpad_refresh_token", refreshToken);
 
-      // Mettre à jour le state
       setCurrentUser(user);
       showToast(`Ravi de vous revoir !`, "success");
 
-      // Rediriger
       const dashMap = {
         student:  "dashboard-student",
         investor: "dashboard-investor",
@@ -169,6 +170,7 @@ export function AppProvider({ children }) {
       const { user, accessToken, refreshToken } = response.data;
 
       setAccessToken(accessToken);
+      localStorage.setItem("launchpad_access_token", accessToken);
       localStorage.setItem("launchpad_refresh_token", refreshToken);
       setCurrentUser(user);
 
@@ -191,9 +193,10 @@ export function AppProvider({ children }) {
     try {
       await authApi.logout();
     } catch {
-      // Ignorer les erreurs de logout (token déjà expiré, etc.)
+      // Ignorer les erreurs de logout
     } finally {
       clearAccessToken();
+      localStorage.removeItem("launchpad_access_token");
       localStorage.removeItem("launchpad_refresh_token");
       setCurrentUser(null);
       setCollabStep("found");
@@ -203,38 +206,118 @@ export function AppProvider({ children }) {
     }
   }, [navigate]);
 
-  // ─── Flux d'Interactions Projets ───────────────────────────
-  const toggleLike = useCallback((projectId) => {
+  // ─── Flux d'Interactions Projets (Branchés sur le Backend Neon) ───
+  const toggleLike = useCallback(async (projectId) => {
+    // 1. Mise à jour optimiste immédiate de l'interface graphique
     setProjects(prev => prev.map(p => {
       if (p.id !== projectId) return p;
+      const willBeLiked = !p.likedByMe;
       return {
         ...p,
-        likedByMe: !p.likedByMe,
-        likes: p.likedByMe ? p.likes - 1 : p.likes + 1,
+        likedByMe: willBeLiked,
+        likes: willBeLiked ? (p.likes || 0) + 1 : Math.max(0, (p.likes || 0) - 1),
       };
     }));
-  }, []);
 
-  const addComment = useCallback((projectId, text, user) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id !== projectId) return p;
+    setSelectedProject(prev => {
+      if (!prev || prev.id !== projectId) return prev;
+      const willBeLiked = !prev.likedByMe;
       return {
-        ...p,
-        comments: [...p.comments, {
-          id: Date.now(),
-          author: user?.name || "Anonyme",
-          avatar: user?.avatar || "??",
-          text,
-          time: "À l'instant",
-          likes: 0,
-        }],
+        ...prev,
+        likedByMe: willBeLiked,
+        likes: willBeLiked ? (prev.likes || 0) + 1 : Math.max(0, (prev.likes || 0) - 1),
       };
-    }));
-  }, []);
+    });
+
+    // 2. Persistance asynchrone en base de données et recalibrage
+    try {
+      const envUrl = import.meta.env.VITE_API_URL || "";
+      const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const token = getAccessToken();
+
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${cleanBaseUrl}/api/projects/${projectId}/like`, {
+        method: "POST",
+        headers
+      });
+
+      const jsonRes = await response.json();
+      // On extrait la charge utile selon la structure de ton service (déballée ou imbriquée sous "project")
+      const backendPayload = jsonRes.project || jsonRes.data || jsonRes;
+
+      if (backendPayload && (backendPayload.likesCount !== undefined || backendPayload.likes !== undefined)) {
+        const serverLikes = backendPayload.likesCount !== undefined ? backendPayload.likesCount : backendPayload.likes;
+        const serverLiked = backendPayload.likedByMe;
+
+        const syncState = p => p.id !== projectId ? p : { ...p, likes: serverLikes, likedByMe: serverLiked };
+        setProjects(prev => prev.map(syncState));
+        setSelectedProject(prev => prev && prev.id === projectId ? { ...prev, likes: serverLikes, likedByMe: serverLiked } : prev);
+      }
+    } catch (error) {
+      console.error("Erreur d'enregistrement du Like:", error);
+    }
+  }, [getAccessToken]);
+
+  const addComment = useCallback(async (projectId, text, user) => {
+    try {
+      const envUrl = import.meta.env.VITE_API_URL || "";
+      const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const token = getAccessToken();
+
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${cleanBaseUrl}/api/projects/${projectId}/comments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text })
+      });
+
+      if (!response.ok) throw new Error("Le serveur de stockage a refusé le message.");
+      const jsonRes = await response.json();
+      
+      // 🛡️ Extraction sécurisée : s'adapte à la structure enveloppée ou brute du contrôleur
+      const dbComment = jsonRes.comment || jsonRes.data || jsonRes;
+
+      const processedComment = {
+        id: dbComment.id || Date.now(),
+        author: dbComment.author?.firstName 
+          ? `${dbComment.author.firstName} ${dbComment.author.lastName || ""}`
+          : (user?.name || "Anonyme"),
+        avatar: dbComment.author?.avatar_url || dbComment.author?.avatar || user?.avatar || "??",
+        text: dbComment.text || text,
+        time: "À l'instant",
+        likes: 0
+      };
+
+      setProjects(prev => prev.map(p => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          comments: [...(p.comments || []), processedComment],
+        };
+      }));
+
+      setSelectedProject(prev => {
+        if (!prev || prev.id !== projectId) return prev;
+        return {
+          ...prev,
+          comments: [...(prev.comments || []), processedComment],
+        };
+      });
+
+      showToast("Commentaire ajouté !", "success");
+    } catch (error) {
+      console.error("Erreur d'ajout du commentaire:", error);
+      showToast("Erreur lors de l'envoi du commentaire", "error");
+    }
+  }, [getAccessToken, showToast]);
 
   const incrementShare = useCallback((projectId) => {
     setProjects(prev => prev.map(p =>
-      p.id !== projectId ? p : { ...p, shareCount: p.shareCount + 1 }
+      p.id !== projectId ? p : { ...p, shareCount: (p.shareCount || 0) + 1 }
     ));
   }, []);
 
@@ -275,28 +358,23 @@ export function AppProvider({ children }) {
     showToast("Votre candidature a bien été envoyée à l'investisseur !", "success");
   }, [showToast]);
 
-  // ─── Soumission KYC via FormData sécurisé ──────────────────
- // ─── Soumission KYC via FormData sécurisé et clés mappées ───
+  // ─── Soumission KYC via FormData sécurisé et clés mappées ───
   const submitKyc = useCallback(async (docs) => {
     try {
       const formData = new FormData();
       
-      // Dictionnaire de correspondance Frontend (camelCase) -> Backend (snake_case)
       const keyMapping = {
         cniFile: "cni_file",
-        selfieFile: "selfie", // Aligne-le selon le nom de ton state frontend (ex: selfie ou selfieFile)
+        selfieFile: "selfie", 
         certifScol: "certif_scol",
         carteEtu: "carte_etu",
-        // Clés investisseurs au cas où :
         repCniFile: "rep_cni_file",
         domicile: "domicile",
         rccmFile: "rccm_file"
       };
 
       Object.entries(docs).forEach(([key, value]) => {
-        // On récupère le nom attendu par le backend, sinon on garde la clé d'origine
         const backendKey = keyMapping[key] || key;
-
         if (value instanceof File) {
           formData.append(backendKey, value);
         } else if (value !== undefined && value !== null) {
@@ -304,10 +382,8 @@ export function AppProvider({ children }) {
         }
       });
 
-      // L'appel utilise à présent api.postFormData de manière native et sécurisée
       await kycApi.submit(formData);
 
-      // Mettre à jour l'état local si le serveur valide la requête
       setKycDocs(docs);
       setCurrentUser(u => ({ ...u, kycStatus: "submitted" }));
       showToast("Documents envoyés ! Résultat sous 24–48h.", "info");
@@ -433,6 +509,7 @@ export function AppProvider({ children }) {
     showToast,
     teamContact,
     setTeamContact,
+    getAccessToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

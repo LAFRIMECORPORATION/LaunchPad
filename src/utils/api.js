@@ -239,6 +239,14 @@ export const projectsApi = {
   similar:     (id)           => api.get(`/projects/${id}/similar`),
   approve:     (id, note)     => api.put(`/admin/projects/${id}/approve`, { note }),
   reject:      (id, reason)   => api.put(`/admin/projects/${id}/reject`, { reason }),
+  getPending:  (params)       => api.get("/admin/projects/pending", params),
+  
+  // 🚀 CORRECTION INJECTÉE : Utilisation propre de postFormData pour l'image de couverture
+  uploadCover: (id, file) => {
+    const formData = new FormData();
+    formData.append("cover", file);
+    return api.postFormData(`/projects/${id}/cover`, formData);
+  },
 };
 
 export const messagesApi = {
