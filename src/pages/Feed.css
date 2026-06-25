@@ -1,0 +1,18 @@
+/* ============================================================
+   LAUNCHPAD — Feed.css  🆕 NOUVEAU
+   Chemin : src/pages/Feed.css
+   ============================================================ */
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .feed-item         { padding: 14px; }
+  .feed-item__header { gap: 10px; }
+  .feed-item__icon   { width: 34px; height: 34px; font-size: 16px; }
+  .feed-item__text   { font-size: 13px; }
+}

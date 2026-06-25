@@ -1,0 +1,75 @@
+/* ============================================================
+   LAUNCHPAD — Badges.css  🆕 NOUVEAU
+   Chemin : src/pages/Badges.css
+   ============================================================ */
+
+/* Stats row */
+.badges-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 480px) {
+  .badges-stats { grid-template-columns: 1fr; }
+}
+
+/* Level card */
+.badges-level-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(91,115,245,.05), rgba(139,92,246,.04));
+  border-color: rgba(91,115,245,.15);
+}
+
+.badges-level-card__left  { display: flex; align-items: center; gap: 16px; }
+.badges-level-card__icon  { font-size: 48px; }
+.badges-level-card__name  { font-family: var(--font-display); font-size: 22px; font-weight: 800; }
+.badges-level-card__score { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+.badges-level-card__right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.badges-level-card__next  { font-size: 12px; color: var(--text-muted); }
+.badges-level-card__pts   { font-size: 11px; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .badges-level-card        { flex-direction: column; align-items: flex-start; }
+  .badges-level-card__right { align-items: flex-start; }
+}
+
+/* Guide */
+.badges-guide { padding: 22px; margin-top: 24px; }
+
+.badges-guide__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+}
+
+.badges-guide__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.badges-guide__item:nth-child(odd)  { padding-right: 16px; }
+.badges-guide__item:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--border); }
+.badges-guide__item:nth-last-child(-n+2) { border-bottom: none; }
+
+.badges-guide__item-icon  { font-size: 18px; flex-shrink: 0; }
+.badges-guide__item-label { flex: 1; color: var(--text-secondary); }
+.badges-guide__item-pts   { font-weight: 700; color: var(--accent); font-size: 12px; }
+
+@media (max-width: 480px) {
+  .badges-guide__grid          { grid-template-columns: 1fr; }
+  .badges-guide__item          { border-left: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+  .badges-guide__item:nth-last-child(1) { border-bottom: none; }
+  .badges-guide__item:nth-last-child(2) { border-bottom: 1px solid var(--border); }
+}

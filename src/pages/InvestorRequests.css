@@ -1,0 +1,270 @@
+/* ============================================================
+   LAUNCHPAD — Investor Requests / Marketplace
+   ============================================================ */
+
+.ir-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Card ── */
+.ir-card {
+    padding: 0;
+    overflow: hidden;
+    transition: var(--tr-normal);
+}
+
+.ir-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+}
+
+.ir-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-hover);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ir-card-header-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ir-card-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.ir-card-author {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.ir-card-company {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ir-card-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.ir-card-body {
+    padding: 18px 20px;
+}
+
+.ir-card-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+}
+
+.ir-card-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 14px;
+}
+
+.ir-read-more {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    padding: 0;
+}
+
+/* ── Skills ── */
+.ir-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 14px;
+}
+
+.ir-skill-tag {
+    padding: 4px 10px;
+    border-radius: var(--r-xs);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--accent-mid);
+}
+
+/* ── Meta ── */
+.ir-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.ir-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ── Footer ── */
+.ir-card-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-hover);
+}
+
+/* ── Type toggle ── */
+.ir-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.ir-type-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 14px 12px;
+    border-radius: var(--r-lg);
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: var(--tr-fast);
+    text-align: center;
+}
+
+.ir-type-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 24px rgba(91, 115, 245, 0.12);
+}
+
+.ir-type-note {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.ir-type-btn.type-job.active {
+    background: rgba(91, 115, 245, 0.12);
+    border-color: rgba(91, 115, 245, 0.45);
+    color: var(--accent-dark);
+}
+
+.ir-type-btn.type-mission.active {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.45);
+    color: #6d28d9;
+}
+
+.ir-type-btn.type-collaboration.active {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #15803d;
+}
+
+.ir-type-btn.type-job:hover,
+.ir-type-btn.type-mission:hover,
+.ir-type-btn.type-collaboration:hover {
+    border-color: currentColor;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.modal {
+    width: min(100%, 720px);
+    background: var(--bg-card);
+    border-radius: var(--r-xl);
+    box-shadow: 0 38px 110px rgba(15, 23, 42, 0.16);
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    position: relative;
+}
+
+.ir-modal {
+    max-width: 680px;
+    max-height: 86vh;
+    overflow-y: auto;
+}
+
+.modal-header,
+.modal-footer {
+    padding: 24px 28px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+    font-size: 22px;
+    letter-spacing: -0.02em;
+}
+
+.modal-body {
+    padding: 24px 28px 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.modal-footer .btn {
+    min-width: 140px;
+}
+
+@media (max-width: 768px) {
+    .ir-type-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}

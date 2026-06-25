@@ -1,0 +1,100 @@
+/* ============================================================
+   LAUNCHPAD — SocialActions Styles
+   ============================================================ */
+
+.social-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ── Bouton de base ── */
+.social-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: var(--tr-fast);
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.social-btn:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ── Petite taille ── */
+.social-btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: var(--r-xs);
+}
+
+/* ── Like actif ── */
+.social-btn.liked {
+    background: #FEF2F2;
+    border-color: rgba(239, 68, 68, 0.25);
+    color: var(--danger);
+}
+
+.social-btn.liked:hover {
+    background: #FEE2E2;
+}
+
+/* ── Share actif ── */
+.social-btn.active {
+    background: var(--accent-light);
+    border-color: var(--accent-mid);
+    color: var(--accent);
+}
+
+/* ── Icons ── */
+.social-btn-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.social-btn-count {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Share wrapper (pour le positioning du menu) ── */
+.social-share-wrap {
+    position: relative;
+    display: inline-flex;
+    z-index: 1000;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+    .social-share-wrap {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .social-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .social-btn-sm {
+        padding: 5px 8px;
+    }
+
+    .social-btn-count {
+        display: inline-flex;
+    }
+}

@@ -1,0 +1,207 @@
+/* ============================================================
+   LAUNCHPAD — Design Tokens
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F4F6FB;
+    color: #0F1523;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+button {
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+}
+
+input,
+textarea,
+select {
+    font-family: 'DM Sans', sans-serif;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #C8D0E7;
+    border-radius: 2px;
+}
+
+:root {
+    /* Couleurs */
+    --bg: #F4F6FB;
+    --bg-card: #FFFFFF;
+    --bg-input: #F8F9FD;
+    --bg-hover: #F0F3FA;
+    --bg-active: #EEF2FF;
+
+    --accent: #5B73F5;
+    --accent-light: #EEF2FF;
+    --accent-mid: #C7D0FD;
+    --accent-dark: #3D56E0;
+    --accent-glow: rgba(91, 115, 245, 0.15);
+
+    --purple: #8B5CF6;
+    --purple-light: #F3EFFE;
+    --teal: #0EA5B0;
+    --teal-light: #E0F7F8;
+
+    --success: #22C55E;
+    --success-bg: #F0FDF4;
+    --warning: #F59E0B;
+    --warning-bg: #FFFBEB;
+    --danger: #EF4444;
+    --danger-bg: #FEF2F2;
+    --info: #3B82F6;
+
+    --text-primary: #0F1523;
+    --text-secondary: #4B5675;
+    --text-muted: #9EA8C4;
+    --text-inverse: #FFFFFF;
+
+    --border: #E8ECF5;
+    --border-focus: #5B73F5;
+    --border-strong: #C8D0E7;
+
+    /* Ombres */
+    --shadow-xs: 0 1px 3px rgba(15, 21, 35, 0.06);
+    --shadow-sm: 0 2px 8px rgba(15, 21, 35, 0.08);
+    --shadow-md: 0 4px 20px rgba(15, 21, 35, 0.10);
+    --shadow-lg: 0 8px 40px rgba(15, 21, 35, 0.12);
+    --shadow-xl: 0 16px 64px rgba(15, 21, 35, 0.14);
+
+    /* Radius */
+    --r-xs: 6px;
+    --r-sm: 10px;
+    --r-md: 14px;
+    --r-lg: 20px;
+    --r-xl: 28px;
+    --r-full: 999px;
+
+    /* Typo */
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+
+    /* Transitions */
+    --tr-fast: all 0.15s ease;
+    --tr-normal: all 0.25s ease;
+
+    /* Layout */
+    --sidebar-w: 240px;
+    --nav-h: 62px;
+}
+
+/* Animations */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-fadeUp {
+    animation: fadeUp 0.35s ease both;
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.25s ease both;
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.20s ease both;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Responsive breakpoints ── */
+/* Mobile  : < 640px  */
+/* Tablet  : 640–1024px */
+/* Desktop : > 1024px */

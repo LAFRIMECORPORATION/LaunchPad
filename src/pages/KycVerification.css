@@ -1,0 +1,176 @@
+/* ============================================================
+   LAUNCHPAD — KycVerification.css  🆕 NOUVEAU
+   Chemin : src/pages/KycVerification.css
+   ============================================================ */
+
+/* ── Page wrapper ─────────────────────────────────────────── */
+.kyc-page {
+  max-width: 720px;
+  margin: 0 auto;
+  animation: fadeUp 0.3s ease both;
+}
+
+/* ── Success / Submitted state ────────────────────────────── */
+.kyc-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.kyc-success__icon   { font-size: 72px; margin-bottom: 4px; }
+.kyc-success__title  { font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -.03em; color: var(--text-primary); }
+.kyc-success__desc   { font-size: 15px; color: var(--text-secondary); line-height: 1.65; max-width: 440px; }
+
+/* ── Step indicator ───────────────────────────────────────── */
+.kyc-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 24px 0 0;
+}
+
+.kyc-steps__item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+}
+
+.kyc-steps__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--tr-normal);
+}
+
+.kyc-steps__circle.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.kyc-steps__circle.done {
+  border-color: var(--success);
+  background: var(--success);
+  color: white;
+}
+
+.kyc-steps__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.kyc-steps__label.active { color: var(--accent); }
+
+.kyc-steps__line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 8px;
+  transition: var(--tr-normal);
+}
+
+.kyc-steps__line.done { background: var(--success); }
+
+@media (max-width: 480px) {
+  .kyc-steps__label { display: none; }
+  .kyc-steps__line  { margin: 0 4px; }
+}
+
+/* ── Form card ─────────────────────────────────────────────── */
+.kyc-form__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.kyc-form__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 22px;
+}
+
+.kyc-form__nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.kyc-form__nav .btn { flex: 1; justify-content: center; }
+
+/* ── Demo box ──────────────────────────────────────────────── */
+.kyc-demo-box {
+  background: rgba(245, 158, 11, .06);
+  border: 1px dashed var(--warning);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.kyc-demo-box__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+/* ── Angel note ────────────────────────────────────────────── */
+.kyc-angel-note {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--success-bg);
+  border: 1px solid rgba(34, 197, 94, .2);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Privacy & delay notes ─────────────────────────────────── */
+.kyc-privacy-note,
+.kyc-delay-note {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.kyc-privacy-note {
+  background: rgba(91, 115, 245, .05);
+  border: 1px solid rgba(91, 115, 245, .15);
+}
+
+.kyc-delay-note {
+  background: var(--success-bg);
+  border: 1px solid rgba(34, 197, 94, .2);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .kyc-page          { padding: 0; }
+  .kyc-success       { padding: 40px 16px; }
+  .kyc-success__icon { font-size: 56px; }
+  .kyc-form__nav     { flex-direction: column; }
+}
