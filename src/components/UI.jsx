@@ -104,7 +104,6 @@ export function ProjectCard({ project, onClick, compact = false }) {
         <div
             className="card card-interactive"
             onClick={onClick}
-<<<<<<< HEAD
             style={{ padding: 0, overflow: "hidden", borderRadius: "var(--r-lg)" }}
         >
             {/* Cover Image Style Facebook */}
@@ -133,67 +132,32 @@ export function ProjectCard({ project, onClick, compact = false }) {
                         {project.emoji}
                     </div>
                 )}
-=======
-            style={{ padding: compact ? "14px" : "20px" }}
-        >
-            {/* Cover avec bookmark button */}
-            <div style={{ position: "relative" }}>
-                <div style={{
-                    height: compact ? 80 : 110,
-                    borderRadius: "var(--r-md)",
-                    background: project.colorBg || "#EEF2FF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: compact ? 32 : 44,
-                    marginBottom: 14,
-                    border: "1px solid var(--border)",
-                }}>
-                    {project.emoji}
-                </div>
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 
                 {/* Bookmark button */}
                 <button
                     onClick={e => { e.stopPropagation(); toggleSave(project.id); }}
                     style={{
                         position: "absolute",
-<<<<<<< HEAD
                         top: 10,
                         right: 10,
                         width: 36,
                         height: 36,
                         borderRadius: "50%",
                         background: "rgba(255,255,255,0.95)",
-=======
-                        top: 8,
-                        right: 8,
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.92)",
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         border: "1px solid var(--border)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-<<<<<<< HEAD
                         fontSize: 18,
                         transition: "var(--tr-fast)",
                         backdropFilter: "blur(8px)",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-=======
-                        fontSize: 16,
-                        transition: "var(--tr-fast)",
-                        backdropFilter: "blur(8px)",
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                     }}
                     title={saved ? "Retirer des favoris" : "Sauvegarder"}
                 >
                     {saved ? "⭐" : "☆"}
                 </button>
-<<<<<<< HEAD
 
                 {/* Category badge overlay */}
                 <div style={{
@@ -298,41 +262,6 @@ export function ProjectCard({ project, onClick, compact = false }) {
                     </div>
                 )}
             </div>
-=======
-            </div>
-
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                <div>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: compact ? 14 : 16, letterSpacing: "-.02em" }}>
-                        {project.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>
-                        {project.category}
-                    </div>
-                </div>
-                <Badge color={project.category}>{project.tags[0]}</Badge>
-            </div>
-
-            {!compact && (
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-                    {project.tagline}
-                </p>
-            )}
-
-            <ProgressBar value={project.raised} max={project.goal} size="thin" />
-
-            {!compact && (
-                <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                    {project.tags.map(t => (
-                        <Badge key={t} color="gray">{t}</Badge>
-                    ))}
-                    <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)" }}>
-                        👥 {project.investors}
-                    </span>
-                </div>
-            )}
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
         </div>
     );
 }

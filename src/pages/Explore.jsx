@@ -1,20 +1,20 @@
-// ============================================================
-<<<<<<< HEAD
+// ====
+
 // LAUNCHPAD — Explore Page (API Connectée — CONFIGURATION FIXÉE)
-=======
+
 // LAUNCHPAD — Explore Page (API Connectée — CORRIGÉE)
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
+
 // Fichier : src/pages/Explore.jsx
-// ============================================================
+// ====
 
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { ProjectCard, Tag } from "../components/UI";
-<<<<<<< HEAD
+
 import { useNavigate } from "react-router-dom";
 
-=======
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
+
+
 import SocialActions from "../components/SocialActions";
 import "./Projects.css";
 
@@ -22,26 +22,16 @@ const CATEGORIES = ["Tous", "GreenTech", "HealthTech", "FinTech", "EdTech", "Saa
 const STAGES = ["Tous les stades", "Idée", "Prototype", "MVP", "Beta", "Commercialisé"];
 const SORT_OPTIONS = [
     { value: "recent", label: "Plus récents" },
-<<<<<<< HEAD
     { value: "funded", label: "Mieux financés" },
-=======
-    { value: "funding", label: "Mieux financés" },
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     { value: "popular", label: "Plus populaires" },
 ];
 
 export default function Explore() {
-<<<<<<< HEAD
     // Initialisation propre du hook de navigation natif de React Router
     const localNavigate = useNavigate();
 
     // Récupération de l'application context
     const appCtx = useApp();
-=======
-    // Récupération de l'application context
-    const appCtx = useApp();
-    const navigate = appCtx?.navigate;
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     const showToast = appCtx?.showToast;
     
     // Sécurisation de la récupération du Token d'authentification
@@ -91,10 +81,6 @@ export default function Explore() {
                 headers["Authorization"] = `Bearer ${token}`;
             }
 
-<<<<<<< HEAD
-=======
-            // FIX : Nettoyage drastique de l'URL pour supprimer définitivement le double /api/api
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             const envUrl = import.meta.env.VITE_API_URL || "";
             const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
             const finalUrl = `${cleanBaseUrl}/api/projects?${queryParams.toString()}`;
@@ -107,10 +93,6 @@ export default function Explore() {
             if (!response.ok) throw new Error("Échec du chargement des projets.");
             const data = await response.json();
             
-<<<<<<< HEAD
-=======
-            // Adaptation à la structure renvoyée par ton API
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             setProjects(Array.isArray(data) ? data : data.data || []);
         } catch (err) {
             console.error("Erreur Explore:", err);
@@ -131,7 +113,7 @@ export default function Explore() {
         return () => clearTimeout(delayDebounceFn);
     }, [loadProjects]);
 
-<<<<<<< HEAD
+
     // ── FONCTION DE NAVIGATION CORRIGÉE ──────────────────────────────────────
     const handleNavigateToDetail = (idDuProjet, donnéesDuProjet) => {
         if (!idDuProjet) {
@@ -141,8 +123,8 @@ export default function Explore() {
         localNavigate(`/projects/${idDuProjet}`, { state: { id: idDuProjet, ...donnéesDuProjet } });
     };
 
-=======
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
+
+
     return (
         <div className="animate-fadeUp">
 
@@ -204,7 +186,6 @@ export default function Explore() {
                 </div>
             ) : projects.length > 0 ? (
                 <div className="grid-auto">
-<<<<<<< HEAD
                     {projects.map(p => {
                         // Extraction sécurisée de l'ID courant du projet
                         const currentId = p?.id || p?.project_id || p?._id;
@@ -251,38 +232,6 @@ export default function Explore() {
                             </div>
                         );
                     })}
-=======
-                    {projects.map(p => (
-                        <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                            <ProjectCard
-                                project={{
-                                    ...p,
-                                    emoji: p.emoji || "📦",
-                                    colorBg: p.colorBg || "rgba(91,115,245,0.1)",
-                                    raised: p.raisedAmount ? parseFloat(p.raisedAmount) : 0,
-                                    goal: p.goalAmount ? parseFloat(p.goalAmount) : 0,
-                                    desc: p.tagline || p.description
-                                }}
-                                onClick={() => navigate && navigate(`project-detail`, { id: p.id })}
-                            />
-                            <div style={{
-                                padding: "10px 14px",
-                                background: "var(--bg-card)",
-                                borderLeft: "1px solid var(--border)",
-                                borderRight: "1px solid var(--border)",
-                                borderBottom: "1px solid var(--border)",
-                                borderRadius: "0 0 var(--r-lg) var(--r-lg)",
-                                marginTop: -1,
-                            }}>
-                                <SocialActions
-                                    project={p}
-                                    size="sm"
-                                    onCommentClick={() => navigate && navigate(`project-detail`, { id: p.id })}
-                                />
-                            </div>
-                        </div>
-                    ))}
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                 </div>
             ) : (
                 <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>

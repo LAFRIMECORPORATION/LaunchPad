@@ -1,18 +1,14 @@
-<<<<<<< HEAD
-=======
 // ============================================================
 // LAUNCHPAD — CommentSection Component
 // Section commentaires pour ProjectDetail
 // ============================================================
 
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar } from "./UI";
 import "./CommentSection.css";
 
 export default function CommentSection({ project }) {
-<<<<<<< HEAD
     const { addComment, currentUser, projects } = useApp();
     const [text, setText] = useState("");
     const [sending, setSending] = useState(false);
@@ -57,22 +53,6 @@ export default function CommentSection({ project }) {
         } finally {
             setSending(false);
         }
-=======
-    const { addComment, currentUser } = useApp();
-    const [text, setText] = useState("");
-    const [sending, setSending] = useState(false);
-
-    const comments = project.comments || [];
-
-    function handleSubmit() {
-        if (!text.trim()) return;
-        setSending(true);
-        setTimeout(() => {
-            addComment(project.id, text.trim(), currentUser);
-            setText("");
-            setSending(false);
-        }, 300);
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     }
 
     function handleKeyDown(e) {
@@ -82,7 +62,6 @@ export default function CommentSection({ project }) {
         }
     }
 
-<<<<<<< HEAD
     // ── FONCTION POUR RÉPONDRE À UN COMMENTAIRE (AVEC PARENTID) ─────────────
     async function handleReply(parentId, replyText) {
         if (!targetProjectId || targetProjectId === "undefined") {
@@ -148,31 +127,14 @@ export default function CommentSection({ project }) {
         <div className="comment-section">
             <div className="comment-section-header">
                 <h3 className="comment-section-title">💬 Commentaires</h3>
-=======
-    return (
-        <div className="comment-section">
-
-            {/* ── Header ── */}
-            <div className="comment-section-header">
-                <h3 className="comment-section-title">
-                    💬 Commentaires
-                </h3>
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                 <span className="comment-section-count">
                     {comments.length} commentaire{comments.length > 1 ? "s" : ""}
                 </span>
             </div>
 
-<<<<<<< HEAD
             {currentUser ? (
                 <div className="comment-form">
                     <Avatar label={currentUser.avatar || currentUser.firstName?.[0] || "U"} size="sm" />
-=======
-            {/* ── Formulaire nouveau commentaire ── */}
-            {currentUser ? (
-                <div className="comment-form">
-                    <Avatar label={currentUser.avatar} size="sm" />
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                     <div className="comment-form-right">
                         <textarea
                             className="comment-input"
@@ -184,24 +146,10 @@ export default function CommentSection({ project }) {
                         />
                         {text.trim() && (
                             <div className="comment-form-actions">
-<<<<<<< HEAD
                                 <button className="btn-comment-cancel" onClick={() => setText("")}>
                                     Annuler
                                 </button>
                                 <button className="btn-comment-submit" onClick={handleSubmit} disabled={sending}>
-=======
-                                <button
-                                    className="btn-comment-cancel"
-                                    onClick={() => setText("")}
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    className="btn-comment-submit"
-                                    onClick={handleSubmit}
-                                    disabled={sending}
-                                >
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                                     {sending ? "Envoi…" : "Publier"}
                                 </button>
                             </div>
@@ -214,10 +162,6 @@ export default function CommentSection({ project }) {
                 </div>
             )}
 
-<<<<<<< HEAD
-=======
-            {/* ── Liste des commentaires ── */}
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             <div className="comment-list">
                 {comments.length === 0 ? (
                     <div className="comment-empty">
@@ -226,7 +170,6 @@ export default function CommentSection({ project }) {
                     </div>
                 ) : (
                     comments.map(c => (
-<<<<<<< HEAD
                         <CommentItem 
                             key={c.id || c._id || Math.random()} 
                             comment={c} 
@@ -236,18 +179,10 @@ export default function CommentSection({ project }) {
                     ))
                 )}
             </div>
-=======
-                        <CommentItem key={c.id} comment={c} />
-                    ))
-                )}
-            </div>
-
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
         </div>
     );
 }
 
-<<<<<<< HEAD
 function CommentItem({ comment, projectId, onReply }) {
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(comment?.likes || comment?.likesCount || 0);
@@ -333,60 +268,14 @@ function CommentItem({ comment, projectId, onReply }) {
                         {liked ? "❤️" : "🤍"} {likeCount}
                     </button>
                     <button className="comment-action-btn" onClick={() => setReplying(r => !r)}>
-=======
-/* ── Sous-composant : un commentaire ── */
-function CommentItem({ comment }) {
-    const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(comment.likes);
-    const [replying, setReplying] = useState(false);
-
-    function handleLike() {
-        setLiked(prev => {
-            setLikeCount(c => prev ? c - 1 : c + 1);
-            return !prev;
-        });
-    }
-
-    return (
-        <div className="comment-item">
-            <Avatar label={comment.avatar} size="sm" />
-            <div className="comment-item-body">
-
-                {/* Header */}
-                <div className="comment-item-header">
-                    <span className="comment-item-author">{comment.author}</span>
-                    <span className="comment-item-time">{comment.time}</span>
-                </div>
-
-                {/* Text */}
-                <p className="comment-item-text">{comment.text}</p>
-
-                {/* Actions */}
-                <div className="comment-item-actions">
-                    <button
-                        className={`comment-action-btn${liked ? " liked" : ""}`}
-                        onClick={handleLike}
-                    >
-                        {liked ? "❤️" : "🤍"} {likeCount}
-                    </button>
-                    <button
-                        className="comment-action-btn"
-                        onClick={() => setReplying(r => !r)}
-                    >
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         Répondre
                     </button>
                 </div>
 
-<<<<<<< HEAD
-=======
-                {/* Reply input */}
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                 {replying && (
                     <div className="comment-reply-wrap">
                         <textarea
                             className="comment-input comment-input-sm"
-<<<<<<< HEAD
                             placeholder={`Répondre à ${authorName}…`}
                             rows={2}
                             value={replyText}
@@ -402,29 +291,11 @@ function CommentItem({ comment }) {
                                 disabled={!replyText.trim() || sendingReply}
                             >
                                 {sendingReply ? "Envoi..." : "Répondre"}
-=======
-                            placeholder={`Répondre à ${comment.author}…`}
-                            rows={1}
-                        />
-                        <div className="comment-form-actions">
-                            <button
-                                className="btn-comment-cancel"
-                                onClick={() => setReplying(false)}
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                className="btn-comment-submit"
-                                onClick={() => setReplying(false)}
-                            >
-                                Répondre
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                             </button>
                         </div>
                     </div>
                 )}
 
-<<<<<<< HEAD
                 {/* Affichage des réplies existantes */}
                 {comment.replies && comment.replies.length > 0 && (
                     <div className="comment-replies">
@@ -438,8 +309,6 @@ function CommentItem({ comment }) {
                         ))}
                     </div>
                 )}
-=======
->>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             </div>
         </div>
     );
