@@ -1,5 +1,9 @@
 // ============================================================
+<<<<<<< HEAD
 // LAUNCHPAD — AppContext.jsx (CORRIGÉ, COMPLET & SÉCURISÉ)
+=======
+// LAUNCHPAD — AppContext.jsx
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 // État global + navigation React Router + authentification API
 // ============================================================
 
@@ -206,6 +210,7 @@ export function AppProvider({ children }) {
     }
   }, [navigate]);
 
+<<<<<<< HEAD
   // ─── Flux d'Interactions Projets (Branchés sur le Backend Neon - SÉCURISÉ) ───
   const toggleLike = useCallback(async (projectId) => {
     const token = getAccessToken();
@@ -243,6 +248,23 @@ export function AppProvider({ children }) {
       if (!prev) return prev;
       const prevId = prev.id || prev.project_id || prev.data?.id;
       if (String(prevId) !== String(projectId)) return prev;
+=======
+  // ─── Flux d'Interactions Projets (Branchés sur le Backend Neon) ───
+  const toggleLike = useCallback(async (projectId) => {
+    // 1. Mise à jour optimiste immédiate de l'interface graphique
+    setProjects(prev => prev.map(p => {
+      if (p.id !== projectId) return p;
+      const willBeLiked = !p.likedByMe;
+      return {
+        ...p,
+        likedByMe: willBeLiked,
+        likes: willBeLiked ? (p.likes || 0) + 1 : Math.max(0, (p.likes || 0) - 1),
+      };
+    }));
+
+    setSelectedProject(prev => {
+      if (!prev || prev.id !== projectId) return prev;
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
       const willBeLiked = !prev.likedByMe;
       return {
         ...prev,
@@ -251,6 +273,7 @@ export function AppProvider({ children }) {
       };
     });
 
+<<<<<<< HEAD
     // 2. Persistance asynchrone
     try {
       const envUrl = import.meta.env.VITE_API_URL || "";
@@ -388,6 +411,98 @@ export function AppProvider({ children }) {
       const pId = p.id || p.project_id;
       return String(pId) !== String(projectId) ? p : { ...p, shareCount: (p.shareCount || 0) + 1 };
     }));
+=======
+    // 2. Persistance asynchrone en base de données et recalibrage
+    try {
+      const envUrl = import.meta.env.VITE_API_URL || "";
+      const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const token = getAccessToken();
+
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${cleanBaseUrl}/api/projects/${projectId}/like`, {
+        method: "POST",
+        headers
+      });
+
+      const jsonRes = await response.json();
+      // On extrait la charge utile selon la structure de ton service (déballée ou imbriquée sous "project")
+      const backendPayload = jsonRes.project || jsonRes.data || jsonRes;
+
+      if (backendPayload && (backendPayload.likesCount !== undefined || backendPayload.likes !== undefined)) {
+        const serverLikes = backendPayload.likesCount !== undefined ? backendPayload.likesCount : backendPayload.likes;
+        const serverLiked = backendPayload.likedByMe;
+
+        const syncState = p => p.id !== projectId ? p : { ...p, likes: serverLikes, likedByMe: serverLiked };
+        setProjects(prev => prev.map(syncState));
+        setSelectedProject(prev => prev && prev.id === projectId ? { ...prev, likes: serverLikes, likedByMe: serverLiked } : prev);
+      }
+    } catch (error) {
+      console.error("Erreur d'enregistrement du Like:", error);
+    }
+  }, [getAccessToken]);
+
+  const addComment = useCallback(async (projectId, text, user) => {
+    try {
+      const envUrl = import.meta.env.VITE_API_URL || "";
+      const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const token = getAccessToken();
+
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${cleanBaseUrl}/api/projects/${projectId}/comments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text })
+      });
+
+      if (!response.ok) throw new Error("Le serveur de stockage a refusé le message.");
+      const jsonRes = await response.json();
+      
+      // 🛡️ Extraction sécurisée : s'adapte à la structure enveloppée ou brute du contrôleur
+      const dbComment = jsonRes.comment || jsonRes.data || jsonRes;
+
+      const processedComment = {
+        id: dbComment.id || Date.now(),
+        author: dbComment.author?.firstName 
+          ? `${dbComment.author.firstName} ${dbComment.author.lastName || ""}`
+          : (user?.name || "Anonyme"),
+        avatar: dbComment.author?.avatar_url || dbComment.author?.avatar || user?.avatar || "??",
+        text: dbComment.text || text,
+        time: "À l'instant",
+        likes: 0
+      };
+
+      setProjects(prev => prev.map(p => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          comments: [...(p.comments || []), processedComment],
+        };
+      }));
+
+      setSelectedProject(prev => {
+        if (!prev || prev.id !== projectId) return prev;
+        return {
+          ...prev,
+          comments: [...(prev.comments || []), processedComment],
+        };
+      });
+
+      showToast("Commentaire ajouté !", "success");
+    } catch (error) {
+      console.error("Erreur d'ajout du commentaire:", error);
+      showToast("Erreur lors de l'envoi du commentaire", "error");
+    }
+  }, [getAccessToken, showToast]);
+
+  const incrementShare = useCallback((projectId) => {
+    setProjects(prev => prev.map(p =>
+      p.id !== projectId ? p : { ...p, shareCount: (p.shareCount || 0) + 1 }
+    ));
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
   }, []);
 
   const toggleSave = useCallback((projectId) => {

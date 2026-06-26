@@ -1,4 +1,13 @@
+<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
+=======
+// ============================================================
+// LAUNCHPAD — SocialActions Component
+// Like + Comment + Share réutilisable
+// ============================================================
+
+import { useState, useRef } from "react";
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 import { useApp } from "../context/AppContext";
 import ShareMenu from "./ShareMenu";
 import "./SocialActions.css";
@@ -10,6 +19,7 @@ export default function SocialActions({
     size = "normal",   // "normal" | "sm"
     className = "",
 }) {
+<<<<<<< HEAD
     const appCtx = useApp();
     const toggleLike = appCtx?.toggleLike;
     const setGlobalProjects = appCtx?.setProjects; 
@@ -83,16 +93,31 @@ export default function SocialActions({
                 setIsLiked(previousLiked);
             }
         }
+=======
+    const { toggleLike } = useApp();
+    const [shareOpen, setShareOpen] = useState(false);
+    const shareRef = useRef(null);
+
+    const btnClass = size === "sm" ? "social-btn social-btn-sm" : "social-btn";
+
+    function handleLike(e) {
+        e.stopPropagation();
+        toggleLike(project.id);
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     }
 
     function handleShare(e) {
         e.stopPropagation();
+<<<<<<< HEAD
         e.preventDefault();
+=======
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
         setShareOpen(prev => !prev);
     }
 
     function handleComment(e) {
         e.stopPropagation();
+<<<<<<< HEAD
         e.preventDefault();
         if (onCommentClick) {
             onCommentClick(e);
@@ -116,6 +141,25 @@ export default function SocialActions({
                     {isLiked ? "❤️" : "🤍"}
                 </span>
                 <span className="social-btn-count">{likesCount}</span>
+=======
+        if (onCommentClick) onCommentClick();
+    }
+
+    return (
+        <div className={`social-actions ${className}`}>
+
+            {/* ── Like ── */}
+            <button
+                type="button"
+                className={`${btnClass}${project.likedByMe ? " liked" : ""}`}
+                onClick={handleLike}
+                title={project.likedByMe ? "Retirer le like" : "Liker ce projet"}
+            >
+                <span className="social-btn-icon">
+                    {project.likedByMe ? "❤️" : "🤍"}
+                </span>
+                <span className="social-btn-count">{project.likes}</span>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             </button>
 
             {/* ── Comment ── */}
@@ -127,7 +171,13 @@ export default function SocialActions({
                     title="Voir les commentaires"
                 >
                     <span className="social-btn-icon">💬</span>
+<<<<<<< HEAD
                     <span className="social-btn-count">{commentsCount}</span>
+=======
+                    <span className="social-btn-count">
+                        {project.comments?.length || 0}
+                    </span>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                 </button>
             )}
 
@@ -140,16 +190,28 @@ export default function SocialActions({
                     title="Partager ce projet"
                 >
                     <span className="social-btn-icon">↗</span>
+<<<<<<< HEAD
                     <span className="social-btn-count">{innerProject?.shareCount || 0}</span>
+=======
+                    <span className="social-btn-count">{project.shareCount}</span>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                 </button>
 
                 {shareOpen && (
                     <ShareMenu
+<<<<<<< HEAD
                         project={innerProject}
+=======
+                        project={project}
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         onClose={() => setShareOpen(false)}
                     />
                 )}
             </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
         </div>
     );
 }

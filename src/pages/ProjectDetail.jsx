@@ -1,5 +1,9 @@
 // ============================================================
+<<<<<<< HEAD
 // LAUNCHPAD — Project Detail Page (Données Temps Réel & Synchronisées)
+=======
+// LAUNCHPAD — Project Detail Page (Données Temps Réel)
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 // Fichier : src/pages/ProjectDetail.jsx
 // ============================================================
 
@@ -7,6 +11,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge, ProgressBar, AIBadge } from "../components/UI";
+<<<<<<< HEAD
+=======
+import { SIMILAR_PROJECTS } from "../data/mockData"; 
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 import SocialActions from "../components/SocialActions";
 import CommentSection from "../components/CommentSection";
 import "./Projects.css";
@@ -18,31 +26,60 @@ export default function ProjectDetail() {
     const navigate = appCtx?.navigate;
     const currentUser = appCtx?.currentUser;
     const showToast = appCtx?.showToast;
+<<<<<<< HEAD
     const globalProjects = appCtx?.projects || [];
 
+=======
+
+    // Récupération sécurisée du token
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     const token = typeof appCtx?.getAccessToken === "function" 
         ? appCtx.getAccessToken() 
         : (appCtx?.token || appCtx?.accessToken || "");
 
+<<<<<<< HEAD
+=======
+    // ÉTAPE CLÉ : Si l'ID n'est pas dans l'URL, on le pioche dans les options passées à ton composant/contexte
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     const id = urlId || appCtx?.currentPageOptions?.id || appCtx?.pageOptions?.id;
 
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
     const [similarProjects, setSimilarProjects] = useState([]);
 
     // ── 1. CHARGEMENT DEPUIS L'API + HARMONISATION DE L'ÉTAT DES LIKES ──
     const loadProjectDetail = useCallback(async () => {
         if (!id || id === "undefined") {
+=======
+
+    // ── 1. CHARGEMENT INDIVIDUEL DEPUIS L'API NATIVE ──
+    const loadProjectDetail = useCallback(async () => {
+        if (!id) {
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
             setLoading(false);
             return;
         }
         setLoading(true);
         try {
+<<<<<<< HEAD
             const envUrl = import.meta.env.VITE_API_URL || "";
             const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
             
             const headers = { "Content-Type": "application/json" };
             if (token) headers["Authorization"] = `Bearer ${token}`;
+=======
+            // Nettoyage de l'URL de l'API pour parer au problème de /api/api
+            const envUrl = import.meta.env.VITE_API_URL || "";
+            const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+            
+            const headers = {
+                "Content-Type": "application/json"
+            };
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 
             const response = await fetch(`${cleanBaseUrl}/api/projects/${id}`, {
                 method: "GET",
@@ -50,6 +87,7 @@ export default function ProjectDetail() {
             });
 
             if (!response.ok) throw new Error("Le projet n'existe pas ou a été archivé.");
+<<<<<<< HEAD
             const resBody = await response.json();
             
             const cleanProject = resBody?.data ? resBody.data : resBody;
@@ -111,6 +149,10 @@ export default function ProjectDetail() {
                 setProject(normalizedProject);
             }
 
+=======
+            const data = await response.json();
+            setProject(data);
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
         } catch (error) {
             console.error("Erreur fetch detail:", error);
             if (typeof showToast === "function") {
@@ -119,6 +161,7 @@ export default function ProjectDetail() {
         } finally {
             setLoading(false);
         }
+<<<<<<< HEAD
     }, [id, token, showToast, globalProjects]);
 
     useEffect(() => {
@@ -181,6 +224,15 @@ export default function ProjectDetail() {
         }
     }, [globalProjects, loading]);
 
+=======
+    }, [id, token, showToast]);
+
+    useEffect(() => {
+        loadProjectDetail();
+    }, [loadProjectDetail]);
+
+    // ── 2. LOGIQUE DE CALCULS ET DÉVIATIONS ──
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
     const raised = project?.raisedAmount ? parseFloat(project.raisedAmount) : 0;
     const goal = project?.goalAmount ? parseFloat(project.goalAmount) : 0;
     const pct = goal > 0 ? Math.round((raised / goal) * 100) : 0;
@@ -226,6 +278,7 @@ export default function ProjectDetail() {
             <div className="two-col" style={{ gap: 32 }}>
                 {/* ── Main content ── */}
                 <div className="two-col-main">
+<<<<<<< HEAD
                     {/* Cover Image Style Facebook */}
                     {(project.coverImageUrl || project.cover_image_url) ? (
                         <div 
@@ -287,10 +340,19 @@ export default function ProjectDetail() {
                                 boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
                             }}
                         >
+=======
+                    {project.coverImageUrl ? (
+                        <div className="project-cover-container" style={{ marginBottom: 20, borderRadius: "var(--r-lg)", overflow: "hidden" }}>
+                            <img src={project.coverImageUrl} alt={project.title} style={{ width: "100%", height: "240px", objectFit: "cover" }} />
+                        </div>
+                    ) : (
+                        <div className="project-cover" style={{ background: "linear-gradient(135deg, #5B73F5 0%, #3B53C5 100%)", color: "white" }}>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                             📦
                         </div>
                     )}
 
+<<<<<<< HEAD
                     {/* Author Info Bar Style Facebook */}
                     <div 
                         className="card" 
@@ -345,6 +407,18 @@ export default function ProjectDetail() {
                     {/* Title and Social Actions */}
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
                         <h1 className="project-detail-title" style={{ marginBottom: 0, fontSize: 28, fontWeight: 800 }}>
+=======
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                        <Badge color={project.category}>{project.category}</Badge>
+                        {project.tags?.map(t => <Badge key={t} color="gray">{t}</Badge>)}
+                        <Badge color={project.status === "active" ? "green" : "yellow"}>
+                            {project.status === "active" ? "En financement" : "En cours de révision"}
+                        </Badge>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 10, flexWrap: "wrap" }}>
+                        <h1 className="project-detail-title" style={{ marginBottom: 0 }}>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                             {project.title}
                         </h1>
                         <SocialActions
@@ -355,6 +429,7 @@ export default function ProjectDetail() {
                         />
                     </div>
 
+<<<<<<< HEAD
                     <p className="project-detail-lead" style={{ marginTop: 0, color: "var(--text-secondary)", fontSize: 17, lineHeight: 1.6, marginBottom: 24 }}>
                         {project.tagline || project.description?.substring(0, 150) + "..." || "Description en cours de rédaction..."}
                     </p>
@@ -371,17 +446,39 @@ export default function ProjectDetail() {
                         <div className="card" style={{ marginBottom: 20, padding: 24, background: "var(--bg-light)" }}>
                             <h3 className="project-section-title" style={{ marginBottom: 12, fontSize: 18 }}>🎯 Problème résolu</h3>
                             <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>{project.problem}</p>
+=======
+                    <p className="project-detail-lead" style={{ marginTop: 10, color: "var(--text-secondary)", fontSize: 16 }}>
+                        {project.tagline || "Aucune description courte disponible pour ce projet."}
+                    </p>
+
+                    <div className="project-section">
+                        <h3 className="project-section-title">📝 Description du projet</h3>
+                        <p className="project-section-text">{project.description}</p>
+                    </div>
+
+                    {project.problem && (
+                        <div className="project-section">
+                            <h3 className="project-section-title">🎯 Problème résolu</h3>
+                            <p className="project-section-text">{project.problem}</p>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         </div>
                     )}
 
                     {project.solution && (
+<<<<<<< HEAD
                         <div className="card" style={{ marginBottom: 20, padding: 24 }}>
                             <h3 className="project-section-title" style={{ marginBottom: 12, fontSize: 18 }}>💡 Notre solution</h3>
                             <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>{project.solution}</p>
+=======
+                        <div className="project-section">
+                            <h3 className="project-section-title">💡 Notre solution</h3>
+                            <p className="project-section-text">{project.solution}</p>
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         </div>
                     )}
 
                     {project.businessModel && (
+<<<<<<< HEAD
                         <div className="card" style={{ marginBottom: 20, padding: 24, background: "var(--bg-light)" }}>
                             <h3 className="project-section-title" style={{ marginBottom: 12, fontSize: 18 }}>💰 Modèle économique</h3>
                             <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>{project.businessModel}</p>
@@ -441,10 +538,24 @@ export default function ProjectDetail() {
                                 }}
                             >
                                 <Avatar label={project.author?.firstName?.[0] || "U"} size="md" ring={true} />
+=======
+                        <div className="project-section">
+                            <h3 className="project-section-title">💰 Modèle économique</h3>
+                            <p className="project-section-text">{project.businessModel}</p>
+                        </div>
+                    )}
+
+                    <div className="project-section">
+                        <h3 className="project-section-title">👥 L'équipe</h3>
+                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                            <div className="team-member-chip" onClick={() => navigate && navigate("profile-student", { id: project.authorId })}>
+                                <Avatar label={project.author?.firstName?.[0] || "U"} size="md" />
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                                 <div>
                                     <div style={{ fontWeight: 700, fontSize: 14 }}>
                                         {project.author?.firstName} {project.author?.lastName}
                                     </div>
+<<<<<<< HEAD
                                     <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                                         {project.author?.profile?.university || "Étudiant"}
                                     </div>
@@ -463,6 +574,15 @@ export default function ProjectDetail() {
                                 >
                                     <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-secondary)" }}>
                                         +{project.teamSize - 1} membre{project.teamSize - 1 > 1 ? "s" : ""}
+=======
+                                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Porteur de projet (Étudiant)</div>
+                                </div>
+                            </div>
+                            {project.teamSize > 1 && (
+                                <div className="team-member-chip" style={{ cursor: "default" }}>
+                                    <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text-secondary)", padding: "0 8px" }}>
+                                        +{project.teamSize - 1} collaborateurs co-auteurs
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                                     </div>
                                 </div>
                             )}
@@ -474,6 +594,7 @@ export default function ProjectDetail() {
                             Projets similaires <AIBadge />
                         </h3>
                         <div className="grid-3">
+<<<<<<< HEAD
                             {similarProjects.length > 0 ? (
                                 similarProjects.map(sp => (
                                     <div key={sp.id} className="similar-mini">
@@ -495,6 +616,23 @@ export default function ProjectDetail() {
                                     Aucun projet similaire trouvé pour le moment.
                                 </div>
                             )}
+=======
+                            {SIMILAR_PROJECTS.map(sp => (
+                                <div key={sp.id} className="similar-mini">
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span style={{ fontWeight: 700, fontSize: 14 }}>{sp.title}</span>
+                                        <Badge color="green">{sp.similarity}%</Badge>
+                                    </div>
+                                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "8px 0" }}>{sp.desc}</p>
+                                    <button
+                                        className="btn btn-secondary btn-sm btn-full"
+                                        onClick={() => navigate && navigate("collaboration", { targetProjectId: project.id })}
+                                    >
+                                        Collaborer
+                                    </button>
+                                </div>
+                            ))}
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
                         </div>
                     </div>
 

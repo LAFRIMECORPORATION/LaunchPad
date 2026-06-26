@@ -41,6 +41,7 @@
     height: 230px;
 }
 
+<<<<<<< HEAD
 .project-cover-container {
     border-radius: var(--r-xl);
     overflow: hidden;
@@ -54,13 +55,18 @@
     display: block;
 }
 
+=======
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 .project-detail-title {
     font-family: var(--font-display);
     font-size: 38px;
     font-weight: 800;
     letter-spacing: -0.04em;
     margin-bottom: 10px;
+<<<<<<< HEAD
     line-height: 1.2;
+=======
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 }
 
 .project-detail-lead {
@@ -88,6 +94,7 @@
     line-height: 1.75;
 }
 
+<<<<<<< HEAD
 /* ── Responsive Project Detail ── */
 @media (max-width: 1024px) {
     .project-detail-title {
@@ -208,6 +215,8 @@
     }
 }
 
+=======
+>>>>>>> 181fbf4ea466b649e8697a98255d0752f8103404
 /* Funding card */
 .funding-card {
     background: var(--bg-card);
