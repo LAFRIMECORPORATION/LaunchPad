@@ -54,13 +54,45 @@ export default function ProjectDetail() {
             
             const cleanProject = resBody?.data ? resBody.data : resBody;
             
-            // 🛡️ RE-MAPPING DES CLÉS : S'assurer que le modèle backend s'aligne sur les clés globales
+            console.log("📦 Données projet reçues:", cleanProject);
+            
+            // 🛡️ RE-MAPPING COMPLET DES CLÉS : S'assurer que toutes les infos sont disponibles
             const normalizedProject = {
                 ...cleanProject,
                 id: cleanProject.id || cleanProject.project_id,
-                likes: cleanProject.likes ?? cleanProject.likesCount ?? 0,
+                title: cleanProject.title || "",
+                tagline: cleanProject.tagline || "",
+                description: cleanProject.description || "",
+                problem: cleanProject.problem || "",
+                solution: cleanProject.solution || "",
+                businessModel: cleanProject.businessModel || cleanProject.business_model || "",
+                category: cleanProject.category || "",
+                stage: cleanProject.stage || "",
+                tags: cleanProject.tags || [],
+                coverImageUrl: cleanProject.coverImageUrl || cleanProject.cover_image_url || null,
+                pitchDeckUrl: cleanProject.pitchDeckUrl || cleanProject.pitch_deck_url || null,
+                demoVideoUrl: cleanProject.demoVideoUrl || cleanProject.demo_video_url || null,
+                githubUrl: cleanProject.githubUrl || cleanProject.github_url || null,
+                goalAmount: Number(cleanProject.goalAmount || cleanProject.goal_amount || 0),
+                raisedAmount: Number(cleanProject.raisedAmount || cleanProject.raised_amount || 0),
+                equityPct: cleanProject.equityPct || cleanProject.equity_pct || null,
+                equityType: cleanProject.equityType || cleanProject.equity_type || "equity",
+                deadline: cleanProject.deadline || null,
+                status: cleanProject.status || "draft",
+                viewsCount: cleanProject.viewsCount || cleanProject.views_count || 0,
+                likes: cleanProject.likes ?? cleanProject.likesCount ?? cleanProject.likes_count ?? 0,
+                sharesCount: cleanProject.sharesCount || cleanProject.shares_count || 0,
+                investorsCount: cleanProject.investorsCount || cleanProject.investors_count || 0,
+                teamSize: cleanProject.teamSize || cleanProject.team_size || 1,
+                publishedAt: cleanProject.publishedAt || cleanProject.published_at || null,
+                createdAt: cleanProject.createdAt || cleanProject.created_at || null,
                 likedByMe: cleanProject.likedByMe ?? cleanProject.isLiked ?? false,
-                comments: cleanProject.comments || []
+                isSaved: cleanProject.isSaved ?? cleanProject.is_saved ?? false,
+                comments: cleanProject.comments || [],
+                commentsCount: cleanProject.commentsCount ?? cleanProject.comments_count ?? (cleanProject.comments?.length || 0),
+                author: cleanProject.author || null,
+                authorId: cleanProject.authorId || cleanProject.author_id || cleanProject.author?.id || null,
+                fundingPct: cleanProject.fundingPct || Math.round((Number(cleanProject.raisedAmount || cleanProject.raised_amount || 0) / Number(cleanProject.goalAmount || cleanProject.goal_amount || 1)) * 100) || 0
             };
             
             // Synchronisation avec les modifications effectuées à la volée sur l'explorer
@@ -195,7 +227,7 @@ export default function ProjectDetail() {
                 {/* ── Main content ── */}
                 <div className="two-col-main">
                     {/* Cover Image Style Facebook */}
-                    {project.coverImageUrl ? (
+                    {(project.coverImageUrl || project.cover_image_url) ? (
                         <div 
                             className="project-cover-container" 
                             style={{ 
@@ -207,7 +239,7 @@ export default function ProjectDetail() {
                             }}
                         >
                             <img 
-                                src={project.coverImageUrl} 
+                                src={project.coverImageUrl || project.cover_image_url} 
                                 alt={project.title} 
                                 style={{ 
                                     width: "100%", 
@@ -215,6 +247,15 @@ export default function ProjectDetail() {
                                     objectFit: "cover",
                                     display: "block"
                                 }} 
+                                onError={(e) => {
+                                    console.error("Erreur chargement image:", e);
+                                    e.target.style.display = "none";
+                                    e.target.parentElement.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                                    e.target.parentElement.style.display = "flex";
+                                    e.target.parentElement.style.alignItems = "center";
+                                    e.target.parentElement.style.justifyContent = "center";
+                                    e.target.parentElement.innerHTML = '<div style="font-size: 64px;">📦</div>';
+                                }}
                             />
                             <div style={{
                                 position: "absolute",
@@ -315,13 +356,15 @@ export default function ProjectDetail() {
                     </div>
 
                     <p className="project-detail-lead" style={{ marginTop: 0, color: "var(--text-secondary)", fontSize: 17, lineHeight: 1.6, marginBottom: 24 }}>
-                        {project.tagline || "Aucune description courte disponible pour ce projet."}
+                        {project.tagline || project.description?.substring(0, 150) + "..." || "Description en cours de rédaction..."}
                     </p>
 
                     {/* Description Card */}
                     <div className="card" style={{ marginBottom: 20, padding: 24 }}>
                         <h3 className="project-section-title" style={{ marginBottom: 12, fontSize: 18 }}>📝 Description du projet</h3>
-                        <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>{project.description}</p>
+                        <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>
+                            {project.description || "Aucune description détaillée disponible pour le moment."}
+                        </p>
                     </div>
 
                     {project.problem && (
@@ -344,6 +387,41 @@ export default function ProjectDetail() {
                             <p className="project-section-text" style={{ lineHeight: 1.8, fontSize: 15 }}>{project.businessModel}</p>
                         </div>
                     )}
+
+                    {/* Additional Info */}
+                    <div className="card" style={{ marginBottom: 20, padding: 24 }}>
+                        <h3 className="project-section-title" style={{ marginBottom: 16, fontSize: 18 }}>📊 Informations supplémentaires</h3>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+                            <div>
+                                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Catégorie</div>
+                                <div style={{ fontWeight: 600, fontSize: 14 }}>{project.category || "Non spécifié"}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Stade</div>
+                                <div style={{ fontWeight: 600, fontSize: 14 }}>{project.stage || "Non spécifié"}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Date de publication</div>
+                                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                    {project.publishedAt ? new Date(project.publishedAt).toLocaleDateString("fr-FR") : "Non publié"}
+                                </div>
+                            </div>
+                            {project.deadline && (
+                                <div>
+                                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Date limite</div>
+                                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                        {new Date(project.deadline).toLocaleDateString("fr-FR")}
+                                    </div>
+                                </div>
+                            )}
+                            {project.equityPct && (
+                                <div>
+                                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Equité proposée</div>
+                                    <div style={{ fontWeight: 600, fontSize: 14 }}>{project.equityPct}%</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Team Section */}
                     <div className="card" style={{ marginBottom: 20, padding: 24 }}>
