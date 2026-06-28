@@ -104,81 +104,164 @@ export function ProjectCard({ project, onClick, compact = false }) {
         <div
             className="card card-interactive"
             onClick={onClick}
-            style={{ padding: compact ? "14px" : "20px" }}
+            style={{ padding: 0, overflow: "hidden", borderRadius: "var(--r-lg)" }}
         >
-            {/* Cover avec bookmark button */}
+            {/* Cover Image Style Facebook */}
             <div style={{ position: "relative" }}>
-                <div style={{
-                    height: compact ? 80 : 110,
-                    borderRadius: "var(--r-md)",
-                    background: project.colorBg || "#EEF2FF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: compact ? 32 : 44,
-                    marginBottom: 14,
-                    border: "1px solid var(--border)",
-                }}>
-                    {project.emoji}
-                </div>
+                {project.coverImageUrl ? (
+                    <img 
+                        src={project.coverImageUrl} 
+                        alt={project.title}
+                        style={{
+                            width: "100%",
+                            height: compact ? 140 : 180,
+                            objectFit: "cover",
+                            display: "block"
+                        }}
+                    />
+                ) : (
+                    <div style={{
+                        height: compact ? 140 : 180,
+                        borderRadius: "var(--r-md)",
+                        background: project.colorBg || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: compact ? 40 : 56,
+                    }}>
+                        {project.emoji}
+                    </div>
+                )}
 
                 {/* Bookmark button */}
                 <button
                     onClick={e => { e.stopPropagation(); toggleSave(project.id); }}
                     style={{
                         position: "absolute",
-                        top: 8,
-                        right: 8,
-                        width: 32,
-                        height: 32,
+                        top: 10,
+                        right: 10,
+                        width: 36,
+                        height: 36,
                         borderRadius: "50%",
-                        background: "rgba(255,255,255,0.92)",
+                        background: "rgba(255,255,255,0.95)",
                         border: "1px solid var(--border)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: 16,
+                        fontSize: 18,
                         transition: "var(--tr-fast)",
                         backdropFilter: "blur(8px)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                     }}
                     title={saved ? "Retirer des favoris" : "Sauvegarder"}
                 >
                     {saved ? "⭐" : "☆"}
                 </button>
+
+                {/* Category badge overlay */}
+                <div style={{
+                    position: "absolute",
+                    bottom: 10,
+                    left: 10,
+                    background: "rgba(0,0,0,0.7)",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "var(--r-sm)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    backdropFilter: "blur(4px)"
+                }}>
+                    {project.category}
+                </div>
             </div>
 
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                <div>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: compact ? 14 : 16, letterSpacing: "-.02em" }}>
+            {/* Content */}
+            <div style={{ padding: compact ? "14px 16px" : "18px 20px" }}>
+                {/* Header */}
+                <div style={{ marginBottom: 8 }}>
+                    <div style={{ 
+                        fontFamily: "var(--font-display)", 
+                        fontWeight: 700, 
+                        fontSize: compact ? 15 : 17, 
+                        letterSpacing: "-.02em",
+                        lineHeight: 1.3,
+                        marginBottom: 4
+                    }}>
                         {project.title}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>
-                        {project.category}
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>👥 {project.investors || 0}</span>
+                        <span>•</span>
+                        <span>👁️ {project.views || 0}</span>
                     </div>
                 </div>
-                <Badge color={project.category}>{project.tags[0]}</Badge>
-            </div>
 
-            {!compact && (
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-                    {project.tagline}
-                </p>
-            )}
+                {!compact && (
+                    <p style={{ 
+                        fontSize: 13, 
+                        color: "var(--text-secondary)", 
+                        lineHeight: 1.5, 
+                        marginBottom: 14,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden"
+                    }}>
+                        {project.tagline}
+                    </p>
+                )}
 
-            <ProgressBar value={project.raised} max={project.goal} size="thin" />
-
-            {!compact && (
-                <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                    {project.tags.map(t => (
-                        <Badge key={t} color="gray">{t}</Badge>
-                    ))}
-                    <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)" }}>
-                        👥 {project.investors}
-                    </span>
+                {/* Progress */}
+                <div style={{ marginBottom: 12 }}>
+                    <div style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        fontSize: 12, 
+                        marginBottom: 4,
+                        fontWeight: 600
+                    }}>
+                        <span style={{ color: "var(--text-main)" }}>
+                            {pct}% financé
+                        </span>
+                        <span style={{ color: "var(--text-muted)" }}>
+                            {Math.round(project.raised / 1000000)}M / {Math.round(project.goal / 1000000)}M XAF
+                        </span>
+                    </div>
+                    <div style={{ 
+                        height: 6, 
+                        background: "var(--bg-light)", 
+                        borderRadius: 3, 
+                        overflow: "hidden" 
+                    }}>
+                        <div 
+                            style={{ 
+                                height: "100%", 
+                                width: `${pct}%`,
+                                background: "linear-gradient(90deg, #5B73F5 0%, #3B53C5 100%)",
+                                borderRadius: 3,
+                                transition: "width 0.3s ease"
+                            }} 
+                        />
+                    </div>
                 </div>
-            )}
+
+                {!compact && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {project.tags?.slice(0, 3).map(t => (
+                            <span key={t} style={{
+                                fontSize: 11,
+                                padding: "3px 8px",
+                                background: "var(--bg-light)",
+                                borderRadius: "var(--r-sm)",
+                                color: "var(--text-secondary)"
+                            }}>
+                                {t}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

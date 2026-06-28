@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { ProjectCard, Tag } from "../components/UI";
 import SocialActions from "../components/SocialActions";
@@ -13,14 +14,16 @@ const CATEGORIES = ["Tous", "GreenTech", "HealthTech", "FinTech", "EdTech", "Saa
 const STAGES = ["Tous les stades", "Idée", "Prototype", "MVP", "Beta", "Commercialisé"];
 const SORT_OPTIONS = [
     { value: "recent", label: "Plus récents" },
-    { value: "funding", label: "Mieux financés" },
+    { value: "funded", label: "Mieux financés" },
     { value: "popular", label: "Plus populaires" },
 ];
 
 export default function Explore() {
+    // Initialisation du hook de navigation React Router
+    const routerNavigate = useNavigate();
+    
     // Récupération de l'application context
     const appCtx = useApp();
-    const navigate = appCtx?.navigate;
     const showToast = appCtx?.showToast;
     
     // Sécurisation de la récupération du Token d'authentification
@@ -84,7 +87,26 @@ export default function Explore() {
             const data = await response.json();
             
             // Adaptation à la structure renvoyée par ton API
-            setProjects(Array.isArray(data) ? data : data.data || []);
+            const rawProjects = Array.isArray(data) ? data : data.data || [];
+            
+            // Normalisation des données pour inclure likes et commentaires
+            const normalizedProjects = rawProjects.map(p => ({
+                ...p,
+                id: p.id || p.project_id,
+                likes: p.likes ?? p.likesCount ?? p.likes_count ?? p._count?.likes ?? 0,
+                comments: p.comments || [],
+                commentsCount: p.commentsCount ?? p.comments_count ?? p._count?.comments ?? 0,
+                likedByMe: p.likedByMe ?? p.isLiked ?? false,
+                isSaved: p.isSaved ?? false,
+                coverImageUrl: p.coverImageUrl || p.cover_image_url || null,
+                raisedAmount: Number(p.raisedAmount || p.raised_amount || 0),
+                goalAmount: Number(p.goalAmount || p.goal_amount || 0),
+                raised: Number(p.raisedAmount || p.raised_amount || 0),
+                goal: Number(p.goalAmount || p.goal_amount || 0),
+                investors: p.investorsCount ?? p.investors_count ?? 0
+            }));
+            
+            setProjects(normalizedProjects);
         } catch (err) {
             console.error("Erreur Explore:", err);
             if (typeof showToast === "function") {
@@ -165,36 +187,48 @@ export default function Explore() {
                 </div>
             ) : projects.length > 0 ? (
                 <div className="grid-auto">
-                    {projects.map(p => (
-                        <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                            <ProjectCard
-                                project={{
-                                    ...p,
-                                    emoji: p.emoji || "📦",
-                                    colorBg: p.colorBg || "rgba(91,115,245,0.1)",
-                                    raised: p.raisedAmount ? parseFloat(p.raisedAmount) : 0,
-                                    goal: p.goalAmount ? parseFloat(p.goalAmount) : 0,
-                                    desc: p.tagline || p.description
-                                }}
-                                onClick={() => navigate && navigate(`project-detail`, { id: p.id })}
-                            />
-                            <div style={{
-                                padding: "10px 14px",
-                                background: "var(--bg-card)",
-                                borderLeft: "1px solid var(--border)",
-                                borderRight: "1px solid var(--border)",
-                                borderBottom: "1px solid var(--border)",
-                                borderRadius: "0 0 var(--r-lg) var(--r-lg)",
-                                marginTop: -1,
-                            }}>
-                                <SocialActions
-                                    project={p}
-                                    size="sm"
-                                    onCommentClick={() => navigate && navigate(`project-detail`, { id: p.id })}
+                    {projects.map(p => {
+                        const currentId = p?.id || p?.project_id || p?._id;
+                        return (
+                            <div 
+                                key={currentId || Math.random().toString()} 
+                                style={{ display: "flex", flexDirection: "column", gap: 0, cursor: "pointer" }}
+                                onClick={() => routerNavigate(`/projects/${currentId}`)}
+                            >
+                                <ProjectCard
+                                    project={{
+                                        ...p,
+                                        emoji: p.emoji || "📦",
+                                        colorBg: p.colorBg || "rgba(91,115,245,0.1)",
+                                        raised: p.raisedAmount ? parseFloat(p.raisedAmount) : 0,
+                                        goal: p.goalAmount ? parseFloat(p.goalAmount) : 0,
+                                        desc: p.tagline || p.description
+                                    }}
                                 />
+                                <div 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                    }}
+                                    style={{
+                                        padding: "10px 14px",
+                                        background: "var(--bg-card)",
+                                        borderLeft: "1px solid var(--border)",
+                                        borderRight: "1px solid var(--border)",
+                                        borderBottom: "1px solid var(--border)",
+                                        borderRadius: "0 0 var(--r-lg) var(--r-lg)",
+                                        marginTop: -1,
+                                    }}
+                                >
+                                    <SocialActions
+                                        project={p}
+                                        size="sm"
+                                        onCommentClick={() => routerNavigate(`/projects/${currentId}`)}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
