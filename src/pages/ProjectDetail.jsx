@@ -56,7 +56,9 @@ export default function ProjectDetail() {
             if (!response.ok) throw new Error("Le projet n'existe pas ou a été archivé.");
 
             const resBody = await response.json();
-            const cleanProject = resBody?.data ? resBody.data : resBody;
+            
+            // Extraction correcte: resBody.data.project
+            const cleanProject = resBody?.data?.project || resBody?.data || resBody?.project || resBody;
 
             // 🛡️ RE-MAPPING COMPLET DES CLÉS : s'assurer que toutes les infos sont disponibles
             const normalizedProject = {

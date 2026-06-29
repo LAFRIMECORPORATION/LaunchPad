@@ -218,19 +218,116 @@ const handleRejectProject = async (projectId) => {
                         <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)" }}>Aucun projet en attente de modération.</div>
                     ) : (
                         pendingProjects.map(p => (
-                            <div key={p.id} className="pending-row" style={{ padding: "12px 0", borderBottom: "1px solid var(--border)" }}>
-                                <div className="pending-row-info">
-                                    <div className="pending-row-title" style={{ fontWeight: 600 }}>{p.title}</div>
-                                    {/* Correction ici : goalAmount au lieu de goal + Ajout du nom de l'auteur */}
-                                    <div className="pending-row-meta">
-                                        Par : {p.author?.firstName || "Inconnu"} · {p.category} · Objectif : {p.goalAmount?.toLocaleString() || 0} XAF
+                            <div key={p.id} className="card" style={{ marginBottom: 20, padding: 16, border: "1px solid var(--border)" }}>
+                                {/* Header avec photo et infos principales */}
+                                <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+                                    {p.coverImageUrl || p.cover_image_url ? (
+                                        <img 
+                                            src={p.coverImageUrl || p.cover_image_url} 
+                                            alt={p.title}
+                                            style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)" }}
+                                        />
+                                    ) : (
+                                        <div style={{ width: 120, height: 80, background: "var(--bg-light)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, border: "1px solid var(--border)" }}>
+                                            📦
+                                        </div>
+                                    )}
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{p.title}</h3>
+                                        <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>
+                                            <strong>Auteur:</strong> {p.author?.firstName} {p.author?.lastName} ({p.author?.email})<br/>
+                                            <strong>Université:</strong> {p.author?.profile?.university || "Non renseignée"}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                            <Badge color="blue">{p.category}</Badge>
+                                            <Badge color="green">{p.stage}</Badge>
+                                            {p.tags?.map(tag => <Badge key={tag} color="gray">{tag}</Badge>)}
+                                        </div>
                                     </div>
-                                    {/* Petit aperçu de la description reçue pour valider visuellement */}
-                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                                        {p.tagline || p.description?.substring(0, 100) + "..."}
+                                </div>
+
+                                {/* Tagline */}
+                                {p.tagline && (
+                                    <p style={{ fontSize: 14, fontStyle: "italic", color: "var(--text-secondary)", marginBottom: 12, padding: "8px 12px", background: "var(--bg-light)", borderRadius: 6 }}>
+                                        "{p.tagline}"
+                                    </p>
+                                )}
+
+                                {/* Description complète */}
+                                <div style={{ marginBottom: 12 }}>
+                                    <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>📝 Description</h4>
+                                    <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                                        {p.description || "Aucune description"}
                                     </p>
                                 </div>
-                                <div className="pending-row-actions">
+
+                                {/* Problème et Solution */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                                    <div>
+                                        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>❓ Problème</h4>
+                                        <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
+                                            {p.problem || "Non renseigné"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>💡 Solution</h4>
+                                        <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
+                                            {p.solution || "Non renseigné"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Business Model */}
+                                {p.businessModel && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>💰 Business Model</h4>
+                                        <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
+                                            {p.businessModel}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Informations financières */}
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12, padding: "12px", background: "var(--bg-light)", borderRadius: 6 }}>
+                                    <div>
+                                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Objectif</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700 }}>{(p.goalAmount || 0).toLocaleString()} XAF</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Equity</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700 }}>{p.equityPct || 0}%</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Type</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700 }}>{p.equityType || "N/A"}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Deadline</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700 }}>{p.deadline ? new Date(p.deadline).toLocaleDateString("fr-FR") : "N/A"}</div>
+                                    </div>
+                                </div>
+
+                                {/* Liens supplémentaires */}
+                                <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 13 }}>
+                                    {p.githubUrl && (
+                                        <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none" }}>
+                                            🔗 GitHub
+                                        </a>
+                                    )}
+                                    {p.demoVideoUrl && (
+                                        <a href={p.demoVideoUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none" }}>
+                                            🎥 Démo vidéo
+                                        </a>
+                                    )}
+                                    {p.pitchDeckUrl && (
+                                        <a href={p.pitchDeckUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none" }}>
+                                            📊 Pitch Deck
+                                        </a>
+                                    )}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="pending-row-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 12, borderTop: "1px solid var(--border)" }}>
                                     <button className="btn btn-success btn-sm" onClick={() => handleApproveProject(p.id)}>✓ Approuver</button>
                                     <button className="btn btn-danger btn-sm" onClick={() => handleRejectProject(p.id)}>✕ Rejeter</button>
                                 </div>

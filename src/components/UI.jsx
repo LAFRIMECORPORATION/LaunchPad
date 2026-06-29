@@ -108,15 +108,23 @@ export function ProjectCard({ project, onClick, compact = false }) {
         >
             {/* Cover Image Style Facebook */}
             <div style={{ position: "relative" }}>
-                {project.coverImageUrl ? (
+                {project.coverImageUrl || project.cover_image_url ? (
                     <img 
-                        src={project.coverImageUrl} 
+                        src={project.coverImageUrl || project.cover_image_url} 
                         alt={project.title}
                         style={{
                             width: "100%",
                             height: compact ? 140 : 180,
                             objectFit: "cover",
                             display: "block"
+                        }}
+                        onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = `
+                                <div style="height:${compact ? 140 : 180}px;border-radius:var(--r-md);background:${project.colorBg || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"};display:flex;align-items:center;justify-content:center;font-size:${compact ? 40 : 56}px;">
+                                    ${project.emoji || "📦"}
+                                </div>
+                            `;
                         }}
                     />
                 ) : (
