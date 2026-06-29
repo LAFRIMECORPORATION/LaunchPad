@@ -61,7 +61,7 @@ export default function ProfileStudent() {
                             <button className="btn btn-secondary" style={{ minWidth: 0 }}>✏️ Modifier</button>
                         ) : (
                             <>
-                                <button className="btn btn-secondary" onClick={() => navigate("messages")}>
+                                <button className="btn btn-secondary" onClick={() => navigate("messages", { targetUserId: profileUser.id })}>
                                     💬 Message
                                 </button>
                                 <button className="btn btn-primary" onClick={() => navigate("collaboration")} style={{ whiteSpace: "nowrap" }}>

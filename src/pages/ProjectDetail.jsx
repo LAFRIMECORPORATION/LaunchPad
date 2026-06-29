@@ -567,18 +567,18 @@ export default function ProjectDetail() {
                                 <button
                                     className="btn btn-secondary btn-full"
                                     style={{ justifyContent: "center" }}
-                                    onClick={() => navigate && navigate("messages", { teamContact: { name: `${project.title} Intégration`, id: project.authorId } })}
+                                    onClick={() => navigate && navigate("messages", { targetUserId: project.author?.id })}
                                 >
-                                    Horaires & Salon de Discussion
+                                    💬 Contacter l'équipe
                                 </button>
                             </>
                         ) : (
                             <button
                                 className="btn btn-secondary btn-full"
                                 style={{ justifyContent: "center" }}
-                                onClick={() => navigate && navigate("messages", { teamContact: { name: `${project.title} Intégration`, id: project.authorId } })}
+                                onClick={() => navigate && navigate("messages", { targetUserId: project.author?.id })}
                             >
-                                💬 Ouvrir le canal de communication
+                                💬 Contacter l'équipe
                             </button>
                         )}
 

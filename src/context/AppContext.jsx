@@ -6,6 +6,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { authApi, kycApi, setAccessToken, clearAccessToken } from "../utils/api";
+import { connectSocket, disconnectSocket } from "../utils/socket";
 import {
   NOTIFICATIONS,
   CONVERSATIONS,
@@ -49,6 +50,7 @@ export function AppProvider({ children }) {
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [conversations, setConversations] = useState(CONVERSATIONS);
   const [activeConvId, setActiveConvId] = useState(1);
+  const [pendingConversation, setPendingConversation] = useState(null);
 
   // ─── Flux de Collaboration ────────────────────────────────
   const [collabStep, setCollabStep] = useState("found");
@@ -78,6 +80,7 @@ export function AppProvider({ children }) {
     if (opts.target) setCollabTarget(opts.target);
     if (opts.collabTarget) setCollabTarget(opts.collabTarget);
     if (opts.teamContact) setTeamContact(opts.teamContact);
+    if (opts.targetUserId) setPendingConversation({ targetUserId: opts.targetUserId });
 
     routerNavigate(getPathForPage(page, opts));
     window.scrollTo(0, 0);
@@ -104,6 +107,9 @@ export function AppProvider({ children }) {
         localStorage.setItem("launchpad_access_token", accessToken);
         localStorage.setItem("launchpad_refresh_token", newRefresh);
         setCurrentUser(user);
+
+        // Connecter Socket.io après réhydratation
+        connectSocket();
 
         if (window.location.pathname === "/" || currentPage === "home") {
           const dashMap = {
@@ -148,6 +154,10 @@ export function AppProvider({ children }) {
       localStorage.setItem("launchpad_refresh_token", refreshToken);
 
       setCurrentUser(user);
+      
+      // Connecter Socket.io après login
+      connectSocket();
+      
       showToast(`Ravi de vous revoir !`, "success");
 
       const dashMap = {
@@ -174,6 +184,9 @@ export function AppProvider({ children }) {
       localStorage.setItem("launchpad_refresh_token", refreshToken);
       setCurrentUser(user);
 
+      // Connecter Socket.io après register
+      connectSocket();
+
       const dashMap = {
         student:  "dashboard-student",
         investor: "dashboard-investor",
@@ -195,6 +208,9 @@ export function AppProvider({ children }) {
     } catch {
       // Ignorer les erreurs de logout
     } finally {
+      // Déconnecter Socket.io
+      disconnectSocket();
+      
       clearAccessToken();
       localStorage.removeItem("launchpad_access_token");
       localStorage.removeItem("launchpad_refresh_token");
@@ -493,6 +509,8 @@ export function AppProvider({ children }) {
     setActiveConvId,
     sendMessage,
     unreadMessages,
+    pendingConversation,
+    setPendingConversation,
 
     collabStep,
     setCollabStep,

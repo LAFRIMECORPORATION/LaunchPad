@@ -17,7 +17,8 @@ export default function DashboardStudent() {
             setLoading(true);
             projectsApi.list({ authorId: currentUser.id })
                 .then(res => {
-                    const data = res.data?.data || res.data || res;
+                    // Extraction correcte: res.data.data.projects ou res.data.projects ou res.data
+                    const data = res.data?.data?.projects || res.data?.projects || res.data?.data || res.data || res;
                     setMyProjects(Array.isArray(data) ? data : []);
                 })
                 .catch(console.error)
