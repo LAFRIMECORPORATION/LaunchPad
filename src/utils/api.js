@@ -258,11 +258,12 @@ export const messagesApi = {
 };
 
 export const paymentsApi = {
-  initStripe:    (data) => api.post("/payments/stripe/init", data),
   initMtn:       (data) => api.post("/payments/mtn/init", data),
   initOrange:    (data) => api.post("/payments/orange/init", data),
+  initStripe:    (data) => api.post("/payments/stripe/init", data),
   getStatus:     (id)   => api.get(`/payments/${id}/status`),
-  getInvestments:()     => api.get("/investments"),
+  list:          (page) => api.get(`/investments?page=${page || 1}`),
+  getOne:        (id)   => api.get(`/investments/${id}`),
 };
 
 export const notificationsApi = {

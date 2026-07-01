@@ -1,19 +1,32 @@
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, ProjectCard, AIBadge, Badge, KycAlert } from "../components/UI";
 import { PROJECTS, USERS } from "../data/mockData";
 import SocialActions from "../components/SocialActions";
+import { paymentsApi } from "../utils/api";
 import "./Dashboard.css";
+
+function fmt(n) {
+    return Math.round(Number(n || 0)).toLocaleString("fr-FR");
+}
 
 export default function DashboardInvestor() {
     const { navigate, currentUser } = useApp();
     
-    // Définition des données locales et adaptées du portfolio
-    const localPortfolio = [
-        { name: "EcoDeliv",  amount: "18M XAF",  return: "+12%" },
-        { name: "DataMesh",  amount: "30M XAF",  return: "+8%"  },
-        { name: "NutriAI",   amount: "12M XAF",  return: "-2%"  },
-        { name: "LearnCam",  amount: "9M XAF",   return: "+22%" }
-    ];
+    const [investments, setInvestments] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        paymentsApi.list()
+            .then(res => {
+                setInvestments(res.data?.investments || []);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Erreur de chargement des investissements :", err);
+                setLoading(false);
+            });
+    }, []);
 
     return (
         <div className="animate-fadeUp">
@@ -119,34 +132,71 @@ export default function DashboardInvestor() {
                         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
                             <div className="section-title">Mes investissements (Cameroun)</div>
                         </div>
-                        <div className="portfolio-header">
-                            {["Projet", "Secteur", "Montant", "Rendement", "Statut"].map(h => (
-                                <span key={h}>{h}</span>
-                            ))}
-                        </div>
-                        {localPortfolio.map((item, i) => {
-                            const project = PROJECTS.find(p => p.title === item.name);
-                            const isUp = item.return.startsWith("+");
-                            return (
-                                <div
-                                    key={i}
-                                    className="portfolio-row"
-                                    onClick={() => project && navigate("project-detail", { project })}
-                                >
-                                    <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{item.name}</span>
-                                    <span>
-                                        <Badge color={project?.category || "gray"}>
-                                            {project?.category || "Startup"}
-                                        </Badge>
-                                    </span>
-                                    <span style={{ fontWeight: 600 }}>{item.amount}</span>
-                                    <span style={{ fontWeight: 700, color: isUp ? "var(--success)" : "var(--danger)" }}>
-                                        {isUp ? "↑" : "↓"} {item.return}
-                                    </span>
-                                    <Badge color="green">Actif</Badge>
+                        {loading ? (
+                            <div style={{ padding: 30, textAlign: "center", color: "var(--text-secondary)" }}>
+                                Chargement de vos investissements...
+                            </div>
+                        ) : investments.length === 0 ? (
+                            <div style={{ padding: 30, textAlign: "center", color: "var(--text-secondary)" }}>
+                                <p style={{ marginBottom: 12 }}>Vous n'avez pas encore d'investissements.</p>
+                                <button className="btn btn-secondary btn-sm" onClick={() => navigate("explore")}>
+                                    Découvrir les startups
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="portfolio-header">
+                                    {["Projet", "Méthode", "Montant", "Date", "Statut"].map(h => (
+                                        <span key={h}>{h}</span>
+                                    ))}
                                 </div>
-                            );
-                        })}
+                                {investments.map((inv) => {
+                                    const projTitle = inv.project?.title || "Projet inconnu";
+                                    const dateStr = new Date(inv.createdAt).toLocaleDateString("fr-FR");
+                                    const formattedAmount = `${fmt(inv.amount)} XAF`;
+
+                                    // Mapping du badge de statut
+                                    let statusColor = "gray";
+                                    let statusText = inv.status;
+                                    if (inv.status === "pending") {
+                                        statusColor = "yellow";
+                                        statusText = "Attente";
+                                    } else if (inv.status === "in_escrow") {
+                                        statusColor = "blue";
+                                        statusText = "En Escrow";
+                                    } else if (inv.status === "released") {
+                                        statusColor = "green";
+                                        statusText = "Libéré";
+                                    } else if (inv.status === "refunded") {
+                                        statusColor = "teal";
+                                        statusText = "Remboursé";
+                                    } else if (inv.status === "failed") {
+                                        statusColor = "red";
+                                        statusText = "Échoué";
+                                    }
+
+                                    return (
+                                        <div
+                                            key={inv.id}
+                                            className="portfolio-row"
+                                            onClick={() => inv.project && navigate("project-detail", { project: inv.project })}
+                                        >
+                                            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{projTitle}</span>
+                                            <span>
+                                                <Badge color="purple">
+                                                    {inv.paymentMethod?.toUpperCase()}
+                                                </Badge>
+                                            </span>
+                                            <span style={{ fontWeight: 600 }}>{formattedAmount}</span>
+                                            <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                                                {dateStr}
+                                            </span>
+                                            <Badge color={statusColor}>{statusText}</Badge>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
                     </div>
 
                 </div>

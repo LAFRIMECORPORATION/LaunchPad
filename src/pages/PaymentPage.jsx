@@ -3,9 +3,9 @@
 // Chemin : src/pages/PaymentPage.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
-import { PROJECTS } from "../data/mockData";
+import { paymentsApi } from "../utils/api";
 import "./Payment.css";
 
 const METHODS = [
@@ -120,16 +120,113 @@ function PaySuccess({ method, phone, amount, project, navigate, showToast }) {
 
 /* ── Main page ─────────────────────────────────────────────── */
 export default function PaymentPage() {
-  const { currentUser, navigate, showToast } = useApp();
+  const { currentUser, navigate, showToast, selectedProject } = useApp();
 
-  const [step,       setStep]       = useState(1); // 1=form 2=confirm 3=success
+  const [step,       setStep]       = useState(1); // 1=form 2=processing 3=success
   const [method,     setMethod]     = useState(METHODS[0]);
   const [phone,      setPhone]      = useState("");
   const [amount,     setAmount]     = useState("");
-  const [project,    setProject]    = useState(PROJECTS[0]);
+  const [project,    setProject]    = useState(selectedProject || null);
+  const [investmentId, setInvestmentId] = useState(null);
+  const [paymentError, setPaymentError] = useState(null);
+  const pollingRef = useRef(null);
+
+  // Nettoyer le polling au démontage
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
+
+  // Fonction de paiement
+  const handlePayment = async () => {
+    setStep(2);
+    setPaymentError(null);
+
+    try {
+      let result;
+
+      if (method.id === "mtn") {
+        result = await paymentsApi.initMtn({
+          projectId: project.id,
+          amount: parseInt(amount),
+          phoneNumber: phone,
+        });
+        setInvestmentId(result.data.investmentId);
+        startPolling(result.data.investmentId);
+      } else if (method.id === "orange") {
+        result = await paymentsApi.initOrange({
+          projectId: project.id,
+          amount: parseInt(amount),
+          phoneNumber: phone,
+        });
+        setInvestmentId(result.data.investmentId);
+        startPolling(result.data.investmentId);
+      } else if (method.id === "stripe") {
+        result = await paymentsApi.initStripe({
+          projectId: project.id,
+          amount: parseInt(amount),
+          currency: "XAF",
+        });
+        setInvestmentId(result.data.investmentId);
+        startPolling(result.data.investmentId);
+      }
+    } catch (err) {
+      setStep(1);
+      setPaymentError(err.message || "Erreur lors du paiement. Réessayez.");
+      showToast(err.message || "Erreur lors du paiement.", "error");
+    }
+  };
+
+  // Polling du statut
+  const startPolling = (invId) => {
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await paymentsApi.getStatus(invId);
+        const { status } = res.data;
+
+        if (status === "in_escrow" || status === "confirmed") {
+          clearInterval(pollingRef.current);
+          setStep(3);
+          showToast("Paiement confirmé avec succès !", "success");
+        } else if (status === "failed" || status === "cancelled") {
+          clearInterval(pollingRef.current);
+          setStep(1);
+          setPaymentError("Le paiement a échoué ou a été annulé.");
+          showToast("Paiement échoué.", "error");
+        }
+      } catch {
+        clearInterval(pollingRef.current);
+        setStep(1);
+      }
+    }, 3000);
+
+    // Timeout après 12 minutes
+    setTimeout(() => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        if (step !== 3) {
+          setStep(1);
+          setPaymentError("Délai dépassé. Le paiement a été annulé.");
+        }
+      }
+    }, 12 * 60 * 1000);
+  };
 
   /* KYC gate */
   if (!currentUser?.kycValidated) return <KycBlocked navigate={navigate} />;
+
+  if (!project) {
+    return (
+      <div className="page-wrapper" style={{ padding: 32, textAlign: "center" }}>
+        <h1 className="page-title">Projet introuvable</h1>
+        <p className="page-subtitle">
+          Aucun projet sélectionné pour l'investissement. Merci de revenir depuis la fiche projet.
+        </p>
+        <button className="btn btn-primary btn-lg" onClick={() => navigate("explore")}>Retour aux projets</button>
+      </div>
+    );
+  }
 
   /* Success */
   if (step === 3) return (
@@ -169,24 +266,18 @@ export default function PaymentPage() {
             {/* Project selector */}
             <div className="card" style={{ padding: 20, marginBottom: 16 }}>
               <div className="section-title" style={{ marginBottom: 14 }}>
-                Choisir le projet
+                Projet sélectionné
               </div>
-              {PROJECTS.slice(0, 4).map(p => (
-                <button
-                  key={p.id}
-                  className={`project-option${project.id === p.id ? " selected" : ""}`}
-                  onClick={() => setProject(p)}
-                >
-                  <span className="project-option__emoji">{p.emoji}</span>
-                  <div className="project-option__info">
-                    <div className="project-option__name">{p.title}</div>
-                    <div className="project-option__meta">
-                      {p.category} · {Math.round((p.raised / p.goal) * 100)}% financé
-                    </div>
+              <div className="project-option selected" style={{ cursor: "default" }}>
+                <span className="project-option__emoji">{project.emoji || "💼"}</span>
+                <div className="project-option__info">
+                  <div className="project-option__name">{project.title || "Projet inconnu"}</div>
+                  <div className="project-option__meta">
+                    {project.category || "Catégorie inconnue"} · {project.raisedAmount ? Math.round((project.raisedAmount / project.goalAmount) * 100) : 0}% financé
                   </div>
-                  {project.id === p.id && <span className="project-option__check">✓</span>}
-                </button>
-              ))}
+                </div>
+                <span className="project-option__check">✓</span>
+              </div>
             </div>
 
             {/* Method selector */}
@@ -298,51 +389,92 @@ export default function PaymentPage() {
               <button
                 className="btn btn-primary btn-full btn-lg"
                 disabled={!amount || parseInt(amount) < 500000 || (method.id !== "stripe" && !phone)}
-                onClick={() => setStep(2)}
+                onClick={handlePayment}
               >
-                Continuer → Confirmer
+                Payer →
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── STEP 2 ─ Confirm ─────────────────────────────── */}
+      {/* ── STEP 2 ─ Processing (attente confirmation téléphone) ─────────────────────────────── */}
       {step === 2 && (
         <div className="pay-confirm">
-          <div className="card" style={{ padding: 28, maxWidth: 560, margin: "0 auto" }}>
-            <h2 className="pay-confirm__title">Confirmer l'investissement</h2>
-            <p className="pay-confirm__sub">Vérifiez les détails avant de valider.</p>
+          <div className="card" style={{ padding: 28, maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
+            <div style={{ fontSize: 64, marginBottom: 20 }}>
+              {method.id === "mtn" ? "📱" : method.id === "orange" ? "🟠" : "💳"}
+            </div>
 
-            <div className="pay-recap card" style={{ marginBottom: 20 }}>
-              <div className="pay-recap__title">Récapitulatif</div>
-              {[
-                ["Projet",    project.title],
-                ["Montant",   `${fmt(parseInt(amount))} XAF`],
-                ["Méthode",   `${method.icon} ${method.name}`],
-                ...(method.id !== "stripe" ? [["Numéro", `+237 ${phone}`]] : []),
-                ["Commission",`${fmt(fee)} XAF`],
-                ["Total",     `${fmt(total)} XAF`],
-                ["Escrow",    "✅ Activé"],
-              ].map(([k, v]) => (
-                <div key={k} className="pay-recap__row">
-                  <span className="pay-recap__key">{k}</span>
-                  <span className="pay-recap__val">{v}</span>
+            {(method.id === "mtn" || method.id === "orange") ? (
+              <>
+                <h2 className="pay-confirm__title">Confirmez sur votre téléphone</h2>
+                <p className="pay-confirm__sub" style={{ marginBottom: 8 }}>
+                  Une demande de paiement a été envoyée au
+                </p>
+                <p className="pay-confirm__sub" style={{ fontSize: 18, fontWeight: 600, marginBottom: 24 }}>
+                  +237 {phone}
+                </p>
+
+                <div className="pay-recap card" style={{ marginBottom: 24, textAlign: "left" }}>
+                  <div className="pay-recap__title">📋 Instructions :</div>
+                  <ol style={{ marginLeft: 20, marginTop: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
+                    <li>Ouvrez la notification sur votre téléphone</li>
+                    <li>Saisissez votre code PIN {method.id === "mtn" ? "MTN MoMo" : "Orange Money"}</li>
+                    <li>Confirmez le paiement de <strong>{fmt(total)} XAF</strong></li>
+                  </ol>
                 </div>
-              ))}
-            </div>
 
-            <div className="pay-confirm__actions">
-              <button className="btn btn-secondary" onClick={() => setStep(1)}>
-                ← Modifier
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => { showToast("Demande de paiement envoyée !", "success"); setStep(3); }}
-              >
-                ✅ Confirmer & Payer
-              </button>
-            </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, color: "var(--text-muted)" }}>
+                  <div style={{ 
+                    width: 20, height: 20, 
+                    border: "2px solid var(--primary)", 
+                    borderTopColor: "transparent", 
+                    borderRadius: "50%", 
+                    animation: "spin 1s linear infinite" 
+                  }}></div>
+                  <span style={{ fontSize: 14 }}>En attente de confirmation... (expire dans 10 min)</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="pay-confirm__title">Traitement en cours...</h2>
+                <div style={{ 
+                  width: 40, height: 40, 
+                  border: "3px solid var(--primary)", 
+                  borderTopColor: "transparent", 
+                  borderRadius: "50%", 
+                  animation: "spin 1s linear infinite",
+                  margin: "0 auto 20px"
+                }}></div>
+                <p className="pay-confirm__sub">Veuillez patienter pendant le traitement du paiement.</p>
+              </>
+            )}
+
+            {paymentError && (
+              <div style={{ 
+                marginTop: 20, 
+                padding: 12, 
+                background: "rgba(239, 68, 68, 0.1)", 
+                border: "1px solid rgba(239, 68, 68, 0.3)", 
+                borderRadius: 8, 
+                color: "#ef4444",
+                fontSize: 14 
+              }}>
+                {paymentError}
+              </div>
+            )}
+
+            <button 
+              className="btn btn-secondary" 
+              style={{ marginTop: 24 }}
+              onClick={() => {
+                if (pollingRef.current) clearInterval(pollingRef.current);
+                setStep(1);
+              }}
+            >
+              Annuler
+            </button>
           </div>
         </div>
       )}
