@@ -359,9 +359,16 @@ export default function Messages() {
           {/* Chat header */}
           <div className="chat-header">
             <button
-              className="btn btn-ghost btn-icon"
+              className="btn btn-ghost btn-icon chat-back-btn"
               style={{ display: chatOpen ? "block" : "none" }}
-              onClick={() => setChatOpen(false)}
+              onClick={() => {
+                if (activeConvId) {
+                  leaveConversation(activeConvId);
+                }
+                setChatOpen(false);
+                setActiveConvId(null);
+                setTyping(false);
+              }}
             >
               ←
             </button>
@@ -436,10 +443,10 @@ export default function Messages() {
 
           {/* Input */}
           <div className="chat-input-area">
-            <button className="btn btn-ghost btn-icon" title="Emoji">
-              😊
-            </button>
-            <button className="btn btn-ghost btn-icon" title="Pièce jointe">
+            <button
+              className="btn btn-ghost btn-icon chat-attach-btn"
+              title="Fichier"
+            >
               📎
             </button>
             <textarea
@@ -454,8 +461,9 @@ export default function Messages() {
               className="btn btn-primary chat-send-btn"
               onClick={handleSend}
               disabled={!input.trim()}
+              title="Envoyer"
             >
-              Envoyer →
+              ➤
             </button>
           </div>
         </div>

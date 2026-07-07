@@ -1,40 +1,40 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 import {
   AUTH_PAGES,
   FULL_BLEED_PAGES,
   NO_SIDEBAR_PAGES,
   PUBLIC_PAGES,
   getPageFromPath,
-} from '../config/routes';
-import { Navbar, Sidebar, Toast } from '../components/UI';
-import BottomNav from '../components/BottomNav';
+} from "../config/routes";
+import { Navbar, Sidebar, Toast } from "../components/UI";
+import BottomNav from "../components/BottomNav";
 
-import Home from '../pages/Home';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import Explore from '../pages/Explore';
-import ProjectDetail from '../pages/ProjectDetail';
-import DashboardStudent from '../pages/DashboardStudent';
-import DashboardInvestor from '../pages/DashboardInverstor';
-import Publish from '../pages/Publish';
-import Collaboration from '../pages/Collaboration';
-import Messages from '../pages/Messages';
-import Notification from '../pages/Notification';
-import ProfileStudent from '../pages/ProfileStudent';
-import ProfileInvestor from '../pages/ProfileInverstor';
-import ProfileDetail from '../pages/ProfileDetail';
-import Admin from '../pages/Admin';
-import SavedProjects from '../pages/SavedProjects';
-import InvestorRequests from '../pages/InvestorRequests';
-import KycVerification from '../pages/KycVerification';
-import FeedPage from '../pages/FeedPage';
-import BadgesPage from '../pages/BadgesPage';
-import AppointmentsPage from '../pages/AppointmentsPage';
-import PaymentPage from '../pages/PaymentPage';
-import DueDiligencePage from '../pages/DueDiligencePage';
-import ForumPage from '../pages/ForumPage';
-import AcademyPage from '../pages/AcademyPage';
+import Home from "../pages/Home";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+import Explore from "../pages/Explore";
+import ProjectDetail from "../pages/ProjectDetail";
+import DashboardStudent from "../pages/DashboardStudent";
+import DashboardInvestor from "../pages/DashboardInverstor";
+import Publish from "../pages/Publish";
+import Collaboration from "../pages/Collaboration";
+import Messages from "../pages/Messages";
+import Notification from "../pages/Notification";
+import ProfileStudent from "../pages/ProfileStudent";
+import ProfileInvestor from "../pages/ProfileInverstor";
+import ProfileDetail from "../pages/ProfileDetail";
+import Admin from "../pages/Admin";
+import SavedProjects from "../pages/SavedProjects";
+import InvestorRequests from "../pages/InvestorRequests";
+import KycVerification from "../pages/KycVerification";
+import FeedPage from "../pages/FeedPage";
+import BadgesPage from "../pages/BadgesPage";
+import AppointmentsPage from "../pages/AppointmentsPage";
+import PaymentPage from "../pages/PaymentPage";
+import DueDiligencePage from "../pages/DueDiligencePage";
+import ForumPage from "../pages/ForumPage";
+import AcademyPage from "../pages/AcademyPage";
 
 function ProtectedRoute({ children }) {
   const { currentUser, authLoading } = useApp();
@@ -44,8 +44,16 @@ function ProtectedRoute({ children }) {
 
   if (authLoading) {
     return (
-      <div className="app-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Chargement…</p>
+      <div
+        className="app-shell"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <p style={{ color: "var(--text-secondary)" }}>Chargement…</p>
       </div>
     );
   }
@@ -79,7 +87,19 @@ function AppLayout({ children }) {
       <Navbar />
       <div className="app-body">
         {showSidebar && <Sidebar />}
-        <main className="app-main" style={isFullBleed ? { padding: 0 } : {}}>
+        <main
+          className="app-main"
+          style={
+            isFullBleed
+              ? {
+                  padding: 0,
+                  width: "100%",
+                  maxWidth: "100%",
+                  overflowX: "hidden",
+                }
+              : {}
+          }
+        >
           {children}
         </main>
       </div>
