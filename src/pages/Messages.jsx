@@ -373,7 +373,7 @@ export default function Messages() {
               />
             </div>
 
-            <div>
+            <div className="chat-header-meta">
               <div className="chat-header-name">
                 {activeConv.other?.firstName} {activeConv.other?.lastName}
               </div>
@@ -383,8 +383,20 @@ export default function Messages() {
             </div>
 
             <div className="chat-header-actions">
-              <button className="btn btn-secondary btn-sm">📎 Fichier</button>
-              <button className="btn btn-secondary btn-sm">ℹ️ Info</button>
+              <button
+                className="btn btn-secondary btn-sm chat-header-action-btn"
+                title="Envoyer un fichier"
+              >
+                <span aria-hidden="true">📎</span>
+                <span className="chat-header-action-label">Fichier</span>
+              </button>
+              <button
+                className="btn btn-secondary btn-sm chat-header-action-btn"
+                title="Voir les informations"
+              >
+                <span aria-hidden="true">ℹ️</span>
+                <span className="chat-header-action-label">Info</span>
+              </button>
             </div>
           </div>
 

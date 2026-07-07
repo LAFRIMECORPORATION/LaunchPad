@@ -131,11 +131,20 @@
     gap: 12px;
     background: var(--bg-card);
     flex-shrink: 0;
+    min-width: 0;
+}
+
+.chat-header-meta {
+    min-width: 0;
+    flex: 1;
 }
 
 .chat-header-name {
     font-weight: 700;
     font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .chat-header-status {
@@ -155,6 +164,18 @@
     margin-left: auto;
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
+}
+
+.chat-header-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.chat-header-action-label {
+    display: inline;
 }
 
 .chat-messages {
@@ -180,7 +201,7 @@
 
 .chat-date-separator::before,
 .chat-date-separator::after {
-    content: '';
+    content: "";
     flex: 1;
     height: 1px;
     background: var(--border);
@@ -282,6 +303,27 @@
     }
 }
 
+@media (max-width: 640px) {
+    .chat-header {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .chat-header-actions {
+        gap: 6px;
+    }
+
+    .chat-header-action-btn {
+        min-width: 36px;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .chat-header-action-label {
+        display: none;
+    }
+}
+
 @media (max-width: 480px) {
     .chat-messages {
         padding: 14px 12px;
@@ -290,5 +332,13 @@
     .chat-input-area {
         padding: 10px 12px;
         gap: 8px;
+    }
+
+    .chat-header-name {
+        font-size: 14px;
+    }
+
+    .chat-header-status {
+        font-size: 11px;
     }
 }
