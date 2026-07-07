@@ -308,7 +308,7 @@ export default function ProjectDetail() {
                         }}
                     >
                         <div
-                            onClick={() => navigate && navigate("profile-student", { id: project.authorId })}
+                            onClick={() => navigate && navigate("profile-user", { userId: project.authorId })}
                             style={{ cursor: "pointer" }}
                         >
                             <Avatar label={project.author?.firstName?.[0] || "U"} size="md" ring={true} />
@@ -316,7 +316,7 @@ export default function ProjectDetail() {
                         <div style={{ flex: 1 }}>
                             <div
                                 style={{ fontWeight: 700, fontSize: 15, cursor: "pointer" }}
-                                onClick={() => navigate && navigate("profile-student", { id: project.authorId })}
+                                onClick={() => navigate && navigate("profile-user", { userId: project.authorId })}
                             >
                                 {project.author?.firstName} {project.author?.lastName}
                             </div>
@@ -434,7 +434,7 @@ export default function ProjectDetail() {
                         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                             <div
                                 className="team-member-chip"
-                                onClick={() => navigate && navigate("profile-student", { id: project.authorId })}
+                                onClick={() => navigate && navigate("profile-user", { userId: project.authorId })}
                                 style={{
                                     cursor: "pointer",
                                     padding: 12,

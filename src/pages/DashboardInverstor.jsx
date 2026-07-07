@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, ProjectCard, AIBadge, Badge, KycAlert } from "../components/UI";
-import { PROJECTS, USERS } from "../data/mockData";
 import SocialActions from "../components/SocialActions";
-import { paymentsApi } from "../utils/api";
+import { paymentsApi, projectsApi } from "../utils/api";
 import "./Dashboard.css";
 
 function fmt(n) {
@@ -14,18 +13,36 @@ export default function DashboardInvestor() {
     const { navigate, currentUser } = useApp();
     
     const [investments, setInvestments] = useState([]);
+    const [recommendedProjects, setRecommendedProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [recommendLoading, setRecommendLoading] = useState(false);
+    const [totalInvested, setTotalInvested] = useState(0);
 
     useEffect(() => {
         paymentsApi.list()
             .then(res => {
-                setInvestments(res.data?.investments || []);
+                const list = res.data?.investments || [];
+                setInvestments(list);
+                setTotalInvested(list.reduce((sum, inv) => sum + Number(inv.amount || 0), 0));
                 setLoading(false);
             })
             .catch(err => {
                 console.error("Erreur de chargement des investissements :", err);
                 setLoading(false);
             });
+    }, []);
+
+    useEffect(() => {
+        setRecommendLoading(true);
+        projectsApi.list({ page: 1, limit: 4, sort: "popular", status: "active" })
+            .then(res => {
+                const data = res.data?.data?.projects || res.data?.projects || res.data?.data || res.data || res;
+                setRecommendedProjects(Array.isArray(data) ? data : []);
+            })
+            .catch(err => {
+                console.error("Erreur chargement recommandations :", err);
+            })
+            .finally(() => setRecommendLoading(false));
     }, []);
 
     return (
@@ -49,10 +66,10 @@ export default function DashboardInvestor() {
 
             {/* ── GRILLE DE STATISTIQUES (XAF Localized) ── */}
             <div className="grid-4" style={{ marginBottom: 24, marginTop: 20 }}>
-                <StatCard icon="⭐" value="12" label="Projets sauvegardés" color="#F59E0B" bgColor="#FFFBEB" />
-                <StatCard icon="💬" value="5" label="En discussion" color="#5B73F5" bgColor="#EEF2FF" />
-                <StatCard icon="💰" value="69M XAF" label="Investi total" color="#22C55E" bgColor="#F0FDF4" delta="+5M XAF ce mois" />
-                <StatCard icon="🆕" value="23" label="Nouveaux projets" color="#8B5CF6" bgColor="#F3EFFE" />
+                <StatCard icon="⭐" value={`${investments.length}`} label="Projets financés" color="#F59E0B" bgColor="#FFFBEB" />
+                <StatCard icon="💬" value="0" label="Messages" color="#5B73F5" bgColor="#EEF2FF" />
+                <StatCard icon="💰" value={`${totalInvested.toLocaleString("fr-FR")} XAF`} label="Investi total" color="#22C55E" bgColor="#F0FDF4" delta={investments.length ? `+${Math.round(totalInvested / investments.length)} XAF moyen` : ""} />
+                <StatCard icon="🆕" value={`${recommendedProjects.length}`} label="Projets recommandés" color="#8B5CF6" bgColor="#F3EFFE" />
             </div>
 
             {/* ── ACCÈS RAPIDE V2 AVEC CONTRÔLE KYC 🔐 ── */}
@@ -97,34 +114,43 @@ export default function DashboardInvestor() {
                     {/* RECOMMANDATIONS IA */}
                     <div>
                         <div className="section-header" style={{ marginBottom: 14 }}>
-                            <span className="section-title">Sélection personnalisée par IA <AIBadge /></span>
+                            <span className="section-title">Projets recommandés <AIBadge /></span>
                             <span className="section-link" onClick={() => navigate("explore")}>Voir tout</span>
                         </div>
-                        <div className="grid-3">
-                            {PROJECTS.slice(0, 3).map(p => (
-                                <div key={p.id} style={{ display: "flex", flexDirection: "column" }}>
-                                    <ProjectCard
-                                        project={p}
-                                        onClick={() => navigate("project-detail", { project: p })}
-                                    />
-                                    <div style={{
-                                        padding: "10px 14px",
-                                        background: "var(--bg-card)",
-                                        borderLeft: "1px solid var(--border)",
-                                        borderRight: "1px solid var(--border)",
-                                        borderBottom: "1px solid var(--border)",
-                                        borderRadius: "0 0 var(--r-md) var(--r-md)",
-                                        marginTop: -1
-                                    }}>
-                                        <SocialActions
+                        {recommendLoading ? (
+                            <div style={{ textAlign: "center", padding: 20 }}>Chargement des recommandations...</div>
+                        ) : recommendedProjects.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)" }}>
+                                Aucune recommandation disponible pour le moment.
+                            </div>
+                        ) : (
+                            <div className="grid-3">
+                                {recommendedProjects.map(p => (
+                                    <div key={p.id} style={{ display: "flex", flexDirection: "column" }}>
+                                        <ProjectCard
                                             project={p}
-                                            size="sm"
-                                            onCommentClick={() => navigate("project-detail", { project: p })}
+                                            onClick={() => navigate("project-detail", { project: p })}
                                         />
+                                        <div style={{
+                                            padding: "10px 14px",
+                                            background: "var(--bg-card)",
+                                            borderLeft: "1px solid var(--border)",
+                                            borderRight: "1px solid var(--border)",
+                                            borderBottom: "1px solid var(--border)",
+                                            borderRadius: "0 0 var(--r-md) var(--r-md)",
+                                            marginTop: -1
+                                        }}>
+                                            <button
+                                                className="btn btn-secondary btn-sm btn-full"
+                                                onClick={() => navigate("messages", { targetUserId: p.author?.id })}
+                                            >
+                                                💬 Contacter l'équipe
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* MON PORTFOLIO V2 */}

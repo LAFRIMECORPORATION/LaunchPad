@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, AIBadge, KycAlert } from "../components/UI";
-import { SIMILAR_PROJECTS } from "../data/mockData";
 import { projectsApi } from "../utils/api";
 import SocialActions from "../components/SocialActions";
 import "./Dashboard.css";
@@ -9,15 +8,16 @@ import "./Dashboard.css";
 export default function DashboardStudent() {
     const { navigate, currentUser, setCollabStep } = useApp();
     const [myProjects, setMyProjects] = useState([]);
+    const [recommendedProjects, setRecommendedProjects] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [recommendLoading, setRecommendLoading] = useState(false);
 
     // Récupération dynamique des projets de l'étudiant connecté via l'API
     useEffect(() => {
         if (currentUser?.id) {
             setLoading(true);
-            projectsApi.list({ authorId: currentUser.id })
+            projectsApi.list({ authorId: currentUser.id, page: 1, limit: 12 })
                 .then(res => {
-                    // Extraction correcte: res.data.data.projects ou res.data.projects ou res.data
                     const data = res.data?.data?.projects || res.data?.projects || res.data?.data || res.data || res;
                     setMyProjects(Array.isArray(data) ? data : []);
                 })
@@ -25,6 +25,19 @@ export default function DashboardStudent() {
                 .finally(() => setLoading(false));
         }
     }, [currentUser?.id]);
+
+    useEffect(() => {
+        setRecommendLoading(true);
+        projectsApi.list({ page: 1, limit: 4, sort: "popular", status: "active" })
+            .then(res => {
+                const data = res.data?.data?.projects || res.data?.projects || res.data?.data || res.data || res;
+                setRecommendedProjects(Array.isArray(data) ? data : []);
+            })
+            .catch(err => {
+                console.error("Erreur chargement projets recommandés :", err);
+            })
+            .finally(() => setRecommendLoading(false));
+    }, []);
 
     const handlePublishClick = () => {
         if (currentUser?.kycValidated) {
@@ -43,9 +56,12 @@ export default function DashboardStudent() {
                     <h1 className="page-title">Bonjour, {currentUser?.firstName || "Étudiant"} 👋</h1>
                     <p className="page-subtitle">Voici l'activité de votre espace aujourd'hui.</p>
                 </div>
-                <div className="page-header-actions">
+                <div className="page-header-actions" style={{ display: "flex", gap: 8 }}>
                     <button className="btn btn-primary" onClick={handlePublishClick}>
                         ➕ Nouveau projet
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate("messages") }>
+                        💬 Messages
                     </button>
                 </div>
             </div>
@@ -129,7 +145,9 @@ export default function DashboardStudent() {
                             </p>
                         ) : (
                             myProjects.map(p => {
-                                const pct = p.goal ? Math.min(Math.round((p.raised / p.goal) * 100), 100) : 0;
+                                const goalAmount = p.goalAmount ?? p.goal;
+                                const raisedAmount = p.raisedAmount ?? p.raised;
+                                const pct = goalAmount ? Math.min(Math.round((raisedAmount / goalAmount) * 100), 100) : 0;
                                 return (
                                     <div key={p.id} style={{ marginBottom: 16 }}>
                                         <div
@@ -139,7 +157,7 @@ export default function DashboardStudent() {
                                             <span className="project-row-emoji">{p.emoji || "💡"}</span>
                                             <div className="project-row-info">
                                                 <div className="project-row-title">{p.title}</div>
-                                                <div className="project-row-sub">{p.category} · {p.stage}</div>
+                                                <div className="project-row-sub">{p.category || "Catégorie inconnue"} · {p.stage || "N/A"}</div>
                                             </div>
                                             <div style={{ textAlign: "right", marginRight: 12 }}>
                                                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--success)" }}>{pct}%</div>
@@ -172,31 +190,46 @@ export default function DashboardStudent() {
                     {/* SYNERGIES SUGGÉRÉES */}
                     <div className="card" style={{ padding: 20 }}>
                         <div className="section-header">
-                            <span className="section-title">Synergies suggérées <AIBadge /></span>
-                            <span className="section-link" onClick={() => navigate("collaboration")}>Voir tout</span>
+                            <span className="section-title">Projets recommandés <AIBadge /></span>
+                            <span className="section-link" onClick={() => navigate("explore")}>Voir tout</span>
                         </div>
-                        <div className="grid-3">
-                            {SIMILAR_PROJECTS.map(sp => (
-                                <div key={sp.id} className="similarity-card">
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                                        <div>
-                                            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{sp.title}</div>
-                                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{sp.category}</div>
+                        {recommendLoading ? (
+                            <div style={{ textAlign: "center", padding: 20 }}>Chargement des recommandations...</div>
+                        ) : recommendedProjects.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)" }}>
+                                Aucune recommandation disponible pour le moment.
+                            </div>
+                        ) : (
+                            <div className="grid-3">
+                                {recommendedProjects.map(p => (
+                                    <div key={p.id} style={{ display: "flex", flexDirection: "column" }}>
+                                        <div className="project-row" style={{ cursor: "default" }}>
+                                            <span className="project-row-emoji">{p.emoji || "💡"}</span>
+                                            <div className="project-row-info">
+                                                <div className="project-row-title">{p.title}</div>
+                                                <div className="project-row-sub">{p.category || "Catégorie inconnue"}</div>
+                                            </div>
                                         </div>
-                                        <div className="similarity-pct">{sp.similarity}%</div>
+                                        <div style={{
+                                            padding: "10px 14px",
+                                            background: "var(--bg-card)",
+                                            borderLeft: "1px solid var(--border)",
+                                            borderRight: "1px solid var(--border)",
+                                            borderBottom: "1px solid var(--border)",
+                                            borderRadius: "0 0 var(--r-md) var(--r-md)",
+                                            marginTop: -1
+                                        }}>
+                                            <button
+                                                className="btn btn-secondary btn-sm btn-full"
+                                                onClick={() => navigate("messages", { targetUserId: p.author?.id })}
+                                            >
+                                                💬 Contacter l'équipe
+                                            </button>
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 12, flex: 1 }}>
-                                        {sp.desc}
-                                    </p>
-                                    <button
-                                        className="btn btn-secondary btn-sm btn-full"
-                                        onClick={() => navigate("collaboration", { target: sp })}
-                                    >
-                                        Demander collab.
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 

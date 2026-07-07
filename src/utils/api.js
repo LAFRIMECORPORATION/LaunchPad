@@ -49,7 +49,11 @@ async function fetchWithAuth(url, options = {}) {
     if (refreshed && accessToken) {
       // Relancer la requête originale avec le nouveau token tout neuf
       headers["Authorization"] = `Bearer ${accessToken}`;
-      return fetch(`${BASE_URL}${url}`, { ...options, headers, credentials: "include" });
+      return fetch(`${BASE_URL}${url}`, {
+        ...options,
+        headers,
+        credentials: "include",
+      });
     } else {
       // Si le rafraîchissement échoue définitivement, déconnexion propre
       handleForceLogout();
@@ -73,9 +77,9 @@ async function tryRefreshToken() {
       if (!refreshToken) return false;
 
       const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ refreshToken }),
       });
 
       if (!res.ok) {
@@ -83,7 +87,7 @@ async function tryRefreshToken() {
       }
 
       const data = await res.json();
-      
+
       // On s'assure d'extraire le token peu importe le nesting de ton contrôleur (data.data ou data direct)
       const newAccessToken = data?.data?.accessToken || data?.accessToken;
       const newRefreshToken = data?.data?.refreshToken || data?.refreshToken;
@@ -99,7 +103,6 @@ async function tryRefreshToken() {
         return true;
       }
       return false;
-
     } catch (error) {
       console.error("Erreur lors du rafraîchissement du token:", error);
       return false;
@@ -116,7 +119,10 @@ async function tryRefreshToken() {
 function handleForceLogout() {
   clearAccessToken();
   localStorage.removeItem("launchpad_refresh_token");
-  if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+  if (
+    window.location.pathname !== "/login" &&
+    window.location.pathname !== "/register"
+  ) {
     window.location.href = "/login";
   }
 }
@@ -127,9 +133,9 @@ async function parseResponse(response) {
 
   if (!response.ok) {
     const error = new Error(data.message || "Une erreur est survenue.");
-    error.code   = data.error;
+    error.code = data.error;
     error.status = response.status;
-    error.data   = data;
+    error.data = data;
     throw error;
   }
 
@@ -150,16 +156,16 @@ export const api = {
 
   async post(url, body = {}) {
     const response = await fetchWithAuth(url, {
-      method:  "POST",
-      body:    JSON.stringify(body),
+      method: "POST",
+      body: JSON.stringify(body),
     });
     return parseResponse(response);
   },
 
   async put(url, body = {}) {
     const response = await fetchWithAuth(url, {
-      method:  "PUT",
-      body:    JSON.stringify(body),
+      method: "PUT",
+      body: JSON.stringify(body),
     });
     return parseResponse(response);
   },
@@ -187,9 +193,9 @@ export const api = {
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
     const response = await fetch(`${BASE_URL}${url}`, {
-      method:      "POST",
+      method: "POST",
       headers,
-      body:        formData,
+      body: formData,
       credentials: "include",
     });
 
@@ -203,44 +209,46 @@ export const api = {
 
 // ── AUTH ─────────────────────────────────────────────────
 export const authApi = {
-  register: (data)          => api.post("/auth/register", data),
-  login:    (data)          => api.post("/auth/login", data),
-  logout:   ()              => api.post("/auth/logout").finally(() => handleForceLogout()),
-  refresh:  (refreshToken)  => api.post("/auth/refresh-token", { refreshToken }),
-  me:       ()              => api.get("/auth/me"),
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
+  logout: () => api.post("/auth/logout").finally(() => handleForceLogout()),
+  refresh: (refreshToken) => api.post("/auth/refresh-token", { refreshToken }),
+  me: () => api.get("/auth/me"),
 };
 
 export const usersApi = {
-  getById:      (id)         => api.get(`/users/${id}`),
-  update:       (id, data)   => api.put(`/users/${id}`, data),
-  uploadAvatar: (id, file)   => api.upload(`/users/${id}/avatar`, file, "avatar"),
+  getById: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  uploadAvatar: (id, file) => api.upload(`/users/${id}/avatar`, file, "avatar"),
 };
 
 export const kycApi = {
-  getStatus:     ()          => api.get("/kyc/status"),
+  getStatus: () => api.get("/kyc/status"),
   // ✅ Corrigé pour utiliser la nouvelle méthode postFormData
-  submit:        (formData)  => api.postFormData("/kyc/submit", formData),
-  getPending:    (params)    => api.get("/admin/kyc/pending", params),
-  approve:       (userId)    => api.put(`/admin/kyc/${userId}/approve`),
-  reject:        (userId, reason) => api.put(`/admin/kyc/${userId}/reject`, { reason }),
-  requestDocs:   (userId, docs)   => api.post(`/admin/kyc/${userId}/request-docs`, { docs }),
+  submit: (formData) => api.postFormData("/kyc/submit", formData),
+  getPending: (params) => api.get("/admin/kyc/pending", params),
+  approve: (userId) => api.put(`/admin/kyc/${userId}/approve`),
+  reject: (userId, reason) =>
+    api.put(`/admin/kyc/${userId}/reject`, { reason }),
+  requestDocs: (userId, docs) =>
+    api.post(`/admin/kyc/${userId}/request-docs`, { docs }),
 };
 
 export const projectsApi = {
-  list:        (params)       => api.get("/projects", params),
-  getById:     (id)           => api.get(`/projects/${id}`),
-  create:      (data)         => api.post("/projects", data),
-  update:      (id, data)     => api.put(`/projects/${id}`, data),
-  delete:      (id)           => api.delete(`/projects/${id}`),
-  publish:     (id)           => api.post(`/projects/${id}/publish`),
-  like:        (id)           => api.post(`/projects/${id}/like`),
-  save:        (id)           => api.post(`/projects/${id}/save`),
-  comment:     (id, content)  => api.post(`/projects/${id}/comments`, { content }),
-  similar:     (id)           => api.get(`/projects/${id}/similar`),
-  approve:     (id, note)     => api.put(`/admin/projects/${id}/approve`, { note }),
-  reject:      (id, reason)   => api.put(`/admin/projects/${id}/reject`, { reason }),
-  getPending:  (params)       => api.get("/admin/projects/pending", params),
-  
+  list: (params) => api.get("/projects", params),
+  getById: (id) => api.get(`/projects/${id}`),
+  create: (data) => api.post("/projects", data),
+  update: (id, data) => api.put(`/projects/${id}`, data),
+  delete: (id) => api.delete(`/projects/${id}`),
+  publish: (id) => api.post(`/projects/${id}/publish`),
+  like: (id) => api.post(`/projects/${id}/like`),
+  save: (id) => api.post(`/projects/${id}/save`),
+  comment: (id, content) => api.post(`/projects/${id}/comments`, { content }),
+  similar: (id) => api.get(`/projects/${id}/similar`),
+  approve: (id, note) => api.put(`/admin/projects/${id}/approve`, { note }),
+  reject: (id, reason) => api.put(`/admin/projects/${id}/reject`, { reason }),
+  getPending: (params) => api.get("/admin/projects/pending", params),
+
   // 🚀 CORRECTION INJECTÉE : Utilisation propre de postFormData pour l'image de couverture
   uploadCover: (id, file) => {
     const formData = new FormData();
@@ -250,52 +258,58 @@ export const projectsApi = {
 };
 
 export const messagesApi = {
-  getConversations:   ()              => api.get("/conversations"),
-  getConversation:    (id)            => api.get(`/conversations/${id}`),
-  getMessages:        (convId, p)     => api.get(`/conversations/${convId}/messages`, p),
-  createDirect:       (targetUserId)  => api.post("/conversations/direct", { targetUserId }),
-  sendMessage:        (convId, text)  => api.post("/messages", { conversationId: convId, content: text }),
+  getConversations: () => api.get("/conversations"),
+  getConversation: (id) => api.get(`/conversations/${id}`),
+  getMessages: (convId, p) => api.get(`/conversations/${convId}/messages`, p),
+  createDirect: (targetUserId) =>
+    api.post("/conversations/direct", { targetUserId }),
+  sendMessage: (convId, text) =>
+    api.post("/messages", { conversationId: convId, content: text }),
+  send: (convId, text) =>
+    api.post("/messages", { conversationId: convId, content: text }),
+  getUnreadCount: () => api.get("/messages/unread-count"),
+  markRead: (convId) => api.post(`/conversations/${convId}/read`),
 };
 
 export const paymentsApi = {
-  initMtn:       (data) => api.post("/payments/mtn/init", data),
-  initOrange:    (data) => api.post("/payments/orange/init", data),
-  initStripe:    (data) => api.post("/payments/stripe/init", data),
-  getStatus:     (id)   => api.get(`/payments/${id}/status`),
-  list:          (page) => api.get(`/investments?page=${page || 1}`),
-  getOne:        (id)   => api.get(`/investments/${id}`),
+  initMtn: (data) => api.post("/payments/mtn/init", data),
+  initOrange: (data) => api.post("/payments/orange/init", data),
+  initStripe: (data) => api.post("/payments/stripe/init", data),
+  getStatus: (id) => api.get(`/payments/${id}/status`),
+  list: (page) => api.get(`/investments?page=${page || 1}`),
+  getOne: (id) => api.get(`/investments/${id}`),
 };
 
 export const notificationsApi = {
-  getAll:       (params) => api.get("/notifications", params),
-  markAllRead:  ()       => api.put("/notifications/mark-all-read"),
-  delete:       (id)     => api.delete(`/notifications/${id}`),
-  subscribe:    (sub)    => api.post("/notifications/push/subscribe", sub),
+  getAll: (params) => api.get("/notifications", params),
+  markAllRead: () => api.put("/notifications/mark-all-read"),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  subscribe: (sub) => api.post("/notifications/push/subscribe", sub),
 };
 
 export const forumApi = {
-  getPosts:    (params)        => api.get("/forum/posts", params),
-  getPost:     (id)            => api.get(`/forum/posts/${id}`),
-  createPost:  (data)          => api.post("/forum/posts", data),
-  like:        (id)            => api.post(`/forum/posts/${id}/like`),
-  reply:       (id, content)   => api.post(`/forum/posts/${id}/replies`, { content }),
+  getPosts: (params) => api.get("/forum/posts", params),
+  getPost: (id) => api.get(`/forum/posts/${id}`),
+  createPost: (data) => api.post("/forum/posts", data),
+  like: (id) => api.post(`/forum/posts/${id}/like`),
+  reply: (id, content) => api.post(`/forum/posts/${id}/replies`, { content }),
 };
 
 export const appointmentsApi = {
-  getAll:       ()           => api.get("/appointments"),
-  create:       (data)       => api.post("/appointments", data),
-  update:       (id, data)   => api.put(`/appointments/${id}`, data),
-  cancel:       (id)         => api.delete(`/appointments/${id}`),
-  getSlots:     (userId)     => api.get(`/availability/${userId}`),
+  getAll: () => api.get("/appointments"),
+  create: (data) => api.post("/appointments", data),
+  update: (id, data) => api.put(`/appointments/${id}`, data),
+  cancel: (id) => api.delete(`/appointments/${id}`),
+  getSlots: (userId) => api.get(`/availability/${userId}`),
 };
 
 export const dueDiligenceApi = {
-  analyze:    (projectId)  => api.post("/due-diligence/analyze", { projectId }),
-  getReport:  (projectId)  => api.get(`/due-diligence/${projectId}`),
+  analyze: (projectId) => api.post("/due-diligence/analyze", { projectId }),
+  getReport: (projectId) => api.get(`/due-diligence/${projectId}`),
 };
 
 export const adminApi = {
-  getStats:    ()      => api.get("/admin/statistics"),
-  getUsers:    (p)     => api.get("/admin/users", p),
-  getProjects: (p)     => api.get("/admin/projects", p),
+  getStats: () => api.get("/admin/statistics"),
+  getUsers: (p) => api.get("/admin/users", p),
+  getProjects: (p) => api.get("/admin/projects", p),
 };

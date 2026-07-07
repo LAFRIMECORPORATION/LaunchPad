@@ -12,6 +12,7 @@ export const ROUTE_PATHS = {
   publish: '/publish',
   explore: '/explore',
   'project-detail': '/projects/:id',
+  'profile-user': '/profile/:userId',
   collaboration: '/collaboration',
   'team-space': '/team-space',
   messages: '/messages',
@@ -45,7 +46,7 @@ export const AUTH_PAGES = ['login', 'register'];
 /** Pages sans sidebar */
 export const NO_SIDEBAR_PAGES = [
   'home', 'login', 'register', 'explore', 'project-detail', 'publish',
-  'collaboration', 'team-space', 'profile-student', 'profile-investor', 'messages',
+  'collaboration', 'team-space', 'profile-student', 'profile-investor', 'profile-user', 'messages',
 ];
 
 /** Pages plein écran (sans padding app-main) */
@@ -60,6 +61,11 @@ export function getPathForPage(page, opts = {}) {
     if (projectId != null) return `/projects/${projectId}`;
     return '/explore';
   }
+  if (page === 'profile-user') {
+    const userId = opts.user?.id ?? opts.userId;
+    if (userId != null) return `/profile/${userId}`;
+    return '/';
+  }
   return ROUTE_PATHS[page] || '/';
 }
 
@@ -68,6 +74,7 @@ export function getPathForPage(page, opts = {}) {
  */
 export function getPageFromPath(pathname) {
   if (pathname.startsWith('/projects/')) return 'project-detail';
+  if (pathname.startsWith('/profile/') && !pathname.match(/^\/profile\/(student|investor)$/)) return 'profile-user';
 
   const exact = PATH_TO_PAGE[pathname];
   if (exact) return exact;

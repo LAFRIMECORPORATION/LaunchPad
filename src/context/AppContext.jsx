@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { authApi, kycApi, setAccessToken, clearAccessToken } from "../utils/api";
+import { authApi, kycApi, messagesApi, setAccessToken, clearAccessToken } from "../utils/api";
 import { connectSocket, disconnectSocket } from "../utils/socket";
 import {
   NOTIFICATIONS,
@@ -51,6 +51,7 @@ export function AppProvider({ children }) {
   const [conversations, setConversations] = useState(CONVERSATIONS);
   const [activeConvId, setActiveConvId] = useState(1);
   const [pendingConversation, setPendingConversation] = useState(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // ─── Flux de Collaboration ────────────────────────────────
   const [collabStep, setCollabStep] = useState("found");
@@ -430,8 +431,20 @@ export function AppProvider({ children }) {
     setNotifications(n => n.map(x => ({ ...x, unread: false })));
   }, []);
 
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    messagesApi.getUnreadCount()
+      .then(res => {
+        const count = res.data?.unread ?? 0;
+        setUnreadMessagesCount(count);
+      })
+      .catch(err => {
+        console.error("Erreur chargement nombre de messages non lus :", err);
+      });
+  }, [currentUser?.id]);
+
   // ─── Messagerie ───────────────────────────────────────────
-  const unreadMessages = conversations.reduce((acc, c) => acc + c.unread, 0);
+  const unreadMessages = unreadMessagesCount;
 
   const sendMessage = useCallback((convId, text) => {
     setConversations(prev => prev.map(c =>
