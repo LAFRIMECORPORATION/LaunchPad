@@ -37,7 +37,16 @@ export default function ProfileDetail() {
       try {
         setLoading(true);
         const res = await usersApi.getById(userId);
-        setUser(res.data?.user || res.data);
+        const loadedUser = res.data?.user || res.data;
+        setUser({
+          ...loadedUser,
+          profile: loadedUser?.profile || {},
+          interests: Array.isArray(loadedUser?.interests)
+            ? loadedUser.interests
+            : Array.isArray(loadedUser?.profile?.interests)
+              ? loadedUser.profile.interests
+              : [],
+        });
         setError(null);
       } catch (err) {
         console.error("Erreur chargement profil :", err);
@@ -61,11 +70,11 @@ export default function ProfileDetail() {
       setConversation(conv);
       setChatOpen(true);
 
+      // Rejoindre la conversation via socket avant chargement
+      joinConversation(conv.id);
+
       // Charger les messages existants
       await loadMessages(conv.id);
-
-      // Rejoindre la conversation via socket
-      joinConversation(conv.id);
     } catch (err) {
       console.error("Erreur création conversation :", err);
       alert("Erreur lors du démarrage de la conversation");
@@ -76,7 +85,8 @@ export default function ProfileDetail() {
   const loadMessages = async (convId) => {
     try {
       const res = await messagesApi.getMessages(convId, { page: 1, limit: 50 });
-      setMessages(res.data?.data || res.data || []);
+      const loadedMessages = res.data?.data || res.data || [];
+      setMessages(Array.isArray(loadedMessages) ? loadedMessages : []);
 
       // Marquer comme lu
       await messagesApi.markRead?.(convId).catch(() => {});
@@ -113,8 +123,14 @@ export default function ProfileDetail() {
 
     try {
       setSendingMessage(true);
-      await messagesApi.sendMessage(conversation.id, input.trim());
+      const res = await messagesApi.sendMessage(conversation.id, input.trim());
+      const sentMessage = res.data?.message || res.data;
+      setMessages((prev) => [...prev, sentMessage]);
       setInput("");
+      setTimeout(
+        () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+        50,
+      );
     } catch (err) {
       console.error("Erreur envoi message :", err);
       alert("Erreur lors de l'envoi du message");

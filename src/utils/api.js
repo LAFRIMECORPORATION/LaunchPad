@@ -129,11 +129,17 @@ function handleForceLogout() {
 
 // ── Parser la réponse et lever une erreur si nécessaire ──
 async function parseResponse(response) {
-  const data = await response.json();
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
 
   if (!response.ok) {
-    const error = new Error(data.message || "Une erreur est survenue.");
-    error.code = data.error;
+    const error = new Error(data?.message || "Une erreur est survenue.");
+    error.code = data?.error;
     error.status = response.status;
     error.data = data;
     throw error;

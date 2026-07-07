@@ -16,7 +16,12 @@ import { Avatar, ChatMessage } from "../components/UI";
 import "./Messages.css";
 
 export default function Messages() {
-  const { currentUser, pendingConversation, setPendingConversation } = useApp();
+  const {
+    currentUser,
+    pendingConversation,
+    setPendingConversation,
+    setUnreadMessagesCount,
+  } = useApp();
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -31,7 +36,10 @@ export default function Messages() {
   const loadConversations = useCallback(async () => {
     try {
       const res = await messagesApi.getConversations();
-      setConversations(res.data.conversations);
+      const loadedConversations = res.data?.conversations || res.data || [];
+      setConversations(
+        Array.isArray(loadedConversations) ? loadedConversations : [],
+      );
     } catch (err) {
       console.error(err);
     } finally {
@@ -46,7 +54,7 @@ export default function Messages() {
         page: pageNum,
         limit: 30,
       });
-      const { data: msgs } = res.data;
+      const msgs = Array.isArray(res.data?.data) ? res.data.data : [];
 
       if (pageNum === 1) {
         setMessages(msgs);
@@ -80,6 +88,11 @@ export default function Messages() {
       setConversations((prev) =>
         prev.map((c) => (c.id === convId ? { ...c, unread: 0 } : c)),
       );
+      setUnreadMessagesCount((count) => {
+        const unreadInConversation =
+          conversations.find((c) => c.id === convId)?.unread || 0;
+        return Math.max(0, count - unreadInConversation);
+      });
     },
     [activeConvId, loadMessages],
   );
@@ -91,9 +104,15 @@ export default function Messages() {
 
     const handleNewMessage = ({ message, conversationId }) => {
       if (conversationId === activeConvId) {
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, message];
+        });
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        messagesApi.markRead(conversationId).catch(console.error);
+        messagesApi
+          .markRead(conversationId)
+          .then(() => setUnreadMessagesCount((count) => Math.max(0, count - 1)))
+          .catch(console.error);
       } else {
         setConversations((prev) =>
           prev.map((c) =>
@@ -167,9 +186,20 @@ export default function Messages() {
       const res = await messagesApi.sendMessage(activeConvId, text);
       const sentMsg = res.data.message;
 
-      setMessages((prev) =>
-        prev.map((m) => (m._optimistic && m.content === text ? sentMsg : m)),
-      );
+      setMessages((prev) => {
+        const replaced = prev.map((m) =>
+          m._optimistic && m.content === text ? sentMsg : m,
+        );
+        const unique = [];
+        const seen = new Set();
+        for (const msg of replaced) {
+          if (!msg?.id || !seen.has(msg.id)) {
+            if (msg?.id) seen.add(msg.id);
+            unique.push(msg);
+          }
+        }
+        return unique;
+      });
 
       setConversations((prev) =>
         prev.map((c) =>
@@ -239,6 +269,15 @@ export default function Messages() {
   function handleSelectConv(id) {
     openConversation(id);
   }
+
+  useEffect(() => {
+    return () => {
+      if (activeConvId) {
+        leaveConversation(activeConvId);
+      }
+      clearTimeout(typingTimer.current);
+    };
+  }, [activeConvId]);
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
 
