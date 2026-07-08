@@ -1,39 +1,12 @@
 // ============================================================
-// LAUNCHPAD — DueDiligencePage.jsx  🆕 NOUVELLE PAGE
+// LAUNCHPAD — DueDiligencePage.jsx  ✅ BRANCHÉ SUR L'API RÉELLE
 // Chemin : src/pages/DueDiligencePage.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
-import { PROJECTS } from "../data/mockData";
+import { projectsApi, dueDiligenceApi } from "../utils/api";
 import "./DueDiligence.css";
-
-/* ── Mock IA analysis ────────────────────────────────────── */
-function generateAnalysis(project) {
-  const score = Math.floor(60 + Math.random() * 35);
-  return {
-    score,
-    risk: score >= 75 ? "Faible" : score >= 55 ? "Modéré" : "Élevé",
-    market:   score >= 70
-      ? "✅ Marché porteur — " + project.category + " en forte croissance en Afrique Centrale (+23%/an)"
-      : "⚠️ Marché local limité — nécessite validation de la taille de l'opportunité",
-    team:     "⚠️ Équipe jeune — " + project.teamSize + " membres · 0 expérience entrepreneuriale préalable documentée",
-    finance:  score >= 65
-      ? "✅ Projections réalistes — modèle " + (project.model?.includes("B2C") ? "B2C" : "B2B") + " validé"
-      : "⚠️ Projections financières optimistes — hypothèses à challenger lors du RDV",
-    redFlags: [
-      "Absence de brevet ou protection IP déclarée",
-      score < 70 ? "Dépendance forte aux subventions publiques camerounaises" : null,
-      project.teamSize < 3 ? "Équipe mono-fondateur — risque opérationnel élevé" : null,
-    ].filter(Boolean),
-    questions: [
-      "Quelle est votre stratégie d'acquisition clients dans les zones rurales du Cameroun ?",
-      "Avez-vous des lettres d'intention (LOI) signées avec des clients ou partenaires ?",
-      "Quel est votre plan de sortie prévu pour les investisseurs (horizon, valorisation) ?",
-      "Comment gérez-vous les risques réglementaires spécifiques à votre secteur au Cameroun ?",
-    ],
-  };
-}
 
 /* ── KYC Blocked ─────────────────────────────────────────── */
 function KycBlocked({ navigate }) {
@@ -62,17 +35,19 @@ function KycBlocked({ navigate }) {
 
 /* ── Score card ──────────────────────────────────────────── */
 function ScoreCard({ result }) {
-  const cls = result.score >= 75 ? "high" : result.score >= 55 ? "medium" : "low";
+  const score = result.score ?? 0;
+  const cls = score >= 75 ? "high" : score >= 55 ? "medium" : "low";
   return (
     <div className={`dd-score-card dd-score-card--${cls}`}>
       <div style={{ textAlign: "center" }}>
-        <div className="dd-score-value">{result.score}</div>
+        <div className="dd-score-value">{score}</div>
         <div className="dd-score-label">/100</div>
       </div>
       <div>
         <div className="dd-score-title">Score Due Diligence</div>
         <div className="dd-score-sub">
-          Risque <strong>{result.risk}</strong> · Analyse générée par IA
+          Risque <strong>{result.risk}</strong> · {result.isSandbox ? "Analyse heuristique" : "Analyse générée par IA"}
+          {result.recommendation && <> · Recommandation : <strong>{result.recommendation}</strong></>}
         </div>
       </div>
     </div>
@@ -81,28 +56,66 @@ function ScoreCard({ result }) {
 
 /* ── Main page ───────────────────────────────────────────── */
 export default function DueDiligencePage() {
-  const { currentUser, navigate, showToast } = useApp();
+  const { currentUser, navigate, showToast, selectedProject } = useApp();
 
-  const [selected,  setSelected]  = useState(null);
+  const [projects,   setProjects]   = useState([]);
+  const [loadingList,setLoadingList]= useState(true);
+
+  const [selected,  setSelected]  = useState(selectedProject || null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result,    setResult]    = useState(null);
+  const [errorMsg,  setErrorMsg]  = useState(null);
+
+  /* Charger les projets actifs */
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoadingList(true);
+      try {
+        const res = await projectsApi.list({ status: "active", limit: 20 });
+        const data = res.data?.projects || res.data || [];
+        if (!cancelled) setProjects(data);
+      } catch (err) {
+        if (!cancelled) showToast(err.message || "Erreur lors du chargement des projets.", "error");
+      } finally {
+        if (!cancelled) setLoadingList(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* KYC gate */
   if (!currentUser?.kycValidated) return <KycBlocked navigate={navigate} />;
 
-  function handleAnalyze(project) {
+  const handleAnalyze = useCallback(async (project) => {
     setSelected(project);
     setResult(null);
+    setErrorMsg(null);
     setAnalyzing(true);
-    setTimeout(() => {
-      setResult(generateAnalysis(project));
+
+    try {
+      const res = await dueDiligenceApi.analyze(project.id);
+      const data = res.data || res;
+      setResult(data);
+      if (data.fromCache) {
+        showToast("Rapport récupéré (analyse récente en cache).", "info");
+      } else {
+        showToast("Analyse IA générée avec succès.", "success");
+      }
+    } catch (err) {
+      setErrorMsg(err.message || "Erreur lors de l'analyse IA.");
+      showToast(err.message || "Erreur lors de l'analyse.", "error");
+    } finally {
       setAnalyzing(false);
-    }, 2400);
-  }
+    }
+  }, [showToast]);
 
   function handleReset() {
     setSelected(null);
     setResult(null);
+    setErrorMsg(null);
     setAnalyzing(false);
   }
 
@@ -121,9 +134,8 @@ export default function DueDiligencePage() {
         <div className="dd-intro-banner">
           <span className="dd-intro-banner__icon">🤖</span>
           <div className="dd-intro-banner__text">
-            Notre IA analyse automatiquement : <strong>cohérence du pitch · taille du marché ·
-            réalisme des projections · red flags · score de risque</strong>.
-            Rapport généré en moins de 10 secondes.
+            Notre IA analyse automatiquement : <strong>marché · équipe · finances · traction ·
+            red flags · score de risque</strong>. Rapport mis en cache 24h pour chaque projet.
           </div>
         </div>
       )}
@@ -134,22 +146,39 @@ export default function DueDiligencePage() {
           <div className="section-title" style={{ marginBottom: 14 }}>
             Sélectionnez un projet à analyser
           </div>
-          <div className="grid-auto">
-            {PROJECTS.map(p => (
-              <div key={p.id} className="dd-project-card card card-hover">
-                <div className="dd-project-card__emoji">{p.emoji}</div>
-                <div className="dd-project-card__name">{p.title}</div>
-                <div className="dd-project-card__meta">{p.category} · {p.stage}</div>
-                <div className="dd-project-card__tagline">{p.tagline}</div>
-                <button
-                  className="btn btn-secondary btn-sm btn-full"
-                  onClick={() => handleAnalyze(p)}
-                >
-                  🤖 Analyser ce projet
-                </button>
-              </div>
-            ))}
-          </div>
+
+          {loadingList && (
+            <div className="loading-state">
+              <div className="spinner" />
+              <div className="loading-state__title">Chargement des projets…</div>
+            </div>
+          )}
+
+          {!loadingList && projects.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-state__icon">📦</div>
+              <div className="empty-state__title">Aucun projet actif disponible</div>
+            </div>
+          )}
+
+          {!loadingList && projects.length > 0 && (
+            <div className="grid-auto">
+              {projects.map(p => (
+                <div key={p.id} className="dd-project-card card card-hover">
+                  <div className="dd-project-card__emoji">{p.emoji || "🚀"}</div>
+                  <div className="dd-project-card__name">{p.title}</div>
+                  <div className="dd-project-card__meta">{p.category} · {p.stage || "—"}</div>
+                  <div className="dd-project-card__tagline">{p.tagline || p.description?.slice(0, 80)}</div>
+                  <button
+                    className="btn btn-secondary btn-sm btn-full"
+                    onClick={() => handleAnalyze(p)}
+                  >
+                    🤖 Analyser ce projet
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -166,10 +195,10 @@ export default function DueDiligencePage() {
             {/* Project header */}
             <div className="card" style={{ padding: 20, marginBottom: 16 }}>
               <div className="dd-project-header">
-                <span style={{ fontSize: 40 }}>{selected.emoji}</span>
+                <span style={{ fontSize: 40 }}>{selected.emoji || "🚀"}</span>
                 <div>
                   <div className="dd-project-header__name">{selected.title}</div>
-                  <div className="dd-project-header__meta">{selected.category} · {selected.stage}</div>
+                  <div className="dd-project-header__meta">{selected.category} · {selected.stage || "—"}</div>
                 </div>
               </div>
             </div>
@@ -185,13 +214,24 @@ export default function DueDiligencePage() {
               </div>
             )}
 
+            {/* Erreur */}
+            {errorMsg && !analyzing && (
+              <div className="card" style={{ padding: 24, textAlign: "center" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>❌</div>
+                <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>{errorMsg}</p>
+                <button className="btn btn-primary" onClick={() => handleAnalyze(selected)}>
+                  Réessayer
+                </button>
+              </div>
+            )}
+
             {/* CTA */}
-            {!analyzing && !result && (
+            {!analyzing && !result && !errorMsg && (
               <div className="dd-cta">
                 <div className="dd-cta__icon">🤖</div>
                 <div className="dd-cta__title">Prêt à analyser</div>
                 <p className="dd-cta__desc">
-                  Notre IA va analyser le pitch, le marché, l'équipe et les risques en quelques secondes.
+                  Notre IA va analyser le marché, l'équipe et les risques en quelques secondes.
                 </p>
                 <button className="btn btn-primary btn-lg" onClick={() => handleAnalyze(selected)}>
                   🚀 Lancer l'analyse IA
@@ -205,6 +245,15 @@ export default function DueDiligencePage() {
                 {/* Score */}
                 <ScoreCard result={result} />
 
+                {/* Summary */}
+                {result.summary && (
+                  <div className="card" style={{ padding: 18, marginBottom: 16 }}>
+                    <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                      {result.summary}
+                    </p>
+                  </div>
+                )}
+
                 {/* Detail */}
                 <div className="card" style={{ padding: 20 }}>
                   <div className="section-title" style={{ marginBottom: 14 }}>
@@ -214,17 +263,34 @@ export default function DueDiligencePage() {
                     ["📊 Marché",    result.market],
                     ["👥 Équipe",    result.team],
                     ["💰 Financier", result.finance],
-                  ].map(([title, text]) => (
+                    ["📈 Traction",  result.traction],
+                  ].filter(([, v]) => v).map(([title, block]) => (
                     <div key={title} className="dd-detail-row">
-                      <div className="dd-detail-row__title">{title}</div>
-                      <div className="dd-detail-row__text">{text}</div>
+                      <div className="dd-detail-row__title">
+                        {title} {block.score != null && <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({block.score}/25)</span>}
+                      </div>
+                      <div className="dd-detail-row__text">{block.analysis}</div>
                     </div>
                   ))}
                 </div>
 
+                {/* Strengths */}
+                {result.strengths?.length > 0 && (
+                  <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                    <div className="section-title" style={{ marginBottom: 12 }}>
+                      ✅ Points forts
+                    </div>
+                    {result.strengths.map((s, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, fontSize: 14, color: "var(--text-secondary)" }}>
+                        <span>•</span><span>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Red flags */}
-                {result.redFlags.length > 0 && (
-                  <div className="card dd-red-flags">
+                {result.redFlags?.length > 0 && (
+                  <div className="card dd-red-flags" style={{ marginTop: 16 }}>
                     <div className="dd-red-flags__title">🚩 Red Flags détectés</div>
                     {result.redFlags.map((f, i) => (
                       <div key={i} className="dd-red-flags__item">
@@ -236,17 +302,19 @@ export default function DueDiligencePage() {
                 )}
 
                 {/* Questions */}
-                <div className="card" style={{ padding: 20 }}>
-                  <div className="section-title" style={{ marginBottom: 12 }}>
-                    ❓ Questions à poser à l'équipe
-                  </div>
-                  {result.questions.map((q, i) => (
-                    <div key={i} className="dd-question">
-                      <span className="dd-question__num">{i + 1}.</span>
-                      <span>{q}</span>
+                {result.questions?.length > 0 && (
+                  <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                    <div className="section-title" style={{ marginBottom: 12 }}>
+                      ❓ Questions à poser à l'équipe
                     </div>
-                  ))}
-                </div>
+                    {result.questions.map((q, i) => (
+                      <div key={i} className="dd-question">
+                        <span className="dd-question__num">{i + 1}.</span>
+                        <span>{q}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="dd-actions">
@@ -268,14 +336,12 @@ export default function DueDiligencePage() {
                 📊 Données du projet
               </div>
               {[
-                ["Objectif",      `${(selected.goal / 1_000_000).toFixed(0)}M XAF`],
-                ["Levé",          `${(selected.raised / 1_000_000).toFixed(0)}M XAF`],
-                ["Progression",   `${Math.round((selected.raised / selected.goal) * 100)}%`],
-                ["Investisseurs", selected.investors],
-                ["Équipe",        `${selected.teamSize} personnes`],
-                ["Stade",         selected.stage],
-                ["Deadline",      selected.deadline],
-                ["Equity offerte",selected.equity],
+                ["Objectif",      selected.goalAmount ? `${(Number(selected.goalAmount) / 1_000_000).toFixed(1)}M XAF` : "—"],
+                ["Levé",          selected.raisedAmount != null ? `${(Number(selected.raisedAmount) / 1_000_000).toFixed(1)}M XAF` : "—"],
+                ["Progression",   selected.goalAmount ? `${Math.round((Number(selected.raisedAmount || 0) / Number(selected.goalAmount)) * 100)}%` : "—"],
+                ["Équipe",        selected.teamSize ? `${selected.teamSize} personnes` : "—"],
+                ["Stade",         selected.stage || "—"],
+                ["Equity offerte",selected.equity != null ? `${selected.equity}%` : "—"],
               ].map(([k, v]) => (
                 <div key={k} className="dd-side-row">
                   <span className="dd-side-row__key">{k}</span>

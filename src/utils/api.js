@@ -154,7 +154,11 @@ async function parseResponse(response) {
 
 export const api = {
   async get(url, params = {}) {
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== null),
+      ),
+    ).toString();
     const fullUrl = query ? `${url}?${query}` : url;
     const response = await fetchWithAuth(fullUrl, { method: "GET" });
     return parseResponse(response);
@@ -282,13 +286,17 @@ export const paymentsApi = {
   initOrange: (data) => api.post("/payments/orange/init", data),
   initStripe: (data) => api.post("/payments/stripe/init", data),
   getStatus: (id) => api.get(`/payments/${id}/status`),
-  list: (page) => api.get(`/investments?page=${page || 1}`),
+  list: (page) => api.get("/investments", { page: page || 1 }),
   getOne: (id) => api.get(`/investments/${id}`),
+  getInvestments: (params) => api.get("/investments", params),
+  getInvestment: (id) => api.get(`/investments/${id}`),
 };
 
 export const notificationsApi = {
   getAll: (params) => api.get("/notifications", params),
+  unreadCount: () => api.get("/notifications/unread-count"),
   markAllRead: () => api.put("/notifications/mark-all-read"),
+  markOneRead: (id) => api.put(`/notifications/${id}/read`),
   delete: (id) => api.delete(`/notifications/${id}`),
   subscribe: (sub) => api.post("/notifications/push/subscribe", sub),
 };
@@ -297,16 +305,22 @@ export const forumApi = {
   getPosts: (params) => api.get("/forum/posts", params),
   getPost: (id) => api.get(`/forum/posts/${id}`),
   createPost: (data) => api.post("/forum/posts", data),
+  updatePost: (id, data) => api.put(`/forum/posts/${id}`, data),
+  deletePost: (id) => api.delete(`/forum/posts/${id}`),
   like: (id) => api.post(`/forum/posts/${id}/like`),
   reply: (id, content) => api.post(`/forum/posts/${id}/replies`, { content }),
+  likeReply: (replyId) => api.post(`/forum/replies/${replyId}/like`),
 };
 
 export const appointmentsApi = {
-  getAll: () => api.get("/appointments"),
+  getAll: (params) => api.get("/appointments", params),
+  getOne: (id) => api.get(`/appointments/${id}`),
   create: (data) => api.post("/appointments", data),
-  update: (id, data) => api.put(`/appointments/${id}`, data),
-  cancel: (id) => api.delete(`/appointments/${id}`),
-  getSlots: (userId) => api.get(`/availability/${userId}`),
+  confirm: (id) => api.put(`/appointments/${id}/confirm`),
+  cancel: (id, reason) => api.put(`/appointments/${id}/cancel`, { reason }),
+  complete: (id) => api.put(`/appointments/${id}/complete`),
+  getSlots: (userId, date) =>
+    api.get(`/appointments/availability/${userId}`, date ? { date } : {}),
 };
 
 export const dueDiligenceApi = {
@@ -314,8 +328,43 @@ export const dueDiligenceApi = {
   getReport: (projectId) => api.get(`/due-diligence/${projectId}`),
 };
 
+export const collaborationsApi = {
+  send: (data) => api.post("/collaborations", data),
+  inbox: () => api.get("/collaborations/inbox"),
+  getOne: (id) => api.get(`/collaborations/${id}`),
+  accept: (id) => api.put(`/collaborations/${id}/accept`),
+  decline: (id, reason) => api.put(`/collaborations/${id}/decline`, { reason }),
+};
+
+export const badgesApi = {
+  getMine: () => api.get("/badges/me"),
+  getForUser: (userId) => api.get(`/badges/user/${userId}`),
+};
+
+export const feedApi = {
+  get: (params) => api.get("/feed", params),
+};
+
+export const investorRequestsApi = {
+  list: (params) => api.get("/investor-requests", params),
+  getOne: (id) => api.get(`/investor-requests/${id}`),
+  create: (data) => api.post("/investor-requests", data),
+  apply: (id, data) => api.post(`/investor-requests/${id}/apply`, data),
+  mine: () => api.get("/investor-requests/mine"),
+  update: (id, data) => api.put(`/investor-requests/${id}`, data),
+  remove: (id) => api.delete(`/investor-requests/${id}`),
+};
+
 export const adminApi = {
   getStats: () => api.get("/admin/statistics"),
-  getUsers: (p) => api.get("/admin/users", p),
-  getProjects: (p) => api.get("/admin/projects", p),
+  getUsers: (params) => api.get("/admin/users", params),
+  toggleUserStatus: (id, reason) =>
+    api.put(`/admin/users/${id}/toggle-status`, { reason }),
+  getProjects: (params) => api.get("/admin/projects", params),
+  approveProject: (id, notes) =>
+    api.put(`/admin/projects/${id}/approve`, { notes }),
+  rejectProject: (id, reason) =>
+    api.put(`/admin/projects/${id}/reject`, { reason }),
+  getAuditLogs: (params) => api.get("/admin/audit-logs", params),
+  getInvestments: (params) => api.get("/admin/investments", params),
 };

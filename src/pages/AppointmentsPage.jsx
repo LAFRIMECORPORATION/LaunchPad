@@ -1,22 +1,13 @@
 // ============================================================
-// LAUNCHPAD — AppointmentsPage.jsx  🆕 NOUVELLE PAGE
+// LAUNCHPAD — AppointmentsPage.jsx  ✅ BRANCHÉ SUR L'API RÉELLE
 // Chemin : src/pages/AppointmentsPage.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar, KycAlert } from "../components/UI";
-import { APPOINTMENTS } from "../data/mockData";
+import { appointmentsApi } from "../utils/api";
 import "./Appointments.css";
-
-const SLOTS = [
-  { id:1, day:"Lun 2 Juin", time:"10h00 – 11h00", free:true  },
-  { id:2, day:"Lun 2 Juin", time:"14h00 – 15h00", free:true  },
-  { id:3, day:"Mar 3 Juin", time:"09h00 – 10h00", free:false },
-  { id:4, day:"Mar 3 Juin", time:"16h00 – 17h00", free:true  },
-  { id:5, day:"Mer 4 Juin", time:"11h00 – 12h00", free:true  },
-  { id:6, day:"Jeu 5 Juin", time:"14h00 – 15h00", free:false },
-];
 
 const STATUS_CONFIG = {
   confirmed: { label:"✅ Confirmé",        cls:"badge-success" },
@@ -25,10 +16,60 @@ const STATUS_CONFIG = {
   completed: { label:"✔️ Effectué",        cls:"badge-gray"    },
 };
 
+const TYPE_LABELS = {
+  pitch:          "Présentation projet",
+  mentoring:      "Mentorat",
+  due_diligence:  "Due Diligence",
+  follow_up:      "Suivi",
+};
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+}
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+function counterpartName(appt, myId) {
+  const isRequester = appt.requester?.id === myId;
+  const person = isRequester ? appt.host : appt.requester;
+  return person ? `${person.firstName} ${person.lastName}` : "—";
+}
+function counterpartInitials(appt, myId) {
+  const isRequester = appt.requester?.id === myId;
+  const person = isRequester ? appt.host : appt.requester;
+  if (!person) return "??";
+  return `${(person.firstName || "?")[0]}${(person.lastName || "?")[0]}`.toUpperCase();
+}
+
 export default function AppointmentsPage() {
-  const { currentUser, navigate, requireKyc, showToast } = useApp();
+  const { currentUser, navigate, showToast } = useApp();
   const isInvestor = currentUser?.role === "investor";
-  const [tab, setTab] = useState("upcoming");
+
+  const [tab, setTab]                 = useState("upcoming");
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [actingId, setActingId]       = useState(null);
+
+  const loadAppointments = useCallback(async (currentTab) => {
+    setLoading(true);
+    try {
+      const res = await appointmentsApi.getAll({ tab: currentTab });
+      const data = res.data || res;
+      setAppointments(data.appointments || []);
+    } catch (err) {
+      showToast(err.message || "Erreur lors du chargement des rendez-vous.", "error");
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (currentUser?.kycValidated) loadAppointments(tab);
+  }, [tab, currentUser?.kycValidated, loadAppointments]);
 
   /* KYC gate */
   if (!currentUser?.kycValidated) {
@@ -58,6 +99,33 @@ export default function AppointmentsPage() {
     );
   }
 
+  async function handleConfirm(id) {
+    setActingId(id);
+    try {
+      await appointmentsApi.confirm(id);
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: "confirmed" } : a));
+      showToast("Rendez-vous confirmé.", "success");
+    } catch (err) {
+      showToast(err.message || "Erreur lors de la confirmation.", "error");
+    } finally {
+      setActingId(null);
+    }
+  }
+
+  async function handleCancel(id) {
+    const reason = window.prompt("Raison de l'annulation (optionnel) :") || undefined;
+    setActingId(id);
+    try {
+      await appointmentsApi.cancel(id, reason);
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: "cancelled" } : a));
+      showToast("Rendez-vous annulé.", "success");
+    } catch (err) {
+      showToast(err.message || "Erreur lors de l'annulation.", "error");
+    } finally {
+      setActingId(null);
+    }
+  }
+
   return (
     <div className="page-wrapper">
       {/* Header */}
@@ -67,11 +135,6 @@ export default function AppointmentsPage() {
           <p className="page-subtitle">
             Gérez vos meetings avec {isInvestor ? "les étudiants" : "les investisseurs"}
           </p>
-        </div>
-        <div className="page-header-actions">
-          <button className="btn btn-primary" onClick={() => showToast("Fonctionnalité Cal.com bientôt disponible", "info")}>
-            + Proposer un créneau
-          </button>
         </div>
       </div>
 
@@ -84,70 +147,79 @@ export default function AppointmentsPage() {
         ))}
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="loading-state">
+          <div className="spinner" />
+          <div className="loading-state__title">Chargement…</div>
+        </div>
+      )}
+
       {/* Appointment cards */}
-      <div className="appt-list">
-        {APPOINTMENTS.map(a => {
-          const st = STATUS_CONFIG[a.status] || STATUS_CONFIG.pending;
-          return (
-            <div key={a.id} className="appointment-card card">
-              <Avatar label={a.avatar} size="lg" />
-              <div className="appointment-card__info">
-                <div className="appointment-card__name">
-                  {a.with}
-                  <span className={`badge ${st.cls}`} style={{ marginLeft: 10 }}>{st.label}</span>
-                </div>
-                <div className="appointment-card__company">{a.role} — {a.company}</div>
-                <div className="appointment-card__details">
-                  <span>📅 {a.date}</span>
-                  <span>⏰ {a.time}</span>
-                  <span>💻 {a.type}</span>
-                </div>
-                {a.project && (
-                  <div className="appointment-card__project">
-                    Projet : <strong>{a.project}</strong>
-                  </div>
-                )}
-              </div>
-              <div className="appointment-card__actions">
-                {a.status === "confirmed" && (
-                  <a href={a.link} className="btn btn-primary btn-sm">Rejoindre 🔗</a>
-                )}
-                <button className="btn btn-secondary btn-sm"
-                  onClick={() => showToast("Reprogrammation disponible bientôt", "info")}>
-                  Reporter
-                </button>
-                <button className="btn btn-danger btn-sm"
-                  onClick={() => showToast("Rendez-vous annulé", "success")}>
-                  Annuler
-                </button>
+      {!loading && (
+        <div className="appt-list">
+          {appointments.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-state__icon">📅</div>
+              <div className="empty-state__title">
+                Aucun rendez-vous {tab === "upcoming" ? "à venir" : "passé"}
               </div>
             </div>
-          );
-        })}
-      </div>
+          )}
 
-      {/* Available slots */}
-      <div className="card" style={{ padding: 22, marginTop: 24 }}>
-        <div className="section-title" style={{ marginBottom: 16 }}>
-          Créneaux disponibles
+          {appointments.map(a => {
+            const st = STATUS_CONFIG[a.status] || STATUS_CONFIG.pending;
+            const isHost = a.host?.id === currentUser?.id;
+            return (
+              <div key={a.id} className="appointment-card card">
+                <Avatar label={counterpartInitials(a, currentUser?.id)} size="lg" />
+                <div className="appointment-card__info">
+                  <div className="appointment-card__name">
+                    {counterpartName(a, currentUser?.id)}
+                    <span className={`badge ${st.cls}`} style={{ marginLeft: 10 }}>{st.label}</span>
+                  </div>
+                  <div className="appointment-card__company">
+                    {TYPE_LABELS[a.type] || a.type} {a.project ? `— ${a.project.title}` : ""}
+                  </div>
+                  <div className="appointment-card__details">
+                    <span>📅 {fmtDate(a.scheduledAt)}</span>
+                    <span>⏰ {fmtTime(a.scheduledAt)} ({a.durationMinutes} min)</span>
+                    {a.meetingLink && <span>💻 Visio</span>}
+                  </div>
+                  {a.notes && (
+                    <div className="appointment-card__project">{a.notes}</div>
+                  )}
+                </div>
+                <div className="appointment-card__actions">
+                  {a.status === "confirmed" && a.meetingLink && (
+                    <a href={a.meetingLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
+                      Rejoindre 🔗
+                    </a>
+                  )}
+                  {a.status === "pending" && isHost && (
+                    <button
+                      className="btn btn-success btn-sm"
+                      disabled={actingId === a.id}
+                      onClick={() => handleConfirm(a.id)}
+                    >
+                      ✓ Confirmer
+                    </button>
+                  )}
+                  {["pending", "confirmed"].includes(a.status) && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      disabled={actingId === a.id}
+                      onClick={() => handleCancel(a.id)}
+                    >
+                      Annuler
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="slots-grid">
-          {SLOTS.map(s => (
-            <button
-              key={s.id}
-              disabled={!s.free}
-              className={`slot-item${s.free ? " free" : " taken"}`}
-              onClick={() => s.free && showToast(`Créneau ${s.day} ${s.time} réservé !`, "success")}
-            >
-              <div className="slot-item__day">{s.day}</div>
-              <div className="slot-item__time">{s.time}</div>
-              <span className={`badge ${s.free ? "badge-success" : "badge-gray"}`}>
-                {s.free ? "Disponible" : "Réservé"}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
