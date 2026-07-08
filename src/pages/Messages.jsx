@@ -23,6 +23,7 @@ export default function Messages() {
     pendingConversation,
     setPendingConversation,
     setUnreadMessagesCount,
+    navigate,
   } = useApp();
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -370,8 +371,21 @@ export default function Messages() {
         openConvWithUser(pendingConversation.targetUserId);
         setPendingConversation(null);
       });
+      return;
     }
-  }, [pendingConversation, openConvWithUser, setPendingConversation]);
+
+    if (pendingConversation?.conversationId) {
+      queueMicrotask(() => {
+        openConversation(pendingConversation.conversationId);
+        setPendingConversation(null);
+      });
+    }
+  }, [
+    pendingConversation,
+    openConvWithUser,
+    openConversation,
+    setPendingConversation,
+  ]);
 
   function formatLastSeen(value) {
     if (!value) return "Hors ligne";
@@ -386,6 +400,13 @@ export default function Messages() {
         minute: "2-digit",
       },
     )}`;
+  }
+
+  function openOtherProfile() {
+    if (!activeConv?.other?.id) return;
+    navigate(`/profile/${activeConv.other.id}`, {
+      state: { fromConversationId: activeConv.id },
+    });
   }
 
   function handleKeyDown(e) {
@@ -509,14 +530,26 @@ export default function Messages() {
               ←
             </button>
 
-            <div style={{ position: "relative" }}>
-              <Avatar
-                label={`${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
-                size="md"
-              />
-            </div>
+            <button
+              type="button"
+              className="chat-profile-link"
+              onClick={openOtherProfile}
+              title="Voir le profil"
+            >
+              <div style={{ position: "relative" }}>
+                <Avatar
+                  label={`${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
+                  size="md"
+                />
+              </div>
+            </button>
 
-            <div className="chat-header-meta">
+            <button
+              type="button"
+              className="chat-header-meta chat-profile-link chat-profile-link--meta"
+              onClick={openOtherProfile}
+              title="Voir le profil"
+            >
               <div className="chat-header-name">
                 {activeConv.other?.firstName} {activeConv.other?.lastName}
               </div>
@@ -529,7 +562,7 @@ export default function Messages() {
                     ? "En ligne"
                     : formatLastSeen(otherUserLastSeen)}
               </div>
-            </div>
+            </button>
 
             <div className="chat-header-actions">
               <button

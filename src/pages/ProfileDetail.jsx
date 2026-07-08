@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge } from "../components/UI";
 import { usersApi, messagesApi } from "../utils/api";
@@ -17,6 +17,7 @@ import "./OtherPages.css";
 
 export default function ProfileDetail() {
   const { userId } = useParams();
+  const location = useLocation();
   const { navigate, currentUser } = useApp();
 
   const [user, setUser] = useState(null);
@@ -30,6 +31,7 @@ export default function ProfileDetail() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const messagesEndRef = useRef(null);
+  const returnConversationId = location.state?.fromConversationId || null;
 
   // ── Charger le profil de l'utilisateur ──────────────────
   useEffect(() => {
@@ -197,6 +199,20 @@ export default function ProfileDetail() {
 
   return (
     <div className="animate-fadeUp">
+      {returnConversationId ? (
+        <div style={{ marginBottom: 16 }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() =>
+              navigate("messages", {
+                targetConversationId: returnConversationId,
+              })
+            }
+          >
+            ← Retour à la discussion
+          </button>
+        </div>
+      ) : null}
       {/* ─── En-tête du profil ─────────────────────────────── */}
       <div style={{ position: "relative", marginBottom: 60 }}>
         <div
@@ -221,8 +237,12 @@ export default function ProfileDetail() {
               {`${user.firstName || "Utilisateur"} ${user.lastName || ""}`.trim()}
             </div>
             <div className="profile-sub">
-              {user.role === "investor" ? "Investisseur" : "Entrepreneur"} ·{" "}
-              {profile.location || "Non spécifié"}
+              {user.role === "investor"
+                ? "Investisseur"
+                : user.role === "student"
+                  ? "Étudiant"
+                  : "Utilisateur"}{" "}
+              · {profile.location || "Non spécifié"}
             </div>
             <div style={{ marginTop: 10 }}>
               {user.kycValidated ? (

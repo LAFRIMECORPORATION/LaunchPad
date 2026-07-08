@@ -94,8 +94,13 @@ export function AppProvider({ children }) {
       if (opts.teamContact) setTeamContact(opts.teamContact);
       if (opts.targetUserId)
         setPendingConversation({ targetUserId: opts.targetUserId });
+      if (opts.targetConversationId)
+        setPendingConversation({ conversationId: opts.targetConversationId });
 
-      routerNavigate(getPathForPage(page, opts));
+      const nextPath = page.startsWith("/") ? page : getPathForPage(page, opts);
+      routerNavigate(nextPath, {
+        state: opts.state,
+      });
       window.scrollTo(0, 0);
     },
     [routerNavigate],
