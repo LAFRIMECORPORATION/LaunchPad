@@ -44,7 +44,7 @@ export default function Messages() {
   const loadConversations = useCallback(async () => {
     try {
       const res = await messagesApi.getConversations();
-      const loadedConversations = res.data?.conversations || res.data || [];
+      const loadedConversations = res?.data?.conversations || res?.data || [];
       setConversations(
         Array.isArray(loadedConversations) ? loadedConversations : [],
       );
@@ -62,7 +62,7 @@ export default function Messages() {
         page: pageNum,
         limit: 30,
       });
-      const msgs = Array.isArray(res.data?.data) ? res.data.data : [];
+      const msgs = Array.isArray(res?.data) ? res.data : [];
 
       if (pageNum === 1) {
         setMessages(msgs);
@@ -255,7 +255,11 @@ export default function Messages() {
 
     try {
       const res = await messagesApi.sendMessage(activeConvId, text);
-      const sentMsg = res.data.message;
+      const sentMsg = res?.data?.message;
+
+      if (!sentMsg?.id) {
+        throw new Error("Réponse message invalide après envoi.");
+      }
 
       setMessages((prev) => {
         const replaced = prev.map((m) =>
@@ -310,7 +314,11 @@ export default function Messages() {
   const openConvWithUser = useCallback(
     async (targetUserId) => {
       const res = await messagesApi.createDirect(targetUserId);
-      const conv = res.data.conversation;
+      const conv = res?.data?.conversation;
+
+      if (!conv?.id) {
+        throw new Error("Conversation invalide.");
+      }
       setConversations((prev) =>
         prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev],
       );
