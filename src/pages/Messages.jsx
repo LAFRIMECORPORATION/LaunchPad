@@ -11,6 +11,8 @@ import {
   leaveConversation,
   emitTyping,
   emitStopTyping,
+  emitConversationRead,
+  requestPresence,
 } from "../utils/socket";
 import { Avatar, ChatMessage } from "../components/UI";
 import "./Messages.css";
@@ -30,8 +32,14 @@ export default function Messages() {
   const [typing, setTyping] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const typingTimer = useRef(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const activeConv = conversations.find((c) => c.id === activeConvId);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -72,29 +80,35 @@ export default function Messages() {
   // ── Ouvrir une conversation ────────────────────────────
   const openConversation = useCallback(
     async (convId) => {
+      const previousUnread =
+        conversations.find((c) => c.id === convId)?.unread || 0;
+
       if (activeConvId) leaveConversation(activeConvId);
 
       setActiveConvId(convId);
       setMessages([]);
-
       setChatOpen(true);
+      setTyping(false);
+      setShowInfoPanel(false);
+      setIsOtherUserOnline(false);
 
       joinConversation(convId);
 
       await loadMessages(convId, 1);
 
-      await messagesApi.markRead(convId);
+      if (previousUnread > 0) {
+        await messagesApi.markRead(convId);
+        emitConversationRead(convId);
+      }
 
       setConversations((prev) =>
         prev.map((c) => (c.id === convId ? { ...c, unread: 0 } : c)),
       );
-      setUnreadMessagesCount((count) => {
-        const unreadInConversation =
-          conversations.find((c) => c.id === convId)?.unread || 0;
-        return Math.max(0, count - unreadInConversation);
-      });
+      if (previousUnread > 0) {
+        setUnreadMessagesCount((count) => Math.max(0, count - previousUnread));
+      }
     },
-    [activeConvId, loadMessages],
+    [activeConvId, conversations, loadMessages, setUnreadMessagesCount],
   );
 
   // ── Socket.io — écouter les nouveaux messages ─────────
@@ -103,32 +117,50 @@ export default function Messages() {
     if (!socket) return;
 
     const handleNewMessage = ({ message, conversationId }) => {
+      const isMine = message?.senderId === currentUser.id;
+
       if (conversationId === activeConvId) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === message.id)) return prev;
-          return [...prev, message];
+          const withoutMatchingOptimistic = prev.filter(
+            (m) =>
+              !(
+                m._optimistic &&
+                m.senderId === message.senderId &&
+                m.content === message.content
+              ),
+          );
+          return [...withoutMatchingOptimistic, message];
         });
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        messagesApi
-          .markRead(conversationId)
-          .then(() => setUnreadMessagesCount((count) => Math.max(0, count - 1)))
-          .catch(console.error);
-      } else {
+
+        if (!isMine) {
+          messagesApi
+            .markRead(conversationId)
+            .then(() => {
+              emitConversationRead(conversationId);
+              setUnreadMessagesCount((count) => Math.max(0, count - 1));
+            })
+            .catch(console.error);
+        }
+      } else if (!isMine) {
         setConversations((prev) =>
           prev.map((c) =>
             c.id === conversationId ? { ...c, unread: (c.unread || 0) + 1 } : c,
           ),
         );
       }
+
       setConversations((prev) =>
         prev
           .map((c) =>
             c.id === conversationId
               ? {
                   ...c,
+                  lastMessageAt: message.createdAt,
                   lastMessage: {
                     content: message.content,
-                    isFromMe: false,
+                    isFromMe: isMine,
                     createdAt: message.createdAt,
                   },
                 }
@@ -142,22 +174,61 @@ export default function Messages() {
     };
 
     const handleTyping = ({ userId }) => {
-      if (userId !== currentUser.id) setTyping(true);
+      if (userId !== currentUser.id) {
+        setTyping(true);
+        setIsOtherUserOnline(true);
+      }
     };
     const handleStopTyping = ({ userId }) => {
       if (userId !== currentUser.id) setTyping(false);
     };
+    const handleConnect = () => {
+      if (activeConv?.other?.id) {
+        requestPresence(activeConv.other.id);
+      }
+    };
+    const handleDisconnect = () => {
+      setIsOtherUserOnline(false);
+    };
+    const handlePresenceState = ({ userId, online }) => {
+      if (userId === activeConv?.other?.id) {
+        setIsOtherUserOnline(Boolean(online));
+      }
+    };
+    const handleUserOnline = ({ userId, online }) => {
+      if (userId === activeConv?.other?.id) {
+        setIsOtherUserOnline(Boolean(online));
+      }
+    };
+    const handleMessagesRead = ({ conversationId, userId }) => {
+      if (conversationId !== activeConvId || userId === currentUser.id) return;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.senderId === currentUser.id ? { ...msg, isRead: true } : msg,
+        ),
+      );
+    };
 
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("presence_state", handlePresenceState);
+    socket.on("user_online", handleUserOnline);
+    socket.on("messages_read", handleMessagesRead);
     socket.on("new_message", handleNewMessage);
     socket.on("user_typing", handleTyping);
     socket.on("user_stop_typing", handleStopTyping);
 
     return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("presence_state", handlePresenceState);
+      socket.off("user_online", handleUserOnline);
+      socket.off("messages_read", handleMessagesRead);
       socket.off("new_message", handleNewMessage);
       socket.off("user_typing", handleTyping);
       socket.off("user_stop_typing", handleStopTyping);
     };
-  }, [activeConvId, currentUser.id]);
+  }, [activeConv, activeConvId, currentUser.id, setUnreadMessagesCount]);
 
   // ── Envoyer un message ─────────────────────────────────
   const handleSend = async () => {
@@ -229,6 +300,12 @@ export default function Messages() {
     typingTimer.current = setTimeout(() => emitStopTyping(activeConvId), 1500);
   };
 
+  const handleSelectFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setSelectedFileName(file.name);
+  };
+
   // ── Ouvrir une conversation avec un utilisateur ────────
   const openConvWithUser = useCallback(
     async (targetUserId) => {
@@ -271,6 +348,12 @@ export default function Messages() {
   }
 
   useEffect(() => {
+    if (activeConv?.other?.id) {
+      requestPresence(activeConv.other.id);
+    }
+  }, [activeConv]);
+
+  useEffect(() => {
     return () => {
       if (activeConvId) {
         leaveConversation(activeConvId);
@@ -278,8 +361,6 @@ export default function Messages() {
       clearTimeout(typingTimer.current);
     };
   }, [activeConvId]);
-
-  const activeConv = conversations.find((c) => c.id === activeConvId);
 
   return (
     <div className={`messages-layout${chatOpen ? " chat-open" : ""}`}>
@@ -368,6 +449,7 @@ export default function Messages() {
                 setChatOpen(false);
                 setActiveConvId(null);
                 setTyping(false);
+                setShowInfoPanel(false);
               }}
             >
               ←
@@ -384,8 +466,14 @@ export default function Messages() {
               <div className="chat-header-name">
                 {activeConv.other?.firstName} {activeConv.other?.lastName}
               </div>
-              <div className="chat-header-status">
-                {typing ? "En train d'écrire..." : "Hors ligne"}
+              <div
+                className={`chat-header-status ${isOtherUserOnline ? "online" : "offline"}`}
+              >
+                {typing
+                  ? "En train d'écrire..."
+                  : isOtherUserOnline
+                    ? "En ligne"
+                    : "Hors ligne"}
               </div>
             </div>
 
@@ -400,12 +488,49 @@ export default function Messages() {
               <button
                 className="btn btn-secondary btn-sm chat-header-action-btn"
                 title="Voir les informations"
+                onClick={() => setShowInfoPanel((prev) => !prev)}
               >
                 <span aria-hidden="true">ℹ️</span>
                 <span className="chat-header-action-label">Info</span>
               </button>
             </div>
           </div>
+
+          {showInfoPanel && (
+            <div className="chat-info-panel">
+              <div className="chat-info-panel__title">Informations</div>
+              <div className="chat-info-panel__row">
+                <span>Contact</span>
+                <strong>
+                  {activeConv.other?.firstName} {activeConv.other?.lastName}
+                </strong>
+              </div>
+              <div className="chat-info-panel__row">
+                <span>Rôle</span>
+                <strong>
+                  {activeConv.other?.role === "investor"
+                    ? "Investisseur"
+                    : activeConv.other?.role === "student"
+                      ? "Étudiant"
+                      : "Utilisateur"}
+                </strong>
+              </div>
+              <div className="chat-info-panel__row">
+                <span>Messages non lus</span>
+                <strong>{activeConv.unread || 0}</strong>
+              </div>
+              {activeConv.lastMessage?.createdAt && (
+                <div className="chat-info-panel__row">
+                  <span>Dernier message</span>
+                  <strong>
+                    {new Date(activeConv.lastMessage.createdAt).toLocaleString(
+                      "fr-FR",
+                    )}
+                  </strong>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Messages */}
           <div className="chat-messages">
@@ -433,6 +558,13 @@ export default function Messages() {
                       minute: "2-digit",
                     }),
                     me: msg.senderId === currentUser.id,
+                    isRead: Boolean(msg.isRead),
+                    readLabel:
+                      msg.senderId === currentUser.id
+                        ? msg.isRead
+                          ? "Vu"
+                          : "Envoyé"
+                        : null,
                   }}
                   senderLabel={`${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
                 />
@@ -443,9 +575,16 @@ export default function Messages() {
 
           {/* Input */}
           <div className="chat-input-area">
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={{ display: "none" }}
+              onChange={handleSelectFile}
+            />
             <button
               className="btn btn-ghost btn-icon chat-attach-btn"
               title="Fichier"
+              onClick={() => fileInputRef.current?.click()}
             >
               📎
             </button>
@@ -457,6 +596,11 @@ export default function Messages() {
               onKeyDown={handleKeyDown}
               rows={1}
             />
+            {selectedFileName ? (
+              <div className="chat-selected-file" title={selectedFileName}>
+                📎 {selectedFileName}
+              </div>
+            ) : null}
             <button
               className="btn btn-primary chat-send-btn"
               onClick={handleSend}

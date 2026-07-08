@@ -471,13 +471,27 @@ export function ChatMessage({ message, senderLabel }) {
         </div>
         <div
           style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: message.me ? "flex-end" : "flex-start",
+            gap: 6,
             fontSize: 10,
             color: "var(--text-muted)",
             marginTop: 4,
             textAlign: message.me ? "right" : "left",
           }}
         >
-          {message.time}
+          <span>{message.time}</span>
+          {message.me && message.readLabel ? (
+            <span
+              style={{
+                color: message.isRead ? "var(--accent)" : "var(--text-muted)",
+                fontWeight: 600,
+              }}
+            >
+              {message.readLabel}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>

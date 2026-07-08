@@ -6,7 +6,8 @@
 import { io } from "socket.io-client";
 import { getAccessToken } from "./api";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
+const SOCKET_URL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
 
 let socket = null;
 
@@ -14,8 +15,8 @@ export function connectSocket() {
   if (socket?.connected) return socket;
 
   socket = io(SOCKET_URL, {
-    auth:       { token: getAccessToken() },
-    transports: ["websocket","polling"],
+    auth: { token: getAccessToken() },
+    transports: ["websocket", "polling"],
     autoConnect: true,
   });
 
@@ -35,7 +36,10 @@ export function connectSocket() {
 }
 
 export function disconnectSocket() {
-  if (socket) { socket.disconnect(); socket = null; }
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
 }
 
 export function getSocket() {
@@ -56,4 +60,12 @@ export function emitTyping(conversationId) {
 
 export function emitStopTyping(conversationId) {
   socket?.emit("stop_typing", { conversationId });
+}
+
+export function emitConversationRead(conversationId) {
+  socket?.emit("conversation_read", { conversationId });
+}
+
+export function requestPresence(userId) {
+  socket?.emit("presence_check", { userId });
 }
