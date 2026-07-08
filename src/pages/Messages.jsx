@@ -40,6 +40,7 @@ export default function Messages() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const chatMessagesRef = useRef(null);
+  const activeOtherUserIdRef = useRef(null);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeConvId),
@@ -204,21 +205,21 @@ export default function Messages() {
       if (userId !== currentUser.id) setTyping(false);
     };
     const handleConnect = () => {
-      if (activeConv?.other?.id) {
-        requestPresence(activeConv.other.id);
+      if (activeOtherUserIdRef.current) {
+        requestPresence(activeOtherUserIdRef.current);
       }
     };
     const handleDisconnect = () => {
       setIsOtherUserOnline(false);
     };
     const handlePresenceState = ({ userId, online, lastSeen }) => {
-      if (userId === activeConv?.other?.id) {
+      if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(Boolean(online));
         setOtherUserLastSeen(lastSeen || null);
       }
     };
     const handleUserOnline = ({ userId, online, lastSeen }) => {
-      if (userId === activeConv?.other?.id) {
+      if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(Boolean(online));
         setOtherUserLastSeen(lastSeen || null);
       }
@@ -399,6 +400,8 @@ export default function Messages() {
   }
 
   useEffect(() => {
+    activeOtherUserIdRef.current = activeConv?.other?.id || null;
+
     if (activeConv?.other?.id) {
       requestPresence(activeConv.other.id);
     }
