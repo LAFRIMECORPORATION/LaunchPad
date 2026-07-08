@@ -2,7 +2,7 @@
 // LAUNCHPAD — Messages Page
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useApp } from "../context/AppContext";
 import { messagesApi } from "../utils/api";
 import {
@@ -35,11 +35,16 @@ export default function Messages() {
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
+  const [otherUserLastSeen, setOtherUserLastSeen] = useState(null);
   const typingTimer = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatMessagesRef = useRef(null);
 
-  const activeConv = conversations.find((c) => c.id === activeConvId);
+  const activeConv = useMemo(
+    () => conversations.find((c) => c.id === activeConvId),
+    [conversations, activeConvId],
+  );
 
   const loadConversations = useCallback(async () => {
     try {
@@ -69,9 +74,6 @@ export default function Messages() {
       } else {
         setMessages((prev) => [...msgs, ...prev]);
       }
-      if (pageNum === 1) {
-        setTimeout(() => messagesEndRef.current?.scrollIntoView(), 50);
-      }
     } catch (err) {
       console.error("Erreur chargement messages :", err);
     }
@@ -91,14 +93,28 @@ export default function Messages() {
       setTyping(false);
       setShowInfoPanel(false);
       setIsOtherUserOnline(false);
+      setOtherUserLastSeen(null);
+
+      requestAnimationFrame(() => {
+        const container = chatMessagesRef.current;
+        if (container) {
+          container.scrollTop = 0;
+        }
+      });
 
       joinConversation(convId);
 
-      await loadMessages(convId, 1);
+      loadMessages(convId, 1).catch((err) => {
+        console.error("Erreur ouverture conversation :", err);
+      });
 
       if (previousUnread > 0) {
-        await messagesApi.markRead(convId);
-        emitConversationRead(convId);
+        messagesApi
+          .markRead(convId)
+          .then(() => {
+            emitConversationRead(convId);
+          })
+          .catch(console.error);
       }
 
       setConversations((prev) =>
@@ -132,7 +148,12 @@ export default function Messages() {
           );
           return [...withoutMatchingOptimistic, message];
         });
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
+        });
 
         if (!isMine) {
           messagesApi
@@ -190,14 +211,16 @@ export default function Messages() {
     const handleDisconnect = () => {
       setIsOtherUserOnline(false);
     };
-    const handlePresenceState = ({ userId, online }) => {
+    const handlePresenceState = ({ userId, online, lastSeen }) => {
       if (userId === activeConv?.other?.id) {
         setIsOtherUserOnline(Boolean(online));
+        setOtherUserLastSeen(lastSeen || null);
       }
     };
-    const handleUserOnline = ({ userId, online }) => {
+    const handleUserOnline = ({ userId, online, lastSeen }) => {
       if (userId === activeConv?.other?.id) {
         setIsOtherUserOnline(Boolean(online));
+        setOtherUserLastSeen(lastSeen || null);
       }
     };
     const handleMessagesRead = ({ conversationId, userId }) => {
@@ -251,7 +274,12 @@ export default function Messages() {
       _optimistic: true,
     };
     setMessages((prev) => [...prev, optimisticMsg]);
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    });
 
     try {
       const res = await messagesApi.sendMessage(activeConvId, text);
@@ -343,6 +371,21 @@ export default function Messages() {
       });
     }
   }, [pendingConversation, openConvWithUser, setPendingConversation]);
+
+  function formatLastSeen(value) {
+    if (!value) return "Hors ligne";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Hors ligne";
+
+    return `Vu le ${date.toLocaleDateString("fr-FR")} à ${date.toLocaleTimeString(
+      "fr-FR",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    )}`;
+  }
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -481,7 +524,7 @@ export default function Messages() {
                   ? "En train d'écrire..."
                   : isOtherUserOnline
                     ? "En ligne"
-                    : "Hors ligne"}
+                    : formatLastSeen(otherUserLastSeen)}
               </div>
             </div>
 
@@ -541,7 +584,7 @@ export default function Messages() {
           )}
 
           {/* Messages */}
-          <div className="chat-messages">
+          <div ref={chatMessagesRef} className="chat-messages">
             <div className="chat-date-separator">Aujourd'hui</div>
             {messages.length === 0 ? (
               <div
