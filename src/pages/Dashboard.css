@@ -98,6 +98,97 @@
     }
 }
 
+/* ── Investor dashboard responsive ── */
+.dashboard-investor-header-actions {
+    min-width: 0;
+}
+
+.dashboard-investor-explore-btn {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.dashboard-investor-stats-grid,
+.dashboard-investor-quick-grid,
+.dashboard-investor-projects-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.dashboard-investor-portfolio-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.dashboard-investor-portfolio-table {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-investor-portfolio-table .portfolio-header,
+.dashboard-investor-portfolio-table .portfolio-row {
+    min-width: 720px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-investor-header-actions {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .dashboard-investor-explore-btn {
+        width: fit-content;
+        max-width: 100%;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .dashboard-investor-stats-grid,
+    .dashboard-investor-quick-grid,
+    .dashboard-investor-projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-investor-header-actions {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .dashboard-investor-explore-btn {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .dashboard-investor-stats-grid,
+    .dashboard-investor-quick-grid,
+    .dashboard-investor-projects-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .dashboard-investor-portfolio-card,
+    .dashboard-investor-portfolio-table,
+    .dashboard-investor-portfolio-table .portfolio-header,
+    .dashboard-investor-portfolio-table .portfolio-row,
+    .portfolio-row,
+    .quick-access-card {
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+}
+
 /* ── Activity feed ── */
 .activity-feed {
     display: flex;
