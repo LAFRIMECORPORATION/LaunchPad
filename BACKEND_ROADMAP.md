@@ -1,169 +1,182 @@
 # 🎯 QUICK REFERENCE — Actions Requises Backend
 
-## HIÉRARCHIE DE PRIORITÉS
+## HIÉRARCHIE DE PRIORITÉS (Mise à jour 2026-07-30)
 
-### 🔴 TRÈS URGENT (Bloque le MVP)
-1. **Paiement** - MTN/Orange/Stripe integration (⏱️ 1-2 semaines)
-2. **KYC Admin** - Workflow de validation (⏱️ 3-5 jours)
-3. **Messagerie** - Persistence (⏱️ 3-5 jours)
-4. **Publication Projets** - DB + AI (⏱️ 1 semaine)
+### ✅ COMPLÉTÉ
+1. **Authentification** - JWT, refresh tokens, register/login/logout ✅
+2. **Utilisateurs** - CRUD profils, upload avatar ✅
+3. **Projets** - CRUD complet, likes, commentaires, publication, modération ✅
+4. **KYC** - Soumission documents, validation admin ✅
+5. **Messagerie REST** - Conversations, messages, marquage lu ✅
+6. **Messagerie Temps Réel** - Socket.io, typing, presence, read receipts ✅
+7. **Paiements** - MTN/Orange/Stripe integration, webhooks, escrow ✅
+8. **Notifications** - In-app, routes de lecture/push ✅
+9. **Forum** - Posts, replies, likes ✅
+10. **Collaborations** - Requests, accept/decline ✅
+11. **Badges** - Attribution automatique ✅
+12. **Feed** - Events, timeline ✅
+13. **Investor Requests** - Publication, candidatures ✅
+14. **Appointments** - CRUD de rendez-vous ✅
+15. **Due Diligence** - Routes et service ✅
+16. **Admin** - Modération projets, KYC, statistiques ✅
 
-### 🟠 IMPORTANT (Complète les features)
-5. **Rendez-vous/Appointments** - Cal.com integration (⏱️ 3-5 jours)
-6. **Forum** - Posts persistence (⏱️ 3-5 jours)
-7. **Collaboration Requests** - Workflow complet (⏱️ 3-5 jours)
-8. **Notifications** - Real-time ou polling (⏱️ 3-5 jours)
+### 🟠 VALIDATION & TESTS (Priorité actuelle)
+1. **Paiements Sandbox** - Tests end-to-end MTN/Orange/Stripe (⏱️ 3-5 jours)
+2. **Performance DB** - Index Prisma, optimisation requêtes (⏱️ 2-3 jours)
+3. **Tests E2E** - Scénarios utilisateur complets (⏱️ 5-7 jours)
+4. **Sécurité** - Audit endpoints, rate limiting avancé (⏱️ 3-5 jours)
 
-### 🟡 UTILE (Nice-to-have)
-9. **Édition Profil** - Profile updates (⏱️ 2-3 jours)
-10. **Partage Social** - OAuth Twitter/LinkedIn (⏱️ 3-5 jours)
-11. **Admin Dashboard** - Full moderation (⏱️ 5-7 jours)
-12. **Due Diligence IA** - AI scoring (⏱️ 1 semaine)
-
-### ⚪ MINIMAL (UI seulement)
-- Emoji picker (Messages)
-- File attachments UI
-- Collaboration task management
+### 🟡 AMÉLIORATIONS (Post-MVP)
+1. **Upload Fichiers** - Attachements messages, documents projets (⏱️ 3-5 jours)
+2. **Push Notifications** - Web Push complet (⏱️ 2-3 jours)
+3. **Due Diligence IA** - Intégration OpenAI/GPT (⏱️ 1 semaine)
+4. **Analytics** - Dashboard admin avancé (⏱️ 5-7 jours)
+5. **Search** - Recherche avancée projets (⏱️ 3-5 jours)
 
 ---
 
-## API ENDPOINTS À CRÉER
+## API ENDPOINTS (État actuel : 100% implémentés)
 
-### Authentification (5 endpoints)
+### Authentification (5 endpoints) ✅
 ```
-POST   /auth/register
-POST   /auth/login
-POST   /auth/logout
-POST   /auth/refresh-token
-GET    /auth/verify
-```
-
-### Utilisateurs & Profils (5 endpoints)
-```
-GET    /users/:id
-GET    /users/current
-PUT    /users/:id
-POST   /users/:id/avatar
-POST   /users/:id/resume
+POST   /api/auth/register
+POST   /api/auth/login
+POST   /api/auth/logout
+POST   /api/auth/refresh-token
+GET    /api/auth/me
 ```
 
-### Projets (10 endpoints)
+### Utilisateurs & Profils (5 endpoints) ✅
 ```
-POST   /projects
-GET    /projects
-GET    /projects/:id
-PUT    /projects/:id
-DELETE /projects/:id
-GET    /projects/similar/:id
-POST   /projects/:id/publish
-GET    /projects?filter=...&sort=...
-POST   /projects/:id/like
-POST   /projects/:id/comments
+GET    /api/users
+GET    /api/users/:id
+PUT    /api/users/:id
+POST   /api/users/:id/avatar
+POST   /api/users/:id/resume
 ```
 
-### Investissements & Paiement (12 endpoints) ⭐ PRIORITÉ
+### Projets (12 endpoints) ✅
 ```
-POST   /investments
-GET    /investments
-GET    /investments/:id
-PUT    /investments/:id
-POST   /payments/initialize
-POST   /payments/confirm
-POST   /payments/mtn/initiate
-POST   /payments/orange/initiate
-POST   /payments/stripe/charge
-GET    /payments/:id/status
-POST   /escrow/:id/verify
-POST   /escrow/:id/release
-```
-
-### KYC (8 endpoints) ⭐ PRIORITÉ
-```
-POST   /kyc/submit
-GET    /kyc/:id
-PUT    /kyc/:id
-GET    /kyc/:id/status
-PUT    /kyc/:id/approve       [ADMIN]
-PUT    /kyc/:id/reject        [ADMIN]
-GET    /admin/kyc/pending     [ADMIN]
-POST   /kyc/:id/request-docs
+POST   /api/projects
+GET    /api/projects
+GET    /api/projects/mine
+GET    /api/projects/:id
+PUT    /api/projects/:id
+DELETE /api/projects/:id
+POST   /api/projects/:id/cover
+POST   /api/projects/:id/publish
+GET    /api/projects/:id/similar
+POST   /api/projects/:id/like
+POST   /api/projects/:id/save
+POST   /api/projects/:id/comments
+GET    /api/projects/:id/comments
+POST   /api/projects/:id/comments/:commentId/like
 ```
 
-### Messages (6 endpoints) ⭐ PRIORITÉ
+### Investissements & Paiement (10 endpoints) ✅
 ```
-POST   /messages
-GET    /conversations/:id/messages
-POST   /conversations
-GET    /conversations
-GET    /conversations/:id
-DELETE /messages/:id
-```
-
-### Forum (6 endpoints)
-```
-POST   /forum/posts
-GET    /forum/posts
-GET    /forum/posts/:id
-PUT    /forum/posts/:id
-DELETE /forum/posts/:id
-POST   /forum/posts/:id/replies
+POST   /api/investments
+GET    /api/investments
+GET    /api/investments/:id
+POST   /api/payments/mtn/init
+POST   /api/payments/orange/init
+POST   /api/payments/stripe/init
+GET    /api/payments/:investmentId/status
+POST   /api/payments/mtn/webhook
+POST   /api/payments/orange/webhook
+POST   /api/payments/stripe/webhook
+POST   /api/payments/cancel-expired
 ```
 
-### Collaboration (5 endpoints)
+### KYC (8 endpoints) ✅
 ```
-POST   /collaborations
-GET    /collaborations/:id
-PUT    /collaborations/:id/accept
-PUT    /collaborations/:id/decline
-GET    /collaborations/inbox
-```
-
-### Rendez-vous (5 endpoints)
-```
-POST   /appointments
-GET    /appointments
-GET    /appointments/:id
-PUT    /appointments/:id
-DELETE /appointments/:id
-GET    /availability/:userId
+POST   /api/kyc/submit
+GET    /api/kyc/:id
+PUT    /api/kyc/:id
+GET    /api/kyc/:id/status
+PUT    /api/kyc/:id/approve       [ADMIN]
+PUT    /api/kyc/:id/reject        [ADMIN]
+GET    /api/admin/kyc/pending     [ADMIN]
+POST   /api/kyc/:id/request-docs
 ```
 
-### Notifications (4 endpoints)
+### Messages (7 endpoints) ✅
 ```
-GET    /notifications
-PUT    /notifications/mark-all-read
-DELETE /notifications/:id
-WebSocket /notifications (real-time)
-```
-
-### Admin (6 endpoints)
-```
-GET    /admin/projects          [ADMIN]
-PUT    /admin/projects/:id/approve  [ADMIN]
-PUT    /admin/projects/:id/reject   [ADMIN]
-GET    /admin/kyc              [ADMIN]
-GET    /admin/users            [ADMIN]
-GET    /admin/statistics       [ADMIN]
+POST   /api/messages
+GET    /api/conversations
+POST   /api/conversations/direct
+GET    /api/conversations/:id/messages
+POST   /api/conversations/:id/read
+DELETE /api/messages/:id
+GET    /api/messages/unread-count
 ```
 
-### Investor Requests (4 endpoints)
+### Forum (6 endpoints) ✅
 ```
-POST   /investor-requests
-GET    /investor-requests
-GET    /investor-requests/:id
-POST   /investor-requests/:id/apply
-```
-
-### Badges (2 endpoints)
-```
-GET    /badges/user/:id
-POST   /badges/award/:userId/:badge  [INTERNAL]
+POST   /api/forum/posts
+GET    /api/forum/posts
+GET    /api/forum/posts/:id
+PUT    /api/forum/posts/:id
+DELETE /api/forum/posts/:id
+POST   /api/forum/posts/:id/replies
 ```
 
-### AI & Due Diligence (2 endpoints) ⭐ FUTUR
+### Collaboration (5 endpoints) ✅
 ```
-POST   /due-diligence/analyze
-GET    /due-diligence/:projectId
+POST   /api/collaborations
+GET    /api/collaborations/:id
+PUT    /api/collaborations/:id/accept
+PUT    /api/collaborations/:id/decline
+GET    /api/collaborations/inbox
+```
+
+### Rendez-vous (5 endpoints) ✅
+```
+POST   /api/appointments
+GET    /api/appointments
+GET    /api/appointments/:id
+PUT    /api/appointments/:id
+DELETE /api/appointments/:id
+GET    /api/availability/:userId
+```
+
+### Notifications (4 endpoints) ✅
+```
+GET    /api/notifications
+PUT    /api/notifications/mark-all-read
+DELETE /api/notifications/:id
+POST   /api/push/subscribe
+```
+
+### Admin (6 endpoints) ✅
+```
+GET    /api/admin/projects/pending
+PUT    /api/admin/projects/:id/approve
+PUT    /api/admin/projects/:id/reject
+GET    /api/admin/kyc
+GET    /api/admin/users
+GET    /api/admin/statistics
+```
+
+### Investor Requests (4 endpoints) ✅
+```
+POST   /api/investor-requests
+GET    /api/investor-requests
+GET    /api/investor-requests/:id
+POST   /api/investor-requests/:id/apply
+```
+
+### Badges (2 endpoints) ✅
+```
+GET    /api/badges/user/:id
+POST   /api/badges/award/:userId/:badge  [INTERNAL]
+```
+
+### Feed & Due Diligence (3 endpoints) ✅
+```
+GET    /api/feed
+POST   /api/due-diligence/analyze
+GET    /api/due-diligence/:projectId
 ```
 
 ---
@@ -405,4 +418,31 @@ Before deploying to production:
 
 ---
 
-Generated: June 3, 2026
+## ÉTAT ACTUEL DU PROJET (2026-07-30)
+
+### ✅ Modules Backend 100% Opérationnels
+- Authentification complète avec JWT et refresh tokens
+- Gestion utilisateurs et profils avec upload avatar
+- Module projets avec CRUD, likes, commentaires, modération
+- KYC complet avec soumission et validation admin
+- Messagerie REST + temps réel avec Socket.io
+- Paiements MTN/Orange/Stripe avec webhooks et escrow
+- Notifications in-app et push subscriptions
+- Forum avec posts, replies et likes
+- Collaborations avec workflow accept/decline
+- Badges et système de réputation
+- Feed events et timeline
+- Investor requests et candidatures
+- Appointments et gestion rendez-vous
+- Due diligence avec routes et service
+- Admin dashboard avec modération
+
+### 🎯 Prochaines Étapes Prioritaires
+1. Validation sandbox paiements (tests réels)
+2. Tests E2E complets
+3. Performance DB (index Prisma)
+4. Audit sécurité
+
+---
+
+**Dernière mise à jour** : 2026-07-30

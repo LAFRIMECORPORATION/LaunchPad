@@ -252,7 +252,7 @@ export default function ForumPage() {
                 className={`forum-post card${post.isPinned ? " pinned" : ""}`}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate("forum-post", { postId: post.id })}
+                onClick={() => navigate(`/forum/${post.id}`)}
               >
                 <div className="forum-post__header">
                   <Avatar label={authorInitials(post.author)} size="md" />
@@ -260,7 +260,7 @@ export default function ForumPage() {
                     <div className="forum-post__badges">
                       {post.isPinned && <span className="badge badge-primary">📌 Épinglé</span>}
                       <span className="badge badge-gray">
-                        {CATEGORIES.find(c => c.id === post.category)?.label || post.category}
+                        {post.category?.name || CATEGORIES.find(c => c.id === post.category)?.label || post.category}
                       </span>
                     </div>
                     <div className="forum-post__title">{post.title}</div>

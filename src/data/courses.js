@@ -1,0 +1,73 @@
+// ============================================================
+// LAUNCHPAD — Contenu statique de l'Academy
+// Pas d'endpoint backend — contenu éditorial géré ici.
+// ============================================================
+
+export const COURSES = [
+  {
+    id: 1,
+    icon: "🎤",
+    title: "Comment pitcher à un investisseur africain",
+    type: "Cours",
+    duration: "45 min",
+    level: "Débutant",
+    premium: false,
+    enrolled: 342,
+    rating: 4.8,
+  },
+  {
+    id: 2,
+    icon: "💰",
+    title: "Lever des fonds : du seed au Série A",
+    type: "Webinaire",
+    duration: "1h30",
+    level: "Intermédiaire",
+    premium: false,
+    enrolled: 218,
+    rating: 4.9,
+  },
+  {
+    id: 3,
+    icon: "📋",
+    title: "Construire son business plan camerounais",
+    type: "Guide PDF",
+    duration: "30 min",
+    level: "Débutant",
+    premium: false,
+    enrolled: 567,
+    rating: 4.7,
+  },
+  {
+    id: 4,
+    icon: "⚖️",
+    title: "Aspects juridiques : créer une SARL au Cameroun",
+    type: "Cours",
+    duration: "1h",
+    level: "Intermédiaire",
+    premium: true,
+    enrolled: 134,
+    rating: 4.6,
+  },
+  {
+    id: 5,
+    icon: "📊",
+    title: "Cap table & dilution : comprendre l'equity",
+    type: "Cours",
+    duration: "55 min",
+    level: "Avancé",
+    premium: true,
+    enrolled: 89,
+    rating: 4.9,
+  },
+  {
+    id: 6,
+    icon: "🌍",
+    title: "Expansion en Afrique Centrale : stratégies",
+    type: "Webinaire",
+    duration: "2h",
+    level: "Avancé",
+    premium: true,
+    enrolled: 67,
+    rating: 5.0,
+  },
+];

@@ -25,6 +25,8 @@ export default function Explore() {
     // Récupération de l'application context
     const appCtx = useApp();
     const showToast = appCtx?.showToast;
+    const setProjects = appCtx?.setProjects;
+    const globalProjects = appCtx?.projects || [];
     
     // Sécurisation de la récupération du Token d'authentification
     const token = typeof appCtx?.getAccessToken === "function" 
@@ -32,7 +34,6 @@ export default function Explore() {
         : (appCtx?.token || appCtx?.accessToken || "");
     
     // ── États synchronisés avec la base de données ───────────────────────────
-    const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     
     // ── États des filtres utilisateur ───────────────────────────────────────
@@ -89,15 +90,15 @@ export default function Explore() {
             // Adaptation à la structure renvoyée par ton API
             const rawProjects = Array.isArray(data) ? data : data.data || [];
             
-            // Normalisation des données pour inclure likes et commentaires
+            // Normalisation des données pour inclure likes et commentaires (harmonisé avec ProjectDetail)
             const normalizedProjects = rawProjects.map(p => ({
                 ...p,
                 id: p.id || p.project_id,
                 likes: p.likes ?? p.likesCount ?? p.likes_count ?? p._count?.likes ?? 0,
-                comments: p.comments || [],
-                commentsCount: p.commentsCount ?? p.comments_count ?? p._count?.comments ?? 0,
                 likedByMe: p.likedByMe ?? p.isLiked ?? false,
-                isSaved: p.isSaved ?? false,
+                isSaved: p.isSaved ?? p.is_saved ?? false,
+                comments: p.comments || [],
+                commentsCount: p.commentsCount ?? p.comments_count ?? p._count?.comments ?? (p.comments?.length || 0),
                 coverImageUrl: p.coverImageUrl || p.cover_image_url || null,
                 raisedAmount: Number(p.raisedAmount || p.raised_amount || 0),
                 goalAmount: Number(p.goalAmount || p.goal_amount || 0),
@@ -115,7 +116,7 @@ export default function Explore() {
         } finally {
             setLoading(false);
         }
-    }, [cat, stage, search, sort, token, showToast]);
+    }, [cat, stage, search, sort, token, showToast, setProjects]);
 
     // Déclencheur à chaque changement de filtres
     useEffect(() => {
@@ -127,14 +128,14 @@ export default function Explore() {
     }, [loadProjects]);
 
     return (
-        <div className="animate-fadeUp">
+        <div className="animate-fadeUp" style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
 
             {/* ── Header ── */}
             <div className="page-header">
                 <div className="page-header-left">
                     <h1 className="page-title">Explorer les projets</h1>
                     <p className="page-subtitle">
-                        {loading ? "Mise à jour de la file..." : `${projects.length} projet${projects.length > 1 ? "s" : ""} disponible${projects.length > 1 ? "s" : ""}`}
+                        {loading ? "Mise à jour de la file..." : `${globalProjects.length} projet${globalProjects.length > 1 ? "s" : ""} disponible${globalProjects.length > 1 ? "s" : ""}`}
                     </p>
                 </div>
                 <div className="page-header-actions">
@@ -185,14 +186,14 @@ export default function Explore() {
                     <div className="spinner" style={{ display: "inline-block", marginBottom: 12 }} />
                     <div className="loading-state__title" style={{ color: "var(--text-muted)" }}>Interrogation de la base de données...</div>
                 </div>
-            ) : projects.length > 0 ? (
-                <div className="grid-auto">
-                    {projects.map(p => {
+            ) : globalProjects.length > 0 ? (
+                <div className="grid-auto" style={{ width: "100%", maxWidth: "100%" }}>
+                    {globalProjects.map(p => {
                         const currentId = p?.id || p?.project_id || p?._id;
                         return (
                             <div 
                                 key={currentId || Math.random().toString()} 
-                                style={{ display: "flex", flexDirection: "column", gap: 0, cursor: "pointer" }}
+                                style={{ display: "flex", flexDirection: "column", gap: 0, cursor: "pointer", width: "100%", maxWidth: "100%" }}
                                 onClick={() => routerNavigate(`/projects/${currentId}`)}
                             >
                                 <ProjectCard

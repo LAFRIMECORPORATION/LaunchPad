@@ -116,7 +116,7 @@ export function ProjectCard({ project, onClick, compact = false }) {
       style={{ padding: 0, overflow: "hidden", borderRadius: "var(--r-lg)" }}
     >
       {/* Cover Image Style Facebook */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
         {project.coverImageUrl || project.cover_image_url ? (
           <img
             src={project.coverImageUrl || project.cover_image_url}
@@ -130,7 +130,7 @@ export function ProjectCard({ project, onClick, compact = false }) {
             onError={(e) => {
               e.target.style.display = "none";
               e.target.parentElement.innerHTML = `
-                                <div style="height:${compact ? 140 : 180}px;border-radius:var(--r-md);background:${project.colorBg || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"};display:flex;align-items:center;justify-content:center;font-size:${compact ? 40 : 56}px;">
+                                <div style="height:${compact ? 140 : 180}px;width:100%;border-radius:var(--r-md);background:${project.colorBg || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"};display:flex;align-items:center;justify-content:center;font-size:${compact ? 40 : 56}px;">
                                     ${project.emoji || "📦"}
                                 </div>
                             `;
@@ -140,6 +140,7 @@ export function ProjectCard({ project, onClick, compact = false }) {
           <div
             style={{
               height: compact ? 140 : 180,
+              width: "100%",
               borderRadius: "var(--r-md)",
               background:
                 project.colorBg ||

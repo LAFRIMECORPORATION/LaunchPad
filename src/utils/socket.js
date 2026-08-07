@@ -32,6 +32,11 @@ export function connectSocket() {
     console.error("Socket erreur :", err.message);
   });
 
+  // Réponse au ping de synchronisation
+  socket.on("pong_client", (data) => {
+    console.log("⚡ Pong reçu du serveur :", data?.message);
+  });
+
   return socket;
 }
 

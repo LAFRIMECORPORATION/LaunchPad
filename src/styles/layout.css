@@ -261,6 +261,11 @@
     border-radius: var(--r-lg);
     box-shadow: var(--shadow-xs);
     transition: var(--tr-normal);
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-hover:hover {
@@ -271,12 +276,27 @@
 
 .card-interactive {
     cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 .card-interactive:hover {
     box-shadow: var(--shadow-md);
     border-color: var(--accent-mid);
     transform: translateY(-2px);
+}
+
+.card-interactive img {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
+    display: block !important;
+    flex-shrink: 0;
 }
 
 /* ── PROGRESS BAR ── */
@@ -903,8 +923,26 @@ body:has(.messages-layout),
 
 .grid-auto {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.grid-auto > * {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    max-width: 400px;
+}
+
+.grid-auto .card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    max-width: 400px;
 }
 
 /* ── TWO COLUMN ── */
@@ -913,16 +951,23 @@ body:has(.messages-layout),
     flex-direction: row;
     gap: 24px;
     align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .two-col-main {
     flex: 1;
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .two-col-side {
     width: 280px;
     flex-shrink: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 16px;

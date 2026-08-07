@@ -18,8 +18,8 @@ export default function SocialActions({
     const targetProjectId = project?.id || project?.project_id || project?.project?.id;
     const innerProject = project?.project || project;
     
-    const initialLikes = innerProject?.likes ?? innerProject?.likesCount ?? 0;
-    const initialLiked = innerProject?.likedByMe ?? innerProject?.isLiked ?? false;
+    const initialLikes = project?.likes ?? project?.likesCount ?? innerProject?.likes ?? innerProject?.likesCount ?? 0;
+    const initialLiked = project?.likedByMe ?? project?.isLiked ?? innerProject?.likedByMe ?? innerProject?.isLiked ?? false;
 
     const [likesCount, setLikesCount] = useState(initialLikes);
     const [isLiked, setIsLiked] = useState(initialLiked);
@@ -90,7 +90,7 @@ export default function SocialActions({
             {showCommentCount && (
                 <button type="button" className={btnClass} onClick={handleComment} title="Voir les commentaires">
                     <span className="social-btn-icon">💬</span>
-                    <span className="social-btn-count">{innerProject?.comments?.length || 0}</span>
+                    <span className="social-btn-count">{(project?.commentsCount ?? project?.comments_count ?? project?._count?.comments ?? project?.comments?.length ?? innerProject?.commentsCount ?? innerProject?.comments_count ?? innerProject?._count?.comments ?? innerProject?.comments?.length) || 0}</span>
                 </button>
             )}
 

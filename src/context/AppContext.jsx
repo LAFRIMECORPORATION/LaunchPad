@@ -16,17 +16,13 @@ import {
   authApi,
   kycApi,
   messagesApi,
+  projectsApi,
+  notificationsApi,
+  investorRequestsApi,
   setAccessToken,
   clearAccessToken,
 } from "../utils/api";
 import { connectSocket, disconnectSocket, getSocket } from "../utils/socket";
-import {
-  NOTIFICATIONS,
-  CONVERSATIONS,
-  PROJECTS,
-  SAVED_PROJECTS,
-  INVESTOR_REQUESTS,
-} from "../data/mockData";
 import { getPathForPage, getPageFromPath } from "../config/routes";
 
 const AppContext = createContext(null);
@@ -46,19 +42,19 @@ export function AppProvider({ children }) {
   );
 
   // ─── Projets & Flux d'Interactions ────────────────────────
-  const [projects, setProjects] = useState(PROJECTS);
-  const [savedProjects, setSavedProjects] = useState(SAVED_PROJECTS);
+  const [projects, setProjects] = useState([]);
+  const [savedProjects, setSavedProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
 
   // ─── Annonces Investisseurs ───────────────────────────────
-  const [investorRequests, setInvestorRequests] = useState(INVESTOR_REQUESTS);
+  const [investorRequests, setInvestorRequests] = useState([]);
 
   // ─── Documents KYC ────────────────────────────────────────
   const [kycDocs, setKycDocs] = useState([]);
 
   // ─── Notifications & Messagerie ───────────────────────────
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
-  const [conversations, setConversations] = useState(CONVERSATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(1);
   const [pendingConversation, setPendingConversation] = useState(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -303,7 +299,13 @@ export function AppProvider({ children }) {
           },
         );
 
+        if (!response.ok) {
+          console.error("Erreur HTTP like:", response.status);
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
         const jsonRes = await response.json();
+        
         // On extrait la charge utile selon la structure de ton service (déballée ou imbriquée sous "project")
         const backendPayload = jsonRes.project || jsonRes.data || jsonRes;
 
@@ -331,6 +333,12 @@ export function AppProvider({ children }) {
         }
       } catch (error) {
         console.error("Erreur d'enregistrement du Like:", error);
+        // Rollback en cas d'erreur
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id !== projectId ? p : { ...p, liked: !liked, likes: prevLikes }
+          )
+        );
       }
     },
     [getAccessToken],
@@ -366,17 +374,18 @@ export function AppProvider({ children }) {
 
         const processedComment = {
           id: dbComment.id || Date.now(),
-          author: dbComment.author?.firstName
-            ? `${dbComment.author.firstName} ${dbComment.author.lastName || ""}`
-            : user?.name || "Anonyme",
+          author: dbComment.author?.firstName || dbComment.author?.first_name
+            ? `${dbComment.author.firstName || dbComment.author.first_name} ${dbComment.author.lastName || dbComment.author.last_name || ""}`
+            : user?.firstName || user?.name || "Anonyme",
           avatar:
-            dbComment.author?.avatar_url ||
+            dbComment.author?.avatarUrl || dbComment.author?.avatar_url ||
             dbComment.author?.avatar ||
-            user?.avatar ||
-            "??",
-          text: dbComment.text || text,
+            user?.avatarUrl || user?.avatar ||
+            user?.firstName?.[0] || "??",
+          text: dbComment.content || dbComment.text || text,
           time: "À l'instant",
           likes: 0,
+          likedByMe: false,
         };
 
         setProjects((prev) =>
@@ -414,12 +423,24 @@ export function AppProvider({ children }) {
     );
   }, []);
 
-  const toggleSave = useCallback((projectId) => {
+  const toggleSave = useCallback(async (projectId) => {
+    // Mise à jour optimiste immédiate
     setSavedProjects((prev) =>
       prev.includes(projectId)
         ? prev.filter((id) => id !== projectId)
         : [...prev, projectId],
     );
+    try {
+      await projectsApi.save(projectId);
+    } catch (error) {
+      // Annuler en cas d'erreur API
+      setSavedProjects((prev) =>
+        prev.includes(projectId)
+          ? prev.filter((id) => id !== projectId)
+          : [...prev, projectId],
+      );
+      console.error("Erreur sauvegarde projet :", error);
+    }
   }, []);
 
   const isProjectSaved = useCallback(
@@ -433,37 +454,48 @@ export function AppProvider({ children }) {
 
   // ─── Annonces Investisseurs ───────────────────────────────
   const addInvestorRequest = useCallback(
-    (request, user) => {
-      setInvestorRequests((prev) => [
-        {
-          id: Date.now(),
-          authorId: user?.id,
-          authorName: user?.name,
-          authorAvatar: user?.avatar,
-          authorCompany: user?.company,
-          applicants: 0,
-          createdAt: "À l'instant",
-          status: "active",
-          ...request,
-        },
-        ...prev,
-      ]);
-      showToast("Votre annonce a été publiée avec succès !", "success");
+    async (request) => {
+      try {
+        const res = await investorRequestsApi.create(request);
+        const newRequest = res?.request ?? res?.data ?? res;
+        setInvestorRequests((prev) => [newRequest, ...prev]);
+        showToast("Votre annonce a été publiée avec succès !", "success");
+        return newRequest;
+      } catch (error) {
+        showToast(error.message || "Erreur lors de la publication.", "error");
+        throw error;
+      }
     },
     [showToast],
   );
 
   const applyToRequest = useCallback(
-    (requestId) => {
+    async (requestId) => {
+      // Mise à jour optimiste
       setInvestorRequests((prev) =>
         prev.map((r) =>
-          r.id !== requestId ? r : { ...r, applicants: r.applicants + 1 },
+          r.id !== requestId
+            ? r
+            : { ...r, applicants: (r.applicants || 0) + 1 },
         ),
       );
-      showToast(
-        "Votre candidature a bien été envoyée à l'investisseur !",
-        "success",
-      );
+      try {
+        await investorRequestsApi.apply(requestId);
+        showToast(
+          "Votre candidature a bien été envoyée à l'investisseur !",
+          "success",
+        );
+      } catch (error) {
+        // Annuler en cas d'échec
+        setInvestorRequests((prev) =>
+          prev.map((r) =>
+            r.id !== requestId
+              ? r
+              : { ...r, applicants: Math.max(0, (r.applicants || 1) - 1) },
+          ),
+        );
+        showToast(error.message || "Erreur lors de la candidature.", "error");
+      }
     },
     [showToast],
   );
@@ -529,8 +561,13 @@ export function AppProvider({ children }) {
 
   // ─── Notifications ────────────────────────────────────────
   const unreadCount = notifications.filter((n) => n.unread).length;
-  const markAllRead = useCallback(() => {
+  const markAllRead = useCallback(async () => {
     setNotifications((n) => n.map((x) => ({ ...x, unread: false })));
+    try {
+      await notificationsApi.markAllRead();
+    } catch (error) {
+      console.error("Erreur mark all read :", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -538,12 +575,52 @@ export function AppProvider({ children }) {
     messagesApi
       .getUnreadCount()
       .then((res) => {
-        const count = res.data?.unread ?? 0;
+        const count = res?.data?.unread ?? res?.unread ?? 0;
         setUnreadMessagesCount(count);
       })
       .catch((err) => {
         console.error("Erreur chargement nombre de messages non lus :", err);
       });
+  }, [currentUser?.id]);
+
+  // ─── Chargement des données depuis l'API après login ─────
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    projectsApi
+      .list()
+      .then((res) => {
+        const list = res?.projects ?? res?.data ?? res ?? [];
+        setProjects(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => console.error("Erreur chargement projets :", err));
+
+    messagesApi
+      .getConversations()
+      .then((res) => {
+        // Backend: success(res, { conversations }) → { data: { conversations: [...] } }
+        const list = res?.data?.conversations ?? res?.conversations ?? [];
+        setConversations(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => console.error("Erreur chargement conversations :", err));
+
+    notificationsApi
+      .getAll()
+      .then((res) => {
+        // Backend: success(res, { notifications, total, unreadCount }) → { data: { notifications: [...] } }
+        const list = res?.data?.notifications ?? res?.notifications ?? [];
+        setNotifications(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => console.error("Erreur chargement notifications :", err));
+
+    investorRequestsApi
+      .list()
+      .then((res) => {
+        // Backend: success(res, { requests, total, page, totalPages }) → { data: { requests: [...] } }
+        const list = res?.data?.requests ?? res?.requests ?? [];
+        setInvestorRequests(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => console.error("Erreur chargement annonces :", err));
   }, [currentUser?.id]);
 
   useEffect(() => {
@@ -552,14 +629,46 @@ export function AppProvider({ children }) {
     const socket = getSocket() || connectSocket();
     if (!socket) return;
 
-    const handleUnreadUpdate = ({ increment = 0, reset = false } = {}) => {
-      setUnreadMessagesCount((prev) => {
-        if (reset) return 0;
-        return Math.max(0, prev + increment);
-      });
+    const handleUnreadUpdate = ({
+      conversationId,
+      increment = 0,
+      reset = false,
+    } = {}) => {
+      if (reset) {
+        // Re-fetch le total réel depuis l'API pour éviter les dérives
+        messagesApi
+          .getUnreadCount()
+          .then((res) =>
+            setUnreadMessagesCount(res?.data?.unread ?? res?.unread ?? 0),
+          )
+          .catch(() => { });
+        // Remettre à 0 le badge de la conversation concernée
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === conversationId || c.id === Number(conversationId)
+              ? { ...c, unreadCount: 0 }
+              : c,
+          ),
+        );
+      } else {
+        setUnreadMessagesCount((prev) => Math.max(0, prev + increment));
+      }
     };
 
-    const handleNewMessage = ({ conversationId }) => {
+    const handleNewMessage = ({ message, conversationId }) => {
+      // Mettre à jour l'aperçu de la conversation dans la liste
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === conversationId || c.id === Number(conversationId)
+            ? {
+              ...c,
+              lastMessage: message,
+              updatedAt: message?.createdAt || new Date().toISOString(),
+            }
+            : c,
+        ),
+      );
+      // Incrémenter le badge seulement si l'utilisateur n'est pas sur cette conversation
       if (currentPage !== "messages" || activeConvId !== conversationId) {
         setUnreadMessagesCount((prev) => prev + 1);
       }
@@ -577,29 +686,34 @@ export function AppProvider({ children }) {
   // ─── Messagerie ───────────────────────────────────────────
   const unreadMessages = unreadMessagesCount;
 
-  const sendMessage = useCallback((convId, text) => {
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id !== convId
-          ? c
-          : {
-              ...c,
-              unread: 0,
-              lastTime: "À l'instant",
-              messages: [
-                ...c.messages,
-                {
-                  id: Date.now(),
-                  from: "me",
-                  text,
-                  time: "À l'instant",
-                  me: true,
-                },
-              ],
-            },
-      ),
-    );
-  }, []);
+  const sendMessage = useCallback(
+    async (convId, text) => {
+      try {
+        const res = await messagesApi.send(convId, text);
+        // Backend: created(res, { message }) → { data: { message: {...} }, message: "Message envoyé." }
+        // res.message est la chaîne "Message envoyé.", l'objet message est dans res.data.message
+        const message = res?.data?.message ?? res?.data ?? res;
+        // Mettre à jour l'aperçu de la conversation dans la liste
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id !== convId
+              ? c
+              : {
+                ...c,
+                lastMessage: message,
+                updatedAt: message?.createdAt || new Date().toISOString(),
+              },
+          ),
+        );
+        return message;
+      } catch (error) {
+        console.error("Erreur envoi message :", error);
+        showToast("Erreur lors de l'envoi du message", "error");
+        throw error;
+      }
+    },
+    [showToast],
+  );
 
   // ─── Collaboration ────────────────────────────────────────
   const startCollabFlow = useCallback(() => {
@@ -641,6 +755,7 @@ export function AppProvider({ children }) {
     requireKyc,
 
     projects,
+    setProjects,
     selectedProject,
     setSelectedProject,
     selProject: selectedProject,

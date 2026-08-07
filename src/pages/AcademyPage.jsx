@@ -5,22 +5,22 @@
 
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { COURSES } from "../data/mockData";
+import { COURSES } from "../data/courses";
 import "./Academy.css";
 
 const FILTERS = [
-  { id: "all",       label: "Tous"        },
-  { id: "free",      label: "Gratuit"     },
-  { id: "premium",   label: "Premium"     },
-  { id: "Cours",     label: "Cours"       },
-  { id: "Webinaire", label: "Webinaires"  },
-  { id: "Guide PDF", label: "Guides PDF"  },
+  { id: "all", label: "Tous" },
+  { id: "free", label: "Gratuit" },
+  { id: "premium", label: "Premium" },
+  { id: "Cours", label: "Cours" },
+  { id: "Webinaire", label: "Webinaires" },
+  { id: "Guide PDF", label: "Guides PDF" },
 ];
 
 const LEVEL_COLOR = {
-  "Débutant":      "badge-success",
+  "Débutant": "badge-success",
   "Intermédiaire": "badge-warning",
-  "Avancé":        "badge-danger",
+  "Avancé": "badge-danger",
 };
 
 function CourseModal({ course, onClose, onEnroll }) {
@@ -81,14 +81,14 @@ function CourseModal({ course, onClose, onEnroll }) {
 export default function AcademyPage() {
   const { showToast } = useApp();
 
-  const [filter,      setFilter]      = useState("all");
-  const [enrolled,    setEnrolled]    = useState([]);
+  const [filter, setFilter] = useState("all");
+  const [enrolled, setEnrolled] = useState([]);
   const [activeCourse, setActiveCourse] = useState(null);
 
   const filtered = COURSES.filter(c => {
-    if (filter === "all")     return true;
-    if (filter === "free")    return !c.premium;
-    if (filter === "premium") return  c.premium;
+    if (filter === "all") return true;
+    if (filter === "free") return !c.premium;
+    if (filter === "premium") return c.premium;
     return c.type === filter;
   });
 
@@ -125,7 +125,7 @@ export default function AcademyPage() {
           </div>
         </div>
         <div className="academy-hero__stats">
-          {[["15+","Cours"],["3 000+","Apprenants"],["4.8★","Note moy."]].map(([v, l]) => (
+          {[["15+", "Cours"], ["3 000+", "Apprenants"], ["4.8★", "Note moy."]].map(([v, l]) => (
             <div key={l} className="academy-hero__stat">
               <div className="academy-hero__stat-val">{v}</div>
               <div className="academy-hero__stat-lbl">{l}</div>

@@ -1,12 +1,23 @@
 import { useApp } from "../context/AppContext";
 import { ProjectCard } from "../components/UI";
-import { PROJECTS } from "..//data/mockData";
+import { projectsApi } from "../utils/api";
 import { useState, useEffect } from "react";
 import "./Home.css";
 
 export default function Home() {
     const { navigate } = useApp();
     const [carouselIndex, setCarouselIndex] = useState(0);
+    const [featuredProjects, setFeaturedProjects] = useState([]);
+
+    useEffect(() => {
+        projectsApi
+            .list({ limit: 3, status: "active" })
+            .then((res) => {
+                const list = res?.projects ?? res?.data ?? res ?? [];
+                setFeaturedProjects((Array.isArray(list) ? list : []).slice(0, 3));
+            })
+            .catch((err) => console.error("Erreur chargement projets vedettes :", err));
+    }, []);
 
     const carouselImages = [
         "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=400&fit=crop",
@@ -124,13 +135,18 @@ export default function Home() {
                 </div>
 
                 <div className="grid-3">
-                    {PROJECTS.slice(0, 3).map(p => (
+                    {featuredProjects.map(p => (
                         <ProjectCard
                             key={p.id}
                             project={p}
                             onClick={() => navigate('project-detail', { project: p })}
                         />
                     ))}
+                    {featuredProjects.length === 0 && (
+                        <p style={{ color: "var(--text-secondary)", gridColumn: "1 / -1", textAlign: "center" }}>
+                            Chargement des projets…
+                        </p>
+                    )}
                 </div>
             </section>
 

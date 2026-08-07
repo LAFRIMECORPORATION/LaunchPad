@@ -3,7 +3,7 @@
 // Fichier : src/pages/ProjectDetail.jsx
 // ============================================================
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge, ProgressBar, AIBadge } from "../components/UI";
@@ -56,7 +56,7 @@ export default function ProjectDetail() {
             if (!response.ok) throw new Error("Le projet n'existe pas ou a été archivé.");
 
             const resBody = await response.json();
-            
+
             // Extraction correcte: resBody.data.project
             const cleanProject = resBody?.data?.project || resBody?.data || resBody?.project || resBody;
 
@@ -129,8 +129,11 @@ export default function ProjectDetail() {
     }, [loadProjectDetail]);
 
     // ── 2. CHARGEMENT DES PROJETS SIMILAIRES DEPUIS L'API ──
+    const similarLoadedRef = useRef(false);
+    
     const loadSimilarProjects = useCallback(async () => {
         if (!id || id === "undefined") return;
+        if (similarLoadedRef.current) return;
 
         try {
             const envUrl = import.meta.env.VITE_API_URL || "";
@@ -148,6 +151,7 @@ export default function ProjectDetail() {
                 const data = await response.json();
                 const projects = data.projects || data.data || [];
                 setSimilarProjects(projects);
+                similarLoadedRef.current = true;
             }
         } catch (error) {
             console.error("Erreur chargement projets similaires:", error);
@@ -155,10 +159,10 @@ export default function ProjectDetail() {
     }, [id, token]);
 
     useEffect(() => {
-        if (project) {
+        if (project && !similarLoadedRef.current) {
             loadSimilarProjects();
         }
-    }, [project, loadSimilarProjects]);
+    }, [project?.id]); // Ne dépend que de l'ID du projet, pas de l'objet project complet
 
     // ── 3. ÉCOUTEUR EN TEMPS RÉEL DU CATALOGUE DE PROJETS ──
     useEffect(() => {
@@ -182,7 +186,7 @@ export default function ProjectDetail() {
                 }));
             }
         }
-    }, [globalProjects, loading, project]);
+    }, [globalProjects, loading, project?.id]);
 
     // ── 4. CALCULS ET DÉRIVATIONS ──
     const raised = project?.raisedAmount ? parseFloat(project.raisedAmount) : 0;
@@ -223,7 +227,7 @@ export default function ProjectDetail() {
     }
 
     return (
-        <div className="animate-fadeUp">
+        <div className="animate-fadeUp" style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
             <button
                 className="btn btn-ghost btn-sm"
                 style={{ marginBottom: 16 }}
@@ -232,9 +236,9 @@ export default function ProjectDetail() {
                 ← Retour aux projets
             </button>
 
-            <div className="two-col" style={{ gap: 32 }}>
+            <div className="two-col" style={{ gap: 32, width: "100%", maxWidth: "100%" }}>
                 {/* ── Main content ── */}
-                <div className="two-col-main">
+                <div className="two-col-main" style={{ width: "100%", maxWidth: "100%" }}>
 
                     {/* Cover Image */}
                     {project.coverImageUrl ? (
@@ -245,13 +249,15 @@ export default function ProjectDetail() {
                                 borderRadius: "var(--r-lg)",
                                 overflow: "hidden",
                                 boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                                position: "relative"
+                                position: "relative",
+                                width: "100%",
+                                height: "320px"
                             }}
                         >
                             <img
                                 src={project.coverImageUrl}
                                 alt={project.title}
-                                style={{ width: "100%", height: "320px", objectFit: "cover", display: "block" }}
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                                 onError={(e) => {
                                     e.target.style.display = "none";
                                     e.target.parentElement.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
@@ -324,7 +330,7 @@ export default function ProjectDetail() {
                                 Porteur de projet • {project.author?.profile?.university || "Étudiant"}
                             </div>
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        <div className="project-author-date">
                             {project.createdAt || project.publishedAt
                                 ? new Date(project.createdAt || project.publishedAt).toLocaleDateString("fr-FR", {
                                     day: "numeric",
@@ -346,7 +352,7 @@ export default function ProjectDetail() {
 
                     {/* Title and Social Actions */}
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-                        <h1 className="project-detail-title" style={{ marginBottom: 0, fontSize: 28, fontWeight: 800 }}>
+                        <h1 className="project-detail-title" style={{ marginBottom: 0, fontWeight: 800 }}>
                             {project.title}
                         </h1>
                         <SocialActions
@@ -396,7 +402,7 @@ export default function ProjectDetail() {
                     {/* Additional Info */}
                     <div className="card" style={{ marginBottom: 20, padding: 24 }}>
                         <h3 className="project-section-title" style={{ marginBottom: 16, fontSize: 18 }}>📊 Informations supplémentaires</h3>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+                        <div className="project-info-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
                             <div>
                                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Catégorie</div>
                                 <div style={{ fontWeight: 600, fontSize: 14 }}>{project.category || "Non spécifié"}</div>
@@ -591,7 +597,7 @@ export default function ProjectDetail() {
                         <div className="section-title" style={{ marginBottom: 12, fontSize: 14, fontWeight: 700 }}>
                             Partager l'opportunité
                         </div>
-                        <div style={{ display: "flex", gap: 8 }}>
+                        <div className="project-share-row" style={{ display: "flex", gap: 8 }}>
                             {["🔗 Lien", "🐦 Twitter", "💼 LinkedIn"].map(s => (
                                 <button
                                     key={s}

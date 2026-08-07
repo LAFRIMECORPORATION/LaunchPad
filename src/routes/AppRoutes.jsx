@@ -34,6 +34,7 @@ import AppointmentsPage from "../pages/AppointmentsPage";
 import PaymentPage from "../pages/PaymentPage";
 import DueDiligencePage from "../pages/DueDiligencePage";
 import ForumPage from "../pages/ForumPage";
+import ForumPostDetail from "../pages/ForumPostDetail";
 import AcademyPage from "../pages/AcademyPage";
 
 function ProtectedRoute({ children }) {
@@ -139,6 +140,7 @@ export default function AppRoutes() {
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/due-diligence" element={<DueDiligencePage />} />
           <Route path="/forum" element={<ForumPage />} />
+          <Route path="/forum/:postId" element={<ForumPostDetail />} />
           <Route path="/academy" element={<AcademyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

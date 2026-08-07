@@ -3,13 +3,13 @@
 // Section commentaires pour ProjectDetail
 // ============================================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar } from "./UI";
 import "./CommentSection.css";
 
 export default function CommentSection({ project }) {
-    const { addComment, currentUser, projects } = useApp();
+    const { addComment, currentUser, projects, setProjects } = useApp();
     const [text, setText] = useState("");
     const [sending, setSending] = useState(false);
 
@@ -28,10 +28,13 @@ export default function CommentSection({ project }) {
     // ── LIEN DIRECT AVEC L'ÉTAT DU CONTEXTE GLOBAL ───────────────────────────
     // On va chercher la version "live" du projet dans le state global de l'app 
     // pour que l'ajout d'un commentaire s'affiche instantanément à l'écran.
-    const liveProject = projects?.find(p => String(p.id || p.project_id) === String(targetProjectId)) || project;
+    const liveProject = useMemo(() => 
+        projects?.find(p => String(p.id || p.project_id) === String(targetProjectId)) || project,
+        [projects, targetProjectId, project]
+    );
     
     const innerProject = liveProject?.project || liveProject?.data || liveProject;
-    const comments = innerProject?.comments || [];
+    const comments = project?.comments || liveProject?.comments || innerProject?.comments || [];
 
     async function handleSubmit() {
         if (!text.trim()) return;
@@ -100,22 +103,44 @@ export default function CommentSection({ project }) {
             const computedAvatar = backendUser?.avatar_url || backendUser?.avatar || currentUser?.avatar || "U";
 
             const processedReply = {
-                id: dbComment.id || Date.now(),
+                id: dbComment.id,
                 author: computedAuthor,
                 avatar: computedAvatar,
                 content: dbComment.content || replyText, 
                 text: dbComment.content || replyText,
                 createdAt: dbComment.createdAt || new Date().toISOString(),
                 likes: 0,
+                likedByMe: false,
                 parentId: parentId
             };
 
-            // Mise à jour locale optimiste
-            // Note: pour une implémentation complète, il faudrait mettre à jour le state global
-            // Ici on recharge simplement le projet pour afficher la nouvelle réponse
-            if (typeof addComment === "function") {
-                // On simule un rechargement en appelant addComment avec un flag spécial
-                // ou on pourrait directement mettre à jour le state
+            if (!processedReply.id) {
+                throw new Error("ID de commentaire manquant dans la réponse du serveur");
+            }
+
+            // Mise à jour locale optimiste du state global
+            if (setProjects && typeof setProjects === "function") {
+                setProjects(prevProjects => 
+                    prevProjects.map(p => {
+                        if (String(p.id || p.project_id) !== String(targetProjectId)) return p;
+                        
+                        const innerP = p.project || p.data || p;
+                        const updatedComments = (innerP.comments || []).map(c => {
+                            if (String(c.id) !== String(parentId)) return c;
+                            return {
+                                ...c,
+                                replies: [...(c.replies || []), processedReply]
+                            };
+                        });
+                        
+                        return {
+                            ...p,
+                            ...(p.project ? { project: { ...p.project, comments: updatedComments } } : {}),
+                            ...(p.data ? { data: { ...p.data, comments: updatedComments } } : {}),
+                            comments: updatedComments
+                        };
+                    })
+                );
             }
         } catch (error) {
             console.error("Erreur lors de la réponse:", error);
@@ -184,14 +209,24 @@ export default function CommentSection({ project }) {
 }
 
 function CommentItem({ comment, projectId, onReply }) {
-    const [liked, setLiked] = useState(false);
+    const [liked, setLiked] = useState(comment?.likedByMe || false);
     const [likeCount, setLikeCount] = useState(comment?.likes || comment?.likesCount || 0);
     const [replying, setReplying] = useState(false);
     const [replyText, setReplyText] = useState("");
     const [sendingReply, setSendingReply] = useState(false);
 
     async function handleLike() {
-        if (!projectId || !comment.id) return;
+        if (!projectId || !comment.id) {
+            console.warn("handleLike: projectId ou comment.id manquant", { projectId, commentId: comment.id });
+            return;
+        }
+
+        // Vérifier si l'ID est un UUID valide (pas un timestamp)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(comment.id)) {
+            console.warn("ID de commentaire invalide (pas UUID):", comment.id);
+            return;
+        }
 
         const previousLiked = liked;
         const previousCount = likeCount;

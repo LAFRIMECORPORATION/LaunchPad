@@ -75,8 +75,26 @@ export default function BadgesPage() {
     );
   }
 
-  const earned  = data?.badges || [];
-  const locked  = data?.lockedBadges || [];
+  const earned  = (data?.badges || []).map(b => ({
+    badgeKey: b.badgeType,
+    id: b.id,
+    label: b.badgeLabel,
+    icon: b.badgeIcon,
+    points: b.pointsAwarded,
+    awardedAt: b.awardedAt,
+    locked: false,
+  }));
+
+  const locked  = (data?.lockedBadges || []).map(b => ({
+    badgeKey: b.badgeType,
+    id: `locked-${b.badgeType}`,
+    label: b.badgeLabel,
+    icon: b.badgeIcon,
+    points: b.points,
+    awardedAt: null,
+    locked: true,
+  }));
+
   const score   = data?.reputationScore || 0;
   const rank    = getRankLabel(score);
 
