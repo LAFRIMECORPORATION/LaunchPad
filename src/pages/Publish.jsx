@@ -126,7 +126,7 @@ export default function Publish() {
     }
 
     return (
-        <div className="animate-fadeUp">
+        <div className="animate-fadeUp publish-page">
 
             {/* ── HEADER ── */}
             <div className="page-header">
@@ -149,7 +149,7 @@ export default function Publish() {
                     <StepIndicator steps={STEPS} currentStep={step} />
                 </div>
 
-                <div className="card" style={{ padding: 32 }}>
+                <div className="card publish-form-card" style={{ padding: 32 }}>
 
                     {/* ── STEP 1 : INFOS DE BASE ── */}
                     {step === 1 && (
@@ -306,7 +306,7 @@ export default function Publish() {
                     )}
 
                     {/* ── NAVIGATION BUTTONS ── */}
-                    <div style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+                    <div className="publish-navigation" style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
                         {step > 1 && (
                             <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setStep(s => s - 1)} disabled={loading}>
                                 ← Étape précédente

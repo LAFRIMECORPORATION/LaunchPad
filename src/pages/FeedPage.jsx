@@ -21,6 +21,9 @@ const FILTERS = [
 // Mapping type d'événement → emoji + label lisible
 const EVENT_CONFIG = {
   project_published:           { icon: "🚀", label: "a publié un projet" },
+  project_approved:            { icon: "✅", label: "a approuvé le projet" },
+  project_rejected:            { icon: "⚠️", label: "a rejeté le projet" },
+  project_removed:             { icon: "🗑️", label: "a retiré le projet" },
   project_funded:              { icon: "🏆", label: "a financé un projet" },
   investment_made:             { icon: "💰", label: "a investi dans" },
   forum_post:                  { icon: "💬", label: "a posté dans le forum" },
@@ -53,9 +56,12 @@ function actorName(actor) {
   return `${actor.firstName || ""} ${actor.lastName || ""}`.trim();
 }
 
-function EventCard({ event, navigate }) {
+function EventCard({ event, navigate, currentUser }) {
   const cfg = EVENT_CONFIG[event.eventType] || { icon: "📌", label: event.eventType };
   const meta = event.metadata || {};
+  const isOwnPublication = event.eventType === "project_published" && event.actor?.id === currentUser?.id;
+  const label = isOwnPublication ? "avez publié un projet" : cfg.label;
+  const isModerationEvent = ["project_approved", "project_rejected", "project_removed"].includes(event.eventType);
 
   return (
     <div className="feed-event-card card">
@@ -64,7 +70,7 @@ function EventCard({ event, navigate }) {
         <div className="feed-event-card__info">
           <div className="feed-event-card__title">
             <strong>{actorName(event.actor)}</strong>{" "}
-            <span style={{ color: "var(--text-secondary)" }}>{cfg.label}</span>{" "}
+            <span style={{ color: "var(--text-secondary)" }}>{label}</span>{" "}
             {event.project && (
               <strong
                 style={{ color: "var(--accent)", cursor: "pointer" }}
@@ -98,7 +104,7 @@ function EventCard({ event, navigate }) {
         </div>
       )}
 
-      {event.project && (
+      {event.project && !isModerationEvent && (
         <div className="feed-event-card__project">
           <span className="badge badge-gray">{event.project.category}</span>
           <button
@@ -114,7 +120,7 @@ function EventCard({ event, navigate }) {
 }
 
 export default function FeedPage() {
-  const { navigate } = useApp();
+  const { navigate, currentUser } = useApp();
 
   const [filter,   setFilter]   = useState("all");
   const [events,   setEvents]   = useState([]);
@@ -220,7 +226,7 @@ export default function FeedPage() {
           ) : (
             <div className="feed-list">
               {events.map(event => (
-                <EventCard key={event.id} event={event} navigate={navigate} />
+                <EventCard key={event.id} event={event} navigate={navigate} currentUser={currentUser} />
               ))}
             </div>
           )}

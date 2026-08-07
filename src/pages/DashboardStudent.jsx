@@ -25,7 +25,10 @@ export default function DashboardStudent() {
             res.data?.data ||
             res.data ||
             res;
-          setMyProjects(Array.isArray(data) ? data : []);
+          const publishedProjects = Array.isArray(data)
+            ? data.filter(project => ["active", "funded"].includes(project.status))
+            : [];
+          setMyProjects(publishedProjects);
         })
         .catch(console.error)
         .finally(() => setLoading(false));

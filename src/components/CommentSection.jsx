@@ -5,6 +5,7 @@
 
 import { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
+import { commentsApi, projectsApi } from "../utils/api";
 import { Avatar } from "./UI";
 import "./CommentSection.css";
 
@@ -80,26 +81,7 @@ export default function CommentSection({ project }) {
         }
 
         try {
-            const envUrl = import.meta.env.VITE_API_URL || "";
-            const cleanBaseUrl = envUrl.replace(/\/api\/?$/, ""); 
-            const token = typeof projects?.getAccessToken === "function" 
-                ? projects.getAccessToken() 
-                : localStorage.getItem("launchpad_access_token") || "";
-
-            const headers = { "Content-Type": "application/json" };
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-
-            const response = await fetch(`${cleanBaseUrl}/api/projects/${targetProjectId}/comments`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({ content: replyText, parentId }) 
-            });
-
-            if (!response.ok) {
-                throw new Error("Le serveur a refusé la réponse.");
-            }
-            
-            const jsonRes = await response.json();
+            const jsonRes = await projectsApi.reply(targetProjectId, replyText, parentId);
             const dbComment = jsonRes.data?.comment || jsonRes.comment || jsonRes.data || jsonRes;
 
             if (!dbComment?.id) {
@@ -242,21 +224,7 @@ function CommentItem({ comment, projectId, onReply }) {
         setLikeCount(c => liked ? c - 1 : c + 1);
 
         try {
-            const envUrl = import.meta.env.VITE_API_URL || "";
-            const cleanBaseUrl = envUrl.replace(/\/api\/?$/, ""); 
-            const token = localStorage.getItem("launchpad_access_token") || "";
-
-            const headers = { "Content-Type": "application/json" };
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-
-            const response = await fetch(`${cleanBaseUrl}/api/projects/${projectId}/comments/${comment.id}/like`, {
-                method: "POST",
-                headers
-            });
-
-            if (!response.ok) throw new Error("Échec du like");
-
-            const jsonRes = await response.json();
+            const jsonRes = await commentsApi.like(projectId, comment.id);
             const data = jsonRes.data || jsonRes;
             setLikeCount(data.likesCount ?? data.likes ?? 0);
             setLiked(data.likedByMe ?? true);

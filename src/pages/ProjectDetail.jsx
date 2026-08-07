@@ -227,7 +227,7 @@ export default function ProjectDetail() {
     }
 
     return (
-        <div className="animate-fadeUp" style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+        <div className="animate-fadeUp project-detail-page" style={{ width: "100%", maxWidth: "100%" }}>
             <button
                 className="btn btn-ghost btn-sm"
                 style={{ marginBottom: 16 }}
@@ -250,8 +250,7 @@ export default function ProjectDetail() {
                                 overflow: "hidden",
                                 boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
                                 position: "relative",
-                                width: "100%",
-                                height: "320px"
+                                width: "100%"
                             }}
                         >
                             <img
@@ -287,7 +286,6 @@ export default function ProjectDetail() {
                             style={{
                                 background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                                 color: "white",
-                                height: "320px",
                                 borderRadius: "var(--r-lg)",
                                 display: "flex",
                                 alignItems: "center",

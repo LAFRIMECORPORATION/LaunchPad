@@ -16,3 +16,15 @@
   .feed-item__icon   { width: 34px; height: 34px; font-size: 16px; }
   .feed-item__text   { font-size: 13px; }
 }
+
+.feed-event-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.feed-event-card__title,
+.feed-event-card__detail,
+.feed-event-card__project {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

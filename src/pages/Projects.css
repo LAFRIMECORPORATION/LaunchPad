@@ -74,12 +74,55 @@ img {
 
 /* ── Publish ── */
 .publish-wrap {
-    max-width: calc(100% - 32px);
+    width: 100%;
+    max-width: 900px;
+    min-width: 0;
     margin: 0 auto;
 }
 
 .publish-steps {
     margin-bottom: 26px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.publish-page,
+.publish-page .publish-wrap,
+.publish-page .publish-form-card {
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.publish-page .publish-form-card {
+    width: 100%;
+    max-width: 100%;
+}
+
+.publish-page .form-group,
+.publish-page .form-input,
+.publish-page .form-textarea,
+.publish-page .form-row {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.publish-page .form-input,
+.publish-page .form-textarea {
+    box-sizing: border-box;
+}
+
+.publish-page .form-textarea {
+    overflow-wrap: anywhere;
+}
+
+.publish-page .publish-navigation {
+    flex-wrap: wrap;
+}
+
+.publish-page .publish-navigation .btn {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 /* ── Project Detail ── */
@@ -91,7 +134,115 @@ img {
     font-size: 80px;
     margin-bottom: 24px;
     border: 1px solid var(--border);
-    height: 230px;
+    height: 320px;
+}
+
+.project-detail-page {
+    overflow: visible;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: none;
+}
+
+.project-detail-page .two-col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+    align-items: start;
+    gap: 32px;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+}
+
+.project-detail-page .two-col-main,
+.project-detail-page .two-col-side-lg {
+    box-sizing: border-box;
+    width: auto;
+    max-width: none;
+}
+
+.project-detail-page .two-col-main {
+    min-width: 0;
+    overflow: visible;
+}
+
+.project-detail-page .card {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.project-detail-page .project-section-title,
+.project-detail-page .project-section-text,
+.project-detail-page .project-detail-lead {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.project-detail-page .project-info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)) !important;
+    width: 100%;
+}
+
+.project-detail-page .grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+    width: 100%;
+    min-width: 0;
+}
+
+.project-detail-page .grid-3 > *,
+.project-detail-page .project-info-grid > * {
+    min-width: 0;
+    max-width: none;
+}
+
+.project-detail-page .project-share-row {
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.project-detail-page .project-share-row > * {
+    min-width: min(100%, 110px);
+}
+
+.project-detail-page .project-info-grid > div,
+.project-detail-page .similar-mini,
+.project-detail-page .team-member-chip {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.project-detail-page .similar-mini span,
+.project-detail-page .similar-mini p,
+.project-detail-page .funding-meta-row {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.project-detail-page .project-detail-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.project-detail-page .project-cover-container,
+.project-detail-page .project-cover {
+    width: 100%;
+    max-width: none;
+}
+
+.project-detail-page .project-cover-container {
+    aspect-ratio: 16 / 7;
+    height: auto !important;
+    min-height: 260px;
+}
+
+.project-detail-page .project-cover-container img {
+    height: 100% !important;
 }
 
 .project-detail-title {
@@ -276,16 +427,25 @@ img {
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
+    .project-detail-page .two-col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project-detail-page .two-col-side-lg {
+        width: 100%;
+    }
+
     .project-detail-title {
         font-size: 30px;
     }
 
     .project-cover-container {
-        height: 240px;
+        height: 240px !important;
+        aspect-ratio: auto;
     }
 
     .project-cover {
-        height: 190px;
+        height: 240px;
         font-size: 64px;
     }
 
@@ -295,16 +455,63 @@ img {
 }
 
 @media (max-width: 768px) {
+    .publish-page .page-header {
+        margin-bottom: 16px;
+    }
+
+    .publish-page .publish-wrap {
+        max-width: 100%;
+    }
+
+    .publish-page .publish-form-card {
+        padding: 20px !important;
+    }
+
+    .publish-page .publish-steps {
+        padding-bottom: 4px;
+    }
+
+    .publish-page .step-label {
+        display: none;
+    }
+
+    .publish-page .step-line {
+        min-width: 20px;
+    }
+
+    .publish-page .publish-navigation {
+        flex-direction: column;
+    }
+
+    .publish-page .publish-navigation .btn {
+        width: 100%;
+        flex: none !important;
+    }
+
+    .project-detail-page {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .project-detail-page .two-col {
+        gap: 20px;
+    }
+
+    .project-detail-page .grid-3 {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
     .project-detail-title {
         font-size: 24px !important;
     }
 
     .project-cover-container {
-        height: 200px;
+        height: 200px !important;
+        aspect-ratio: auto;
     }
 
     .project-cover {
-        height: 160px;
+        height: 200px;
         font-size: 52px;
     }
 
@@ -343,6 +550,15 @@ img {
 }
 
 @media (max-width: 480px) {
+    .publish-page .publish-form-card {
+        padding: 16px !important;
+    }
+
+    .publish-page .publish-steps {
+        margin-left: -4px;
+        margin-right: -4px;
+    }
+
     .project-detail-title {
         font-size: 18px !important;
     }
@@ -352,11 +568,12 @@ img {
     }
 
     .project-cover-container {
-        height: 160px;
+        height: 160px !important;
+        aspect-ratio: auto;
     }
 
     .project-cover {
-        height: 120px;
+        height: 160px;
         font-size: 40px;
         border-radius: var(--r-lg);
     }
@@ -367,7 +584,7 @@ img {
 
     /* Info grid : 1 colonne sur très petits écrans */
     .project-info-grid {
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     /* Chips d'équipe empilés */

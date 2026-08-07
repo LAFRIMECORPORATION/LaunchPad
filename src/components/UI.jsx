@@ -377,6 +377,8 @@ export function NotificationItem({ notif, onClick }) {
         display: "flex",
         gap: 12,
         padding: "14px 16px",
+        minWidth: 0,
+        maxWidth: "100%",
         borderRadius: "var(--r-md)",
         background: notif.unread ? "var(--accent-light)" : "var(--bg-card)",
         border: `1px solid ${notif.unread ? "var(--accent-mid)" : "var(--border)"}`,
@@ -386,7 +388,7 @@ export function NotificationItem({ notif, onClick }) {
       }}
     >
       <span style={{ fontSize: 22, flexShrink: 0 }}>{notif.icon}</span>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             display: "flex",
@@ -394,7 +396,7 @@ export function NotificationItem({ notif, onClick }) {
             marginBottom: 3,
           }}
         >
-          <span style={{ fontWeight: 600, fontSize: 13.5 }}>{notif.title}</span>
+          <span style={{ fontWeight: 700, fontSize: 13.5, overflowWrap: "anywhere" }}>{notif.title}</span>
           <span
             style={{
               fontSize: 11,
@@ -411,6 +413,8 @@ export function NotificationItem({ notif, onClick }) {
             fontSize: 13,
             color: "var(--text-secondary)",
             lineHeight: 1.5,
+            margin: 0,
+            overflowWrap: "anywhere",
           }}
         >
           {notif.desc}

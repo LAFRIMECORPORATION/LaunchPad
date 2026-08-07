@@ -20,6 +20,31 @@ function fmtXAF(n) {
   return `${v} XAF`;
 }
 
+function AdminBarChart({ items, emptyLabel = "Aucune donnée" }) {
+  if (!items?.length) {
+    return <div className="admin-chart-empty">{emptyLabel}</div>;
+  }
+
+  const max = Math.max(...items.map(item => Number(item.value) || 0), 1);
+
+  return (
+    <div className="admin-bars" role="img" aria-label="Graphique de statistiques">
+      {items.map(item => (
+        <div className="admin-bar-row" key={item.label}>
+          <span className="admin-bar-label" title={item.label}>{item.label}</span>
+          <div className="admin-bar-track">
+            <div
+              className="admin-bar-fill"
+              style={{ width: `${Math.max(4, ((Number(item.value) || 0) / max) * 100)}%` }}
+            />
+          </div>
+          <strong className="admin-bar-value">{fmt(item.value)}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Admin() {
   const { navigate, showToast } = useApp();
   const [tab, setTab] = useState("overview");
@@ -85,10 +110,12 @@ export default function Admin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadProjects = useCallback(async () => {
+  const loadProjects = useCallback(async (status = "pending") => {
     setProjectsLoading(true);
     try {
-      const res  = await adminApi.getProjects({ status: "pending", limit: 50 });
+      const params = { limit: 50 };
+      if (status !== "all") params.status = status;
+      const res  = await adminApi.getProjects(params);
       const data = res.data?.projects || res.data || [];
       setPendingProjects(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -129,10 +156,10 @@ export default function Admin() {
 
   useEffect(() => {
     if (tab === "overview") {
-      loadProjects();
+      loadProjects("pending");
       loadKyc();
     } else if (tab === "kyc")      loadKyc();
-    else if (tab === "projects")   loadProjects();
+    else if (tab === "projects")   loadProjects("all");
     else if (tab === "users")      loadUsers();
     else if (tab === "audit")      loadAuditLogs();
   }, [tab, loadKyc, loadProjects, loadUsers, loadAuditLogs]);
@@ -207,6 +234,36 @@ export default function Admin() {
     }
   }
 
+  async function handleDeleteUser(userId, name) {
+    const confirmation = window.prompt(
+      `Cette action anonymise définitivement ${name}. Tapez SUPPRIMER pour confirmer :`,
+    );
+    if (confirmation !== "SUPPRIMER") return;
+
+    try {
+      await adminApi.deleteUser(userId, "Suppression demandée par l'administration");
+      showToast(`${name} a été supprimé.`, "success");
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    } catch (err) {
+      showToast(err.message || "Erreur suppression utilisateur.", "error");
+    }
+  }
+
+  async function handleDeleteProject(projectId, title) {
+    const confirmation = window.prompt(
+      `Cette action retire définitivement le projet « ${title} ». Tapez SUPPRIMER pour confirmer :`,
+    );
+    if (confirmation !== "SUPPRIMER") return;
+
+    try {
+      await adminApi.deleteProject(projectId, "Retrait demandé par l'administration");
+      showToast("Projet retiré de la plateforme.", "success");
+      setPendingProjects(prev => prev.filter(p => p.id !== projectId));
+    } catch (err) {
+      showToast(err.message || "Erreur suppression projet.", "error");
+    }
+  }
+
   return (
     <div className="animate-fadeUp">
 
@@ -235,6 +292,65 @@ export default function Admin() {
           <StatCard icon="⏳" value={fmt(stats.projects?.pending)} label="En attente"           color="#F59E0B" bgColor="#FFFBEB" />
           <StatCard icon="🛡️" value={fmt(stats.users?.pendingKyc)} label="KYC en attente"      color="var(--accent)" bgColor="rgba(91,115,245,.1)" />
           <StatCard icon="💰" value={fmtXAF(stats.investments?.totalVolume)} label="Volume investi" color="#8B5CF6" bgColor="#F3EFFE" delta={`revenus 30j : ${fmtXAF(stats.investments?.revenue30d)}`} />
+        </div>
+      )}
+
+      {stats && (
+        <div className="admin-chart-grid">
+          <div className="admin-chart-card card">
+            <div className="section-title">👥 Utilisateurs par rôle</div>
+            <AdminBarChart
+              items={(stats.users?.byRole || []).map(item => ({
+                label: item.role,
+                value: item.count,
+              }))}
+            />
+          </div>
+          <div className="admin-chart-card card">
+            <div className="section-title">📦 Projets par catégorie</div>
+            <AdminBarChart
+              items={(stats.projects?.byCategory || []).map(item => ({
+                label: item.category,
+                value: item.count,
+              }))}
+            />
+          </div>
+          <div className="admin-chart-card card admin-chart-card-wide">
+            <div className="section-title">📈 Inscriptions sur les 7 derniers jours</div>
+            <AdminBarChart
+              items={(stats.users?.growthData || []).map(item => ({
+                label: new Date(item.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+                value: item.count,
+              }))}
+            />
+          </div>
+          <div className="admin-chart-card card">
+            <div className="section-title">📌 Projets par statut</div>
+            <AdminBarChart
+              items={(stats.projects?.byStatus || []).map(item => ({
+                label: item.status,
+                value: item.count,
+              }))}
+            />
+          </div>
+          <div className="admin-chart-card card">
+            <div className="section-title">🛡️ Dossiers KYC</div>
+            <AdminBarChart
+              items={(stats.kyc?.byStatus || []).map(item => ({
+                label: item.status,
+                value: item.count,
+              }))}
+            />
+          </div>
+          <div className="admin-chart-card card admin-chart-card-wide">
+            <div className="section-title">💳 Investissements par statut</div>
+            <AdminBarChart
+              items={(stats.investments?.byStatus || []).map(item => ({
+                label: item.status,
+                value: item.count,
+              }))}
+            />
+          </div>
         </div>
       )}
 
@@ -342,7 +458,7 @@ export default function Admin() {
       ════════════════════════════════════════════════ */}
       {tab === "projects" && (
         <div className="admin-section card" style={{ padding: 20 }}>
-          <div className="section-title" style={{ marginBottom: 16 }}>📦 File d'attente des projets</div>
+          <div className="section-title" style={{ marginBottom: 16 }}>📦 Gestion de tous les projets</div>
           {projectsLoading ? (
             <div style={{ textAlign: "center", padding: 40 }}><div className="spinner" /></div>
           ) : pendingProjects.length === 0 ? (
@@ -400,6 +516,7 @@ export default function Admin() {
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 12, borderTop: "1px solid var(--border)" }}>
                   <button className="btn btn-success btn-sm" onClick={() => handleApproveProject(p.id)}>✓ Approuver</button>
                   <button className="btn btn-danger btn-sm"  onClick={() => handleRejectProject(p.id)}>✕ Rejeter</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProject(p.id, p.title)}>Supprimer</button>
                 </div>
               </div>
             ))
@@ -464,6 +581,12 @@ export default function Admin() {
                           onClick={() => handleToggleUser(u.id, u.isActive !== false, `${u.firstName} ${u.lastName}`)}
                         >
                           {u.isActive !== false ? "Suspendre" : "Réactiver"}
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDeleteUser(u.id, `${u.firstName} ${u.lastName}`)}
+                        >
+                          Supprimer
                         </button>
                       </td>
                     </tr>

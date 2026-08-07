@@ -282,29 +282,7 @@ export function AppProvider({ children }) {
 
       // 2. Persistance asynchrone en base de données et recalibrage
       try {
-        const envUrl = import.meta.env.VITE_API_URL || "";
-        const cleanBaseUrl = envUrl.endsWith("/api")
-          ? envUrl.slice(0, -4)
-          : envUrl;
-        const token = getAccessToken();
-
-        const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const response = await fetch(
-          `${cleanBaseUrl}/api/projects/${projectId}/like`,
-          {
-            method: "POST",
-            headers,
-          },
-        );
-
-        if (!response.ok) {
-          console.error("Erreur HTTP like:", response.status);
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-
-        const jsonRes = await response.json();
+        const jsonRes = await projectsApi.like(projectId);
         
         // On extrait la charge utile selon la structure de ton service (déballée ou imbriquée sous "project")
         const backendPayload = jsonRes.project || jsonRes.data || jsonRes;
@@ -336,9 +314,12 @@ export function AppProvider({ children }) {
         // Rollback en cas d'erreur
         setProjects((prev) =>
           prev.map((p) =>
-            p.id !== projectId ? p : { ...p, liked: !liked, likes: prevLikes }
+            p.id !== projectId
+              ? p
+              : { ...p, likedByMe: !p.likedByMe, likes: Math.max(0, (p.likes || 0) - 1) }
           )
         );
+        throw error;
       }
     },
     [getAccessToken],
@@ -347,27 +328,7 @@ export function AppProvider({ children }) {
   const addComment = useCallback(
     async (projectId, text, user) => {
       try {
-        const envUrl = import.meta.env.VITE_API_URL || "";
-        const cleanBaseUrl = envUrl.endsWith("/api")
-          ? envUrl.slice(0, -4)
-          : envUrl;
-        const token = getAccessToken();
-
-        const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const response = await fetch(
-          `${cleanBaseUrl}/api/projects/${projectId}/comments`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ content: text }),
-          },
-        );
-
-        if (!response.ok)
-          throw new Error("Le serveur de stockage a refusé le message.");
-        const jsonRes = await response.json();
+        const jsonRes = await projectsApi.comment(projectId, text);
 
         // 🛡️ Extraction sécurisée : s'adapte à la structure enveloppée ou brute du contrôleur
         const dbComment = jsonRes.data?.comment || jsonRes.comment || jsonRes.data || jsonRes;

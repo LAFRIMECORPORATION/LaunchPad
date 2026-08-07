@@ -20,6 +20,26 @@ const FILTERS = [
     { id: "system",       label: "Système"        },
 ];
 
+const NOTIFICATION_CONFIG = {
+    system:      { icon: "🔔", label: "Système" },
+    kyc:         { icon: "🛡️", label: "KYC" },
+    investment:  { icon: "💰", label: "Investissement" },
+    message:     { icon: "💬", label: "Message" },
+    forum:       { icon: "🗣️", label: "Forum" },
+    appointment: { icon: "📅", label: "Rendez-vous" },
+    badge:       { icon: "🏅", label: "Badge" },
+};
+
+function timeAgo(dateStr) {
+    if (!dateStr) return "";
+    const minutes = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+    if (minutes < 1) return "À l'instant";
+    if (minutes < 60) return `Il y a ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Il y a ${hours} h`;
+    return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
 export default function Notifications() {
     const { showToast } = useApp();
     const [filter, setFilter] = useState("all");
@@ -69,6 +89,7 @@ export default function Notifications() {
         if (!notif.isRead) {
             setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
             setUnreadCount(c => Math.max(0, c - 1));
+            notificationsApi.markOneRead(notif.id).catch(() => loadNotifications(filter));
         }
         // Naviguer si actionUrl présent (à adapter selon ton système de routes)
         if (notif.actionUrl) {
@@ -129,16 +150,23 @@ export default function Notifications() {
                 <div className="notif-list">
                     {filtered.length > 0 ? (
                         filtered.map(n => (
+                            (() => {
+                                const config = NOTIFICATION_CONFIG[n.type] || NOTIFICATION_CONFIG.system;
+                                return (
                             <NotificationItem
                                 key={n.id}
                                 notif={{
                                     ...n,
                                     unread: !n.isRead,
-                                    time: n.createdAt,
-                                    text: n.body,
+                                    icon: config.icon,
+                                    category: config.label,
+                                    time: timeAgo(n.createdAt),
+                                    desc: n.body,
                                 }}
                                 onClick={() => handleNotifClick(n)}
                             />
+                                );
+                            })()
                         ))
                     ) : (
                         <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>

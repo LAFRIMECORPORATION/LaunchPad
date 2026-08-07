@@ -1,3 +1,86 @@
+.admin-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-chart-card {
+    min-width: 0;
+    padding: 18px;
+}
+
+.admin-chart-card-wide {
+    grid-column: 1 / -1;
+}
+
+.admin-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.admin-bar-row {
+    display: grid;
+    grid-template-columns: minmax(80px, 120px) minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.admin-bar-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: capitalize;
+}
+
+.admin-bar-track {
+    min-width: 0;
+    height: 9px;
+    overflow: hidden;
+    border-radius: var(--r-full);
+    background: var(--bg-hover);
+}
+
+.admin-bar-fill {
+    height: 100%;
+    min-width: 4px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    transition: width 0.35s ease;
+}
+
+.admin-bar-value {
+    color: var(--text-primary);
+    font-size: 12px;
+    text-align: right;
+}
+
+.admin-chart-empty {
+    padding: 24px 0 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .admin-chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-chart-card-wide {
+        grid-column: auto;
+    }
+
+    .admin-bar-row {
+        grid-template-columns: minmax(70px, 100px) minmax(0, 1fr) 30px;
+    }
+}
+
 /* ============================================================
    LAUNCHPAD — Notifications, Profiles, Admin Styles
    ============================================================ */

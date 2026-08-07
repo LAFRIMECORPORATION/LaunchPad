@@ -180,8 +180,10 @@ export const api = {
     return parseResponse(response);
   },
 
-  async delete(url) {
-    const response = await fetchWithAuth(url, { method: "DELETE" });
+  async delete(url, body = undefined) {
+    const options = { method: "DELETE" };
+    if (body !== undefined) options.body = JSON.stringify(body);
+    const response = await fetchWithAuth(url, options);
     return parseResponse(response);
   },
 
@@ -254,6 +256,7 @@ export const projectsApi = {
   like: (id) => api.post(`/projects/${id}/like`),
   save: (id) => api.post(`/projects/${id}/save`),
   comment: (id, content) => api.post(`/projects/${id}/comments`, { content }),
+  reply: (id, content, parentId) => api.post(`/projects/${id}/comments`, { content, parentId }),
   similar: (id) => api.get(`/projects/${id}/similar`),
   approve: (id, note) => api.put(`/admin/projects/${id}/approve`, { note }),
   reject: (id, reason) => api.put(`/admin/projects/${id}/reject`, { reason }),
@@ -265,6 +268,11 @@ export const projectsApi = {
     formData.append("cover", file);
     return api.postFormData(`/projects/${id}/cover`, formData);
   },
+};
+
+export const commentsApi = {
+  like: (projectId, commentId) =>
+    api.post(`/projects/${projectId}/comments/${commentId}/like`),
 };
 
 export const messagesApi = {
@@ -360,11 +368,15 @@ export const adminApi = {
   getUsers: (params) => api.get("/admin/users", params),
   toggleUserStatus: (id, reason) =>
     api.put(`/admin/users/${id}/toggle-status`, { reason }),
+  deleteUser: (id, reason) =>
+    api.delete(`/admin/users/${id}`, { reason }),
   getProjects: (params) => api.get("/admin/projects", params),
   approveProject: (id, notes) =>
     api.put(`/admin/projects/${id}/approve`, { notes }),
   rejectProject: (id, reason) =>
     api.put(`/admin/projects/${id}/reject`, { reason }),
+  deleteProject: (id, reason) =>
+    api.delete(`/admin/projects/${id}`, { reason }),
   getAuditLogs: (params) => api.get("/admin/audit-logs", params),
   getInvestments: (params) => api.get("/admin/investments", params),
 };
