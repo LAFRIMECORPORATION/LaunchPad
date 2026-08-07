@@ -67,6 +67,148 @@
     font-size: 13px;
 }
 
+    .admin-marketplace-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .admin-marketplace-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 16px;
+    }
+
+    .admin-marketplace-stat strong {
+        color: var(--text-primary);
+        font-family: var(--font-display);
+        font-size: 26px;
+    }
+
+    .admin-marketplace-stat span {
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .admin-marketplace-panel {
+        min-width: 0;
+        padding: 20px;
+    }
+
+    .admin-marketplace-panel-header p {
+        margin: 5px 0 18px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .admin-marketplace-offer {
+        min-width: 0;
+        padding: 18px 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-marketplace-offer-head,
+    .admin-marketplace-application {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .admin-marketplace-offer-head h3 {
+        margin: 0 0 5px;
+        color: var(--text-primary);
+        font-family: var(--font-display);
+        font-size: 17px;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-marketplace-offer-head span,
+    .admin-marketplace-application span {
+        color: var(--text-muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-marketplace-description {
+        margin: 12px 0;
+        color: var(--text-secondary);
+        font-size: 13px;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-marketplace-application-count {
+        display: inline-flex;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: var(--accent-light);
+        color: var(--accent-dark);
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .admin-marketplace-applications {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .admin-marketplace-application {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--bg-light);
+    }
+
+    .admin-marketplace-application > div:first-child {
+        min-width: 0;
+    }
+
+    .admin-marketplace-application strong {
+        display: block;
+        color: var(--text-primary);
+        font-size: 13px;
+    }
+
+    .admin-marketplace-application p {
+        margin: 6px 0 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-marketplace-application-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .admin-status {
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: var(--bg-hover);
+        color: var(--text-muted);
+        font-size: 10px !important;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .admin-status-accepted { background: var(--success-bg); color: var(--success); }
+    .admin-status-rejected { background: var(--danger-bg); color: var(--danger); }
+
+    .admin-marketplace-empty {
+        padding: 32px 0 12px;
+        color: var(--text-muted);
+        text-align: center;
+    }
+
 @media (max-width: 640px) {
     .admin-chart-grid {
         grid-template-columns: 1fr;
@@ -79,6 +221,24 @@
     .admin-bar-row {
         grid-template-columns: minmax(70px, 100px) minmax(0, 1fr) 30px;
     }
+
+        .admin-marketplace-panel {
+            padding: 16px;
+        }
+
+        .admin-marketplace-offer-head,
+        .admin-marketplace-application {
+            flex-direction: column;
+        }
+
+        .admin-marketplace-offer-head .btn,
+        .admin-marketplace-application-actions {
+            width: 100%;
+        }
+
+        .admin-marketplace-application-actions {
+            justify-content: flex-start;
+        }
 }
 
 /* ============================================================

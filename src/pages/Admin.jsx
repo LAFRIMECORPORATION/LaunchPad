@@ -69,12 +69,15 @@ export default function Admin() {
   // ── Audit logs ────────────────────────────────────────────
   const [auditLogs, setAuditLogs]     = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [marketplace, setMarketplace] = useState(null);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
 
   const TABS = [
     { id: "overview",  icon: "📊", label: "Vue d'ensemble"                         },
     { id: "projects",  icon: "📦", label: `Projets (${pendingProjects.length})`    },
     { id: "users",     icon: "👥", label: "Utilisateurs"                           },
     { id: "kyc",       icon: "🛡️", label: `KYC (${kycList.length})`               },
+    { id: "marketplace", icon: "🛒", label: "Marketplace" },
     { id: "audit",     icon: "📋", label: "Audit logs"                             },
   ];
 
@@ -154,6 +157,18 @@ export default function Admin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const loadMarketplace = useCallback(async () => {
+    setMarketplaceLoading(true);
+    try {
+      const res = await adminApi.getMarketplace();
+      setMarketplace(res.data || res);
+    } catch (err) {
+      showToast(err.message || "Erreur chargement marketplace.", "error");
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     if (tab === "overview") {
       loadProjects("pending");
@@ -161,8 +176,9 @@ export default function Admin() {
     } else if (tab === "kyc")      loadKyc();
     else if (tab === "projects")   loadProjects("all");
     else if (tab === "users")      loadUsers();
+    else if (tab === "marketplace") loadMarketplace();
     else if (tab === "audit")      loadAuditLogs();
-  }, [tab, loadKyc, loadProjects, loadUsers, loadAuditLogs]);
+  }, [tab, loadKyc, loadProjects, loadUsers, loadMarketplace, loadAuditLogs]);
 
   // ── Actions Projets ───────────────────────────────────────
   async function handleApproveProject(id) {
@@ -261,6 +277,34 @@ export default function Admin() {
       setPendingProjects(prev => prev.filter(p => p.id !== projectId));
     } catch (err) {
       showToast(err.message || "Erreur suppression projet.", "error");
+    }
+  }
+
+  async function handleMarketplaceApplication(applicationId, status) {
+    try {
+      await adminApi.updateMarketplaceApplication(applicationId, status);
+      setMarketplace(prev => prev ? {
+        ...prev,
+        offers: prev.offers.map(offer => ({
+          ...offer,
+          applications: offer.applications?.map(app => app.id === applicationId ? { ...app, status } : app),
+        })),
+      } : prev);
+      showToast("Candidature mise à jour.", "success");
+    } catch (err) {
+      showToast(err.message || "Erreur mise à jour candidature.", "error");
+    }
+  }
+
+  async function handleDeleteMarketplaceOffer(offerId, title) {
+    const reason = window.prompt(`Motif de suppression de « ${title} » (optionnel) :`);
+    if (reason === null) return;
+    try {
+      await adminApi.deleteMarketplaceOffer(offerId, reason.trim() || undefined);
+      setMarketplace(prev => prev ? { ...prev, offers: prev.offers.filter(offer => offer.id !== offerId) } : prev);
+      showToast("Offre supprimée.", "success");
+    } catch (err) {
+      showToast(err.message || "Erreur suppression offre.", "error");
     }
   }
 
@@ -666,6 +710,66 @@ export default function Admin() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {tab === "marketplace" && (
+        <div className="admin-section">
+          {marketplaceLoading ? (
+            <div style={{ textAlign: "center", padding: 40 }}><div className="spinner" /></div>
+          ) : marketplace && (
+            <>
+              <div className="admin-marketplace-stats">
+                <div className="card admin-marketplace-stat"><strong>{marketplace.offers?.length || 0}</strong><span>Offres visibles</span></div>
+                <div className="card admin-marketplace-stat"><strong>{marketplace.applicationsTotal || 0}</strong><span>Candidatures totales</span></div>
+                {(marketplace.offersByStatus || []).map(item => (
+                  <div className="card admin-marketplace-stat" key={item.status}><strong>{item.count}</strong><span>Offres {item.status}</span></div>
+                ))}
+              </div>
+
+              <div className="card admin-marketplace-panel">
+                <div className="admin-marketplace-panel-header">
+                  <div>
+                    <div className="section-title">🛒 Contrôle de la marketplace</div>
+                    <p>Superviser les offres, candidatures et décisions depuis un seul espace.</p>
+                  </div>
+                </div>
+                {!marketplace.offers?.length ? (
+                  <div className="admin-marketplace-empty">Aucune offre marketplace active.</div>
+                ) : marketplace.offers.map(offer => (
+                  <div className="admin-marketplace-offer" key={offer.id}>
+                    <div className="admin-marketplace-offer-head">
+                      <div>
+                        <h3>{offer.title}</h3>
+                        <span>{offer.reqType} · {offer.author?.firstName} {offer.author?.lastName} · {offer.author?.email}</span>
+                      </div>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteMarketplaceOffer(offer.id, offer.title)}>Supprimer</button>
+                    </div>
+                    <p className="admin-marketplace-description">{offer.description}</p>
+                    <div className="admin-marketplace-application-count">{offer._count?.applications || offer.applications?.length || 0} candidature(s)</div>
+                    {offer.applications?.length > 0 && (
+                      <div className="admin-marketplace-applications">
+                        {offer.applications.map(application => (
+                          <div className="admin-marketplace-application" key={application.id}>
+                            <div>
+                              <strong>{application.applicant?.firstName} {application.applicant?.lastName}</strong>
+                              <span>{application.applicant?.email}</span>
+                              <p>{application.coverMessage || "Aucun message."}</p>
+                            </div>
+                            <div className="admin-marketplace-application-actions">
+                              <span className={`admin-status admin-status-${application.status}`}>{application.status}</span>
+                              <button className="btn btn-success btn-sm" onClick={() => handleMarketplaceApplication(application.id, "accepted")}>Accepter</button>
+                              <button className="btn btn-danger btn-sm" onClick={() => handleMarketplaceApplication(application.id, "rejected")}>Refuser</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

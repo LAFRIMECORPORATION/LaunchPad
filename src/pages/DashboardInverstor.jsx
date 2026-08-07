@@ -132,6 +132,13 @@ export default function DashboardInvestor() {
       >
         {[
           {
+            icon: "🛒",
+            label: "Marketplace",
+            id: "investor-requests",
+            desc: "Offres et candidatures",
+            locked: false,
+          },
+          {
             icon: "💰",
             label: "Investir",
             id: "payment",

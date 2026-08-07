@@ -383,4 +383,9 @@ export const adminApi = {
     api.delete(`/admin/projects/${id}`, { reason }),
   getAuditLogs: (params) => api.get("/admin/audit-logs", params),
   getInvestments: (params) => api.get("/admin/investments", params),
+  getMarketplace: () => api.get("/admin/marketplace"),
+  updateMarketplaceApplication: (id, status) =>
+    api.put(`/admin/marketplace/applications/${id}/status`, { status }),
+  deleteMarketplaceOffer: (id, reason) =>
+    api.delete(`/admin/marketplace/offers/${id}`, { reason }),
 };

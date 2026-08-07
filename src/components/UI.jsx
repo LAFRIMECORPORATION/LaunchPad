@@ -598,6 +598,7 @@ export function Navbar() {
   const investorLinks = [
     ["dashboard-investor", "Dashboard"],
     ["explore", "Explorer"],
+    ["investor-requests", "Marketplace"],
   ];
   const links =
     currentUser?.role === "student"
@@ -746,6 +747,7 @@ export function Sidebar() {
   const investorItems = [
     { icon: "🏠", label: "Tableau de bord", id: "dashboard-investor" },
     { icon: "🔍", label: "Explorer", id: "explore" },
+    { icon: "🛒", label: "Marketplace", id: "investor-requests" },
     { icon: "💰", label: "Investir", id: "payment" },
     { icon: "🤖", label: "Due Diligence IA", id: "due-diligence" },
     { icon: "📅", label: "Rendez-vous", id: "appointments" },

@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { investorRequestsApi, projectsApi } from "../utils/api";
-import "./OtherPages.css";
+import "./InvestorRequests.css";
 
 const TYPE_LABELS = {
   equity:    { label: "💼 Equity",     color: "#5B73F5" },
@@ -23,6 +23,11 @@ const FILTERS = [
   { id: "mentoring",label: "🧠 Mentorat" },
 ];
 
+const MARKETPLACE_SECTORS = [
+  "AgriTech", "FinTech", "HealthTech", "EdTech", "GreenTech",
+  "SaaS", "Mobilité", "Cybersécurité", "Web3", "Commerce",
+];
+
 function fmt(n) {
   return Number(n || 0).toLocaleString("fr-FR");
 }
@@ -33,7 +38,7 @@ function PublishModal({ onClose, onSubmit, submitting }) {
     title:       "",
     description: "",
     type:        "equity",
-    sectors:     "",
+    sectors:     [],
     minAmount:   "",
     maxAmount:   "",
     equityRange: "",
@@ -43,6 +48,15 @@ function PublishModal({ onClose, onSubmit, submitting }) {
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
 
+  function toggleSector(sector) {
+    setForm(current => ({
+      ...current,
+      sectors: current.sectors.includes(sector)
+        ? current.sectors.filter(item => item !== sector)
+        : [...current.sectors, sector],
+    }));
+  }
+
   const canSubmit = form.title.trim() && form.description.trim();
 
   function handleSubmit() {
@@ -51,7 +65,7 @@ function PublishModal({ onClose, onSubmit, submitting }) {
       title:        form.title.trim(),
       description:  form.description.trim(),
       type:         form.type,
-      sectors:      form.sectors ? form.sectors.split(",").map(s => s.trim()).filter(Boolean) : [],
+      sectors:      form.sectors,
       minAmount:    form.minAmount ? parseInt(form.minAmount) : undefined,
       maxAmount:    form.maxAmount ? parseInt(form.maxAmount) : undefined,
       equityRange:  form.equityRange.trim() || undefined,
@@ -100,8 +114,22 @@ function PublishModal({ onClose, onSubmit, submitting }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Secteurs ciblés (séparés par virgules)</label>
-            <input className="form-input" placeholder="AgriTech, FinTech, HealthTech" value={form.sectors} onChange={e => set("sectors", e.target.value)} />
+            <label className="form-label">Secteurs ciblés</label>
+            <div className="marketplace-sector-checkboxes">
+              {MARKETPLACE_SECTORS.map(sector => (
+                <label className={`marketplace-sector-option${form.sectors.includes(sector) ? " selected" : ""}`} key={sector}>
+                  <input
+                    type="checkbox"
+                    checked={form.sectors.includes(sector)}
+                    onChange={() => toggleSector(sector)}
+                  />
+                  <span>{sector}</span>
+                </label>
+              ))}
+            </div>
+            <span className="marketplace-field-hint">
+              {form.sectors.length > 0 ? `${form.sectors.length} secteur(s) sélectionné(s)` : "Sélectionnez un ou plusieurs secteurs"}
+            </span>
           </div>
 
           {form.type === "equity" && (
@@ -200,54 +228,44 @@ function RequestCard({ request, currentUser, onApply, onDelete }) {
   const isExpired = request.deadline && new Date(request.deadline) < new Date();
 
   return (
-    <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+    <article className="marketplace-card">
+      <div className="marketplace-card-top">
+        <div className="marketplace-card-heading">
+          <div className="marketplace-card-badges">
             <span
-              className="badge"
+              className="marketplace-type-badge"
               style={{ background: `${typeConfig.color}20`, color: typeConfig.color, border: `1px solid ${typeConfig.color}40` }}
             >
               {typeConfig.label}
             </span>
             {isExpired && <span className="badge badge-gray">⏰ Expiré</span>}
           </div>
-          <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17, marginBottom: 4 }}>
-            {request.title}
-          </h3>
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+          <h2 className="marketplace-card-title">{request.title}</h2>
+          <div className="marketplace-card-author">
             Par {request.investor?.firstName} {request.investor?.lastName}
             {request.investor?.profile?.company ? ` · ${request.investor.profile.company}` : ""}
           </div>
         </div>
         {isOwner && (
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onDelete(request.id)}
-            style={{ color: "var(--danger, #EF4444)", flexShrink: 0 }}
-          >
-            Supprimer
-          </button>
+          <button className="marketplace-delete" onClick={() => onDelete(request.id)}>Supprimer</button>
         )}
       </div>
 
-      <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-        {request.description}
-      </p>
+      <p className="marketplace-card-description">{request.description}</p>
 
       {/* Détails */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 14 }}>
+      <div className="marketplace-card-meta">
         {(request.minAmount || request.maxAmount) && (
-          <div style={{ fontSize: 13 }}>
+          <div className="marketplace-meta-item">
             💰 {request.minAmount ? `${fmt(request.minAmount)} XAF` : "—"}
             {request.maxAmount ? ` → ${fmt(request.maxAmount)} XAF` : ""}
           </div>
         )}
         {request.equityRange && (
-          <div style={{ fontSize: 13 }}>📊 Equity : {request.equityRange}</div>
+          <div className="marketplace-meta-item">📊 Equity : {request.equityRange}</div>
         )}
         {request.deadline && (
-          <div style={{ fontSize: 13 }}>
+          <div className="marketplace-meta-item">
             📅 Limite : {new Date(request.deadline).toLocaleDateString("fr-FR")}
           </div>
         )}
@@ -255,7 +273,7 @@ function RequestCard({ request, currentUser, onApply, onDelete }) {
 
       {/* Secteurs */}
       {request.sectors?.length > 0 && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+        <div className="marketplace-tags">
           {request.sectors.map(s => (
             <span key={s} className="badge badge-gray">{s}</span>
           ))}
@@ -264,23 +282,23 @@ function RequestCard({ request, currentUser, onApply, onDelete }) {
 
       {/* Requirements */}
       {request.requirements && (
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", padding: "10px 14px", background: "var(--bg-light)", borderRadius: 8, marginBottom: 14 }}>
+        <div className="marketplace-requirements">
           📋 <strong>Critères :</strong> {request.requirements}
         </div>
       )}
 
       {/* Action */}
       {!isOwner && !isExpired && (
-        <button className="btn btn-primary btn-sm" onClick={() => onApply(request)}>
+        <button className="btn btn-primary marketplace-card-action" onClick={() => onApply(request)}>
           ✉️ Postuler / Répondre
         </button>
       )}
       {isOwner && (
-        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        <div className="marketplace-owner-note">
           👤 Votre offre — gérez les candidatures via votre profil
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -297,11 +315,12 @@ export default function InvestorRequests() {
   const [applyTarget, setApplyTarget] = useState(null);
   const [applying,    setApplying]    = useState(false);
   const [myProjects,  setMyProjects]  = useState([]);
+  const [search,      setSearch]      = useState("");
 
   const loadRequests = useCallback(async (type) => {
     setLoading(true);
     try {
-      const res  = await investorRequestsApi.list({ type: type === "all" ? undefined : type, limit: 30 });
+      const res  = await investorRequestsApi.list({ type: type === "all" ? undefined : type, search: search.trim() || undefined, limit: 30 });
       const data = res.data?.requests || res.data || [];
       setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -311,7 +330,7 @@ export default function InvestorRequests() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [search]);
 
   useEffect(() => { loadRequests(filter); }, [filter, loadRequests]);
 
@@ -364,29 +383,41 @@ export default function InvestorRequests() {
   }
 
   return (
-    <div className="page-wrapper">
+    <div className="marketplace-page">
 
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">📢 Marketplace Investisseurs</h1>
-          <p className="page-subtitle">Offres d'investissement publiées par la communauté</p>
+      <section className="marketplace-hero">
+        <div className="marketplace-hero-copy">
+          <span className="marketplace-eyebrow">LAUNCHPAD MARKETPLACE</span>
+          <h1 className="marketplace-title">Des opportunités qui avancent.</h1>
+          <p className="marketplace-subtitle">
+            {isInvestor
+              ? "Publiez votre thèse d’investissement et découvrez les projets qui correspondent à votre vision."
+              : "Trouvez un investisseur, un mentor ou un partenaire pour faire grandir votre projet."
+            }
+          </p>
         </div>
         {isInvestor && (
-          <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={() => setShowPublish(true)}>
+            <button className="btn btn-primary marketplace-hero-action" onClick={() => setShowPublish(true)}>
               ➕ Publier une offre
             </button>
-          </div>
         )}
+      </section>
+
+      <div className="marketplace-toolbar">
+        <div className="marketplace-search">
+          <span>⌕</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && loadRequests(filter)} placeholder="Rechercher une offre, un secteur…" />
+        </div>
+        <div className="marketplace-role-note">{isInvestor ? "Votre espace investisseur" : "Votre espace étudiant"}</div>
       </div>
 
       {/* Filters */}
-      <div className="filter-tabs">
+      <div className="marketplace-filters">
         {FILTERS.map(f => (
           <button
             key={f.id}
-            className={`filter-tab${filter === f.id ? " active" : ""}`}
+            className={`marketplace-filter${filter === f.id ? " active" : ""}`}
             onClick={() => setFilter(f.id)}
           >
             {f.label}
@@ -396,7 +427,7 @@ export default function InvestorRequests() {
 
       {/* Loading */}
       {loading && (
-        <div className="loading-state">
+            <div className="marketplace-loading">
           <div className="spinner" />
           <div className="loading-state__title">Chargement des offres…</div>
         </div>
@@ -406,9 +437,9 @@ export default function InvestorRequests() {
       {!loading && (
         <>
           {requests.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state__icon">📢</div>
-              <div className="empty-state__title">Aucune offre disponible</div>
+            <div className="marketplace-empty">
+              <div className="marketplace-empty-icon">⌁</div>
+              <div className="marketplace-empty-title">Aucune offre disponible</div>
               {isInvestor && (
                 <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={() => setShowPublish(true)}>
                   Publier la première offre
@@ -416,7 +447,7 @@ export default function InvestorRequests() {
               )}
             </div>
           ) : (
-            requests.map(r => (
+            <div className="marketplace-list">{requests.map(r => (
               <RequestCard
                 key={r.id}
                 request={r}
@@ -424,7 +455,7 @@ export default function InvestorRequests() {
                 onApply={setApplyTarget}
                 onDelete={handleDelete}
               />
-            ))
+            ))}</div>
           )}
         </>
       )}
