@@ -186,7 +186,6 @@
     flex-direction: column;
   }
 }
-}
 
 @media (max-width: 480px) {
   .forum-post__stats  { display: none; }
