@@ -28,3 +28,65 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+.feed-unread-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent-mid);
+  border-radius: var(--r-full);
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feed-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.feed-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.feed-mark-read-btn {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.feed-unread .feed-event-card {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.feed-read {
+  opacity: 0.82;
+}
+
+@media (max-width: 640px) {
+  .feed-mark-read-btn {
+    width: 100%;
+    text-align: left;
+    margin-left: 0;
+  }
+}

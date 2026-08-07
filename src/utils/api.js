@@ -5,7 +5,9 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-let accessToken = null;
+let accessToken = typeof localStorage !== "undefined"
+  ? localStorage.getItem("launchpad_access_token")
+  : null;
 let refreshPromise = null; // 🛡️ Permet de mutualiser les requêtes de refresh simultanées au rechargement (F5)
 
 export function setAccessToken(token) {
@@ -351,6 +353,8 @@ export const badgesApi = {
 
 export const feedApi = {
   get: (params) => api.get("/feed", params),
+  markRead: (eventId) => api.post(`/feed/${eventId}/read`),
+  markAllRead: () => api.post("/feed/read-all"),
 };
 
 export const investorRequestsApi = {

@@ -98,8 +98,10 @@ export default function Notifications() {
     }
 
     // Filtrage côté client pour les catégories non gérées par le backend en query directe
-    const filtered = filter === "all" || filter === "unread"
+    const filtered = filter === "all"
         ? notifications
+        : filter === "unread"
+            ? notifications.filter(n => !n.isRead)
         : notifications.filter(n => n.type === filter);
 
     return (

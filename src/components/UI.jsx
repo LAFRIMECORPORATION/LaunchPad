@@ -764,7 +764,7 @@ export function Sidebar() {
     { id: "admin", icon: "📊", label: "Vue d'ensemble" },
     { id: "explore", icon: "📦", label: "Projets" },
     { id: "messages", icon: "👥", label: "Utilisateurs" },
-    { id: "notifications", icon: "🚨", label: "Modération" },
+    { id: "notifications", icon: "🚨", label: "Modération", badge: unreadCount },
   ];
 
   const items =

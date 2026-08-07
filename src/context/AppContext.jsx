@@ -18,6 +18,7 @@ import {
   messagesApi,
   projectsApi,
   notificationsApi,
+  feedApi,
   investorRequestsApi,
   setAccessToken,
   clearAccessToken,
@@ -54,6 +55,7 @@ export function AppProvider({ children }) {
 
   // ─── Notifications & Messagerie ───────────────────────────
   const [notifications, setNotifications] = useState([]);
+  const [feedUnreadCount, setFeedUnreadCount] = useState(0);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(1);
   const [pendingConversation, setPendingConversation] = useState(null);
@@ -526,7 +528,7 @@ export function AppProvider({ children }) {
   }, [currentUser, navigate]);
 
   // ─── Notifications ────────────────────────────────────────
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.unread ?? !n.isRead).length;
   const markAllRead = useCallback(async () => {
     setNotifications((n) => n.map((x) => ({ ...x, unread: false })));
     try {
@@ -575,9 +577,14 @@ export function AppProvider({ children }) {
       .then((res) => {
         // Backend: success(res, { notifications, total, unreadCount }) → { data: { notifications: [...] } }
         const list = res?.data?.notifications ?? res?.notifications ?? [];
-        setNotifications(Array.isArray(list) ? list : []);
+        setNotifications(Array.isArray(list) ? list.map(n => ({ ...n, unread: n.unread ?? !n.isRead })) : []);
       })
       .catch((err) => console.error("Erreur chargement notifications :", err));
+
+    feedApi
+      .get({ page: 1, limit: 1 })
+      .then((res) => setFeedUnreadCount(res?.data?.unreadCount ?? res?.unreadCount ?? 0))
+      .catch((err) => console.error("Erreur chargement compteur feed :", err));
 
     investorRequestsApi
       .list()
@@ -741,6 +748,7 @@ export function AppProvider({ children }) {
 
     notifications,
     unreadCount,
+    feedUnreadCount,
     markAllRead,
 
     conversations,

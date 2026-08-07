@@ -129,6 +129,8 @@ export default function FeedPage() {
   const [loading,  setLoading]  = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error,    setError]    = useState(null);
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const LIMIT = 20;
   const hasMore = events.length < total;
@@ -139,26 +141,42 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const res  = await feedApi.get({ filter: currentFilter, page: currentPage, limit: LIMIT });
+      const res  = await feedApi.get({ filter: currentFilter, page: currentPage, limit: LIMIT, unreadOnly });
       const data = res.data || res;
       const newEvents = data.events || [];
 
       setEvents(prev => append ? [...prev, ...newEvents] : newEvents);
       setTotal(data.total ?? newEvents.length);
+      setUnreadCount(data.unreadCount ?? 0);
     } catch (err) {
       setError(err.message || "Erreur lors du chargement du fil d'actualités.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [unreadOnly]);
 
   // Reset et rechargement quand le filtre change
   useEffect(() => {
     setPage(1);
     setEvents([]);
     loadFeed(filter, 1, false);
-  }, [filter, loadFeed]);
+  }, [filter, unreadOnly, loadFeed]);
+
+  async function handleEventClick(event) {
+    if (!event.isRead) {
+      setEvents(prev => prev.filter(item => item.id !== event.id));
+      setTotal(prev => Math.max(0, prev - 1));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      await feedApi.markRead(event.id).catch(() => loadFeed(filter, 1, false));
+    }
+  }
+
+  async function handleMarkAllRead() {
+    setEvents(prev => unreadOnly ? [] : prev.map(event => ({ ...event, isRead: true })));
+    setUnreadCount(0);
+    await feedApi.markAllRead().catch(() => loadFeed(filter, 1, false));
+  }
 
   function handleLoadMore() {
     const nextPage = page + 1;
@@ -175,11 +193,21 @@ export default function FeedPage() {
           <h1 className="page-title">📰 Fil d'actualités</h1>
           <p className="page-subtitle">Les dernières activités de la communauté Launchpad</p>
         </div>
+        <div className="feed-unread-summary">
+          <span className="feed-unread-dot" />
+          {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
+        </div>
       </div>
 
       {/* Filters */}
       <div className="filter-tabs">
-        {FILTERS.map(f => (
+        <button className={`filter-tab${!unreadOnly ? " active" : ""}`} onClick={() => setUnreadOnly(false)}>
+          Tout
+        </button>
+        <button className={`filter-tab${unreadOnly ? " active" : ""}`} onClick={() => setUnreadOnly(true)}>
+          Non lus {unreadCount > 0 && <span className="feed-count-badge">{unreadCount}</span>}
+        </button>
+        {FILTERS.filter(f => f.id !== "all").map(f => (
           <button
             key={f.id}
             className={`filter-tab${filter === f.id ? " active" : ""}`}
@@ -188,6 +216,11 @@ export default function FeedPage() {
             {f.label}
           </button>
         ))}
+        {unreadCount > 0 && (
+          <button className="feed-mark-read-btn" onClick={handleMarkAllRead}>
+            ✓ Tout lire
+          </button>
+        )}
       </div>
 
       {/* Loading initial */}
@@ -226,7 +259,9 @@ export default function FeedPage() {
           ) : (
             <div className="feed-list">
               {events.map(event => (
-                <EventCard key={event.id} event={event} navigate={navigate} currentUser={currentUser} />
+                <div key={event.id} className={event.isRead ? "feed-read" : "feed-unread"} onClick={() => handleEventClick(event)}>
+                  <EventCard event={event} navigate={navigate} currentUser={currentUser} />
+                </div>
               ))}
             </div>
           )}

@@ -90,7 +90,31 @@
    ══════════════════════════════════════════════════════════ */
 
 .notif-page {
+    min-width: 0;
     max-width: 680px;
+}
+
+.notif-page .page-subtitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notif-page .notif-list {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.notif-page .notif-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.notif-page .tag {
+    min-width: 0;
 }
 
 .notif-filters {

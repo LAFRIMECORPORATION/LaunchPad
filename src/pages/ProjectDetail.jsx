@@ -101,15 +101,19 @@ export default function ProjectDetail() {
 
             // Synchronisation avec les modifications effectuées à la volée sur l'explorer
             const matchedGlobalProject = globalProjects.find(p => String(p.id || p.project_id) === String(id));
+            const globalComments = matchedGlobalProject?.comments;
+            const detailComments = normalizedProject.comments;
 
             if (matchedGlobalProject) {
                 setProject({
                     ...normalizedProject,
                     likes: matchedGlobalProject.likes,
                     likedByMe: matchedGlobalProject.likedByMe,
-                    comments: matchedGlobalProject.comments || normalizedProject.comments,
-                    commentsCount: matchedGlobalProject.commentsCount ?? matchedGlobalProject.comments_count ?? (matchedGlobalProject.comments?.length || 0),
-                    comments_count: matchedGlobalProject.commentsCount ?? matchedGlobalProject.comments_count ?? (matchedGlobalProject.comments?.length || 0)
+                    comments: Array.isArray(globalComments) && globalComments.length > 0
+                        ? globalComments
+                        : detailComments,
+                    commentsCount: matchedGlobalProject.commentsCount ?? matchedGlobalProject.comments_count ?? detailComments.length,
+                    comments_count: matchedGlobalProject.commentsCount ?? matchedGlobalProject.comments_count ?? detailComments.length
                 });
             } else {
                 setProject(normalizedProject);

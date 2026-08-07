@@ -37,7 +37,10 @@ export default function CommentSection({ project }) {
     }
     
     const innerProject = liveProject?.project || liveProject?.data || liveProject;
-    const comments = project?.comments || liveProject?.comments || innerProject?.comments || [];
+    const commentSources = [project?.comments, liveProject?.comments, innerProject?.comments];
+    const comments = commentSources.find(source => Array.isArray(source) && source.length > 0)
+        || commentSources.find(Array.isArray)
+        || [];
 
     async function handleSubmit() {
         if (!text.trim()) return;
