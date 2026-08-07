@@ -8,14 +8,12 @@ import { useApp } from "../context/AppContext";
 import { Avatar } from "./UI";
 import "./CommentSection.css";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function CommentSection({ project }) {
     const { addComment, currentUser, projects, setProjects } = useApp();
     const [text, setText] = useState("");
     const [sending, setSending] = useState(false);
-
-    if (!project) {
-        return <div className="comment-empty">Chargement des commentaires...</div>;
-    }
 
     // ── SÉCURISATION DE L'ID (Aligné sur la robustesse de SocialActions) ───────
     const targetProjectId = 
@@ -32,6 +30,10 @@ export default function CommentSection({ project }) {
         projects?.find(p => String(p.id || p.project_id) === String(targetProjectId)) || project,
         [projects, targetProjectId, project]
     );
+
+    if (!project) {
+        return <div className="comment-empty">Chargement des commentaires...</div>;
+    }
     
     const innerProject = liveProject?.project || liveProject?.data || liveProject;
     const comments = project?.comments || liveProject?.comments || innerProject?.comments || [];
@@ -72,6 +74,11 @@ export default function CommentSection({ project }) {
             return;
         }
 
+        if (!UUID_REGEX.test(parentId)) {
+            console.warn("ID parent invalide (pas UUID):", parentId);
+            throw new Error("Impossible de répondre à un commentaire local sans UUID.");
+        }
+
         try {
             const envUrl = import.meta.env.VITE_API_URL || "";
             const cleanBaseUrl = envUrl.replace(/\/api\/?$/, ""); 
@@ -93,7 +100,11 @@ export default function CommentSection({ project }) {
             }
             
             const jsonRes = await response.json();
-            const dbComment = jsonRes.data || jsonRes.comment || jsonRes;
+            const dbComment = jsonRes.data?.comment || jsonRes.comment || jsonRes.data || jsonRes;
+
+            if (!dbComment?.id) {
+                throw new Error("ID de commentaire manquant dans la réponse du serveur");
+            }
 
             // Normalisation de la réponse
             const backendUser = dbComment.user || dbComment.author;
@@ -113,10 +124,6 @@ export default function CommentSection({ project }) {
                 likedByMe: false,
                 parentId: parentId
             };
-
-            if (!processedReply.id) {
-                throw new Error("ID de commentaire manquant dans la réponse du serveur");
-            }
 
             // Mise à jour locale optimiste du state global
             if (setProjects && typeof setProjects === "function") {
@@ -196,7 +203,7 @@ export default function CommentSection({ project }) {
                 ) : (
                     comments.map(c => (
                         <CommentItem 
-                            key={c.id || c._id || Math.random()} 
+                            key={c.id || c._id || `comment-${comments.indexOf(c)}`} 
                             comment={c} 
                             projectId={targetProjectId}
                             onReply={handleReply}
@@ -222,8 +229,7 @@ function CommentItem({ comment, projectId, onReply }) {
         }
 
         // Vérifier si l'ID est un UUID valide (pas un timestamp)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(comment.id)) {
+        if (!UUID_REGEX.test(comment.id)) {
             console.warn("ID de commentaire invalide (pas UUID):", comment.id);
             return;
         }
@@ -250,7 +256,8 @@ function CommentItem({ comment, projectId, onReply }) {
 
             if (!response.ok) throw new Error("Échec du like");
 
-            const data = await response.json();
+            const jsonRes = await response.json();
+            const data = jsonRes.data || jsonRes;
             setLikeCount(data.likesCount ?? data.likes ?? 0);
             setLiked(data.likedByMe ?? true);
         } catch (error) {

@@ -361,7 +361,7 @@ export function AppProvider({ children }) {
           {
             method: "POST",
             headers,
-            body: JSON.stringify({ text }),
+            body: JSON.stringify({ content: text }),
           },
         );
 
@@ -370,10 +370,14 @@ export function AppProvider({ children }) {
         const jsonRes = await response.json();
 
         // 🛡️ Extraction sécurisée : s'adapte à la structure enveloppée ou brute du contrôleur
-        const dbComment = jsonRes.comment || jsonRes.data || jsonRes;
+        const dbComment = jsonRes.data?.comment || jsonRes.comment || jsonRes.data || jsonRes;
+
+        if (!dbComment?.id) {
+          throw new Error("Le serveur n'a pas renvoyé l'identifiant du commentaire.");
+        }
 
         const processedComment = {
-          id: dbComment.id || Date.now(),
+          id: dbComment.id,
           author: dbComment.author?.firstName || dbComment.author?.first_name
             ? `${dbComment.author.firstName || dbComment.author.first_name} ${dbComment.author.lastName || dbComment.author.last_name || ""}`
             : user?.firstName || user?.name || "Anonyme",
@@ -410,6 +414,7 @@ export function AppProvider({ children }) {
       } catch (error) {
         console.error("Erreur d'ajout du commentaire:", error);
         showToast("Erreur lors de l'envoi du commentaire", "error");
+        throw error;
       }
     },
     [getAccessToken, showToast],
