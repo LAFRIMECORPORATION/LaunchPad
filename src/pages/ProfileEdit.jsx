@@ -71,7 +71,16 @@ export default function ProfileEdit() {
         ? await usersApi.uploadAvatar(currentUser.id, file)
         : await usersApi.uploadCover(currentUser.id, file);
       const updated = response.data?.user || response.user || response.data || response;
-      updateCurrentUser?.({ ...currentUser, ...updated, profile: { ...currentUser.profile, ...(kind === "cover" ? updated.profile || updated : {}) } });
+      
+      if (kind === "avatar") {
+        updateCurrentUser?.({ ...currentUser, avatarUrl: updated.avatarUrl });
+      } else {
+        updateCurrentUser?.({ 
+          ...currentUser, 
+          profile: { ...currentUser.profile, coverImageUrl: updated.coverImageUrl } 
+        });
+      }
+      
       showToast(kind === "avatar" ? "Photo de profil mise à jour." : "Photo de couverture mise à jour.", "success");
     } catch (error) {
       showToast(error.message || "Erreur lors de l'envoi de la photo.", "error");
