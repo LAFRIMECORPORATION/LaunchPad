@@ -71,6 +71,9 @@ export default function Admin() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [marketplace, setMarketplace] = useState(null);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [investmentsControl, setInvestmentsControl] = useState(null);
+  const [academyControl, setAcademyControl] = useState(null);
+  const [forumControl, setForumControl] = useState(null);
 
   const TABS = [
     { id: "overview",  icon: "📊", label: "Vue d'ensemble"                         },
@@ -78,6 +81,9 @@ export default function Admin() {
     { id: "users",     icon: "👥", label: "Utilisateurs"                           },
     { id: "kyc",       icon: "🛡️", label: `KYC (${kycList.length})`               },
     { id: "marketplace", icon: "🛒", label: "Marketplace" },
+    { id: "investments", icon: "💳", label: "Investissements" },
+    { id: "academy", icon: "📚", label: "Academy" },
+    { id: "forum", icon: "💬", label: "Forum" },
     { id: "audit",     icon: "📋", label: "Audit logs"                             },
   ];
 
@@ -169,6 +175,20 @@ export default function Admin() {
     }
   }, [showToast]);
 
+  const loadControl = useCallback(async (kind) => {
+    try {
+      const res = kind === "investments" ? await adminApi.getInvestmentsControl()
+        : kind === "academy" ? await adminApi.getAcademyControl()
+          : await adminApi.getForumControl();
+      const data = res.data || res;
+      if (kind === "investments") setInvestmentsControl(data);
+      if (kind === "academy") setAcademyControl(data);
+      if (kind === "forum") setForumControl(data);
+    } catch (err) {
+      showToast(err.message || `Erreur chargement ${kind}.`, "error");
+    }
+  }, [showToast]);
+
   useEffect(() => {
     if (tab === "overview") {
       loadProjects("pending");
@@ -177,8 +197,9 @@ export default function Admin() {
     else if (tab === "projects")   loadProjects("all");
     else if (tab === "users")      loadUsers();
     else if (tab === "marketplace") loadMarketplace();
+    else if (["investments", "academy", "forum"].includes(tab)) loadControl(tab);
     else if (tab === "audit")      loadAuditLogs();
-  }, [tab, loadKyc, loadProjects, loadUsers, loadMarketplace, loadAuditLogs]);
+  }, [tab, loadKyc, loadProjects, loadUsers, loadMarketplace, loadControl, loadAuditLogs]);
 
   // ── Actions Projets ───────────────────────────────────────
   async function handleApproveProject(id) {
@@ -711,6 +732,41 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {tab === "investments" && investmentsControl && (
+        <div className="admin-section card admin-control-panel">
+          <div className="section-title">💳 Contrôle des investissements</div>
+          <div className="admin-control-stats">
+            {(investmentsControl.stats || []).map(item => (
+              <div className="admin-control-stat" key={item.status}><strong>{item.count}</strong><span>{item.status} · {fmtXAF(item.total)}</span></div>
+            ))}
+          </div>
+          <div className="admin-control-list">
+            {(investmentsControl.investments || []).map(investment => (
+              <div className="admin-control-row" key={investment.id}>
+                <div><strong>{investment.project?.title || "Projet"}</strong><span>{investment.investor?.firstName} {investment.investor?.lastName} · {fmtXAF(investment.amount)}</span></div>
+                <div className="admin-control-actions"><span className="admin-status">{investment.status}</span>{!["refunded", "failed"].includes(investment.status) && <button className="btn btn-danger btn-sm" onClick={async () => { const reason = window.prompt("Motif du remboursement :"); if (reason === null) return; try { await adminApi.refundInvestment(investment.id, reason); showToast("Investissement remboursé.", "success"); loadControl("investments"); } catch (err) { showToast(err.message || "Erreur remboursement.", "error"); } }}>Rembourser</button>}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "academy" && academyControl && (
+        <div className="admin-section card admin-control-panel">
+          <div className="section-title">📚 Contrôle Academy</div>
+          <div className="admin-control-stats"><div className="admin-control-stat"><strong>{academyControl.courses?.length || 0}</strong><span>Cours</span></div><div className="admin-control-stat"><strong>{academyControl.enrollments || 0}</strong><span>Inscriptions</span></div></div>
+          <div className="admin-control-list">{(academyControl.courses || []).map(course => <div className="admin-control-row" key={course.id}><div><strong>{course.title}</strong><span>{course.level} · {course._count?.enrollments || course.enrollCount || 0} inscription(s)</span></div><button className="btn btn-danger btn-sm" onClick={async () => { if (!window.confirm(`Supprimer le cours « ${course.title} » ?`)) return; try { await adminApi.deleteAcademyCourse(course.id); showToast("Cours supprimé.", "success"); loadControl("academy"); } catch (err) { showToast(err.message || "Erreur suppression cours.", "error"); } }}>Supprimer</button></div>)}</div>
+        </div>
+      )}
+
+      {tab === "forum" && forumControl && (
+        <div className="admin-section card admin-control-panel">
+          <div className="section-title">💬 Contrôle du forum</div>
+          <div className="admin-control-stats"><div className="admin-control-stat"><strong>{forumControl.total || 0}</strong><span>Publications</span></div></div>
+          <div className="admin-control-list">{(forumControl.posts || []).map(post => <div className="admin-control-row" key={post.id}><div><strong>{post.title || "Sans titre"}</strong><span>{post.author?.firstName} {post.author?.lastName} · {post.likesCount || 0} likes · {post.repliesCount || 0} réponses</span></div><div className="admin-control-actions"><button className="btn btn-secondary btn-sm" onClick={async () => { try { await adminApi.toggleForumPin(post.id); showToast("Publication mise à jour.", "success"); loadControl("forum"); } catch (err) { showToast(err.message || "Erreur épinglage.", "error"); } }}>{post.isPinned ? "Désépingler" : "Épingler"}</button><button className="btn btn-danger btn-sm" onClick={async () => { if (!window.confirm("Supprimer cette publication ?")) return; try { await adminApi.deleteForumPost(post.id); showToast("Publication supprimée.", "success"); loadControl("forum"); } catch (err) { showToast(err.message || "Erreur suppression.", "error"); } }}>Supprimer</button></div></div>)}</div>
         </div>
       )}
 

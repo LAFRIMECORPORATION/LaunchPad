@@ -388,4 +388,11 @@ export const adminApi = {
     api.put(`/admin/marketplace/applications/${id}/status`, { status }),
   deleteMarketplaceOffer: (id, reason) =>
     api.delete(`/admin/marketplace/offers/${id}`, { reason }),
+  getInvestmentsControl: (params) => api.get("/admin/investments-control", params),
+  refundInvestment: (id, reason) => api.post(`/admin/investments/${id}/refund`, { reason }),
+  getAcademyControl: () => api.get("/admin/academy-control"),
+  deleteAcademyCourse: (id) => api.delete(`/admin/academy/courses/${id}`),
+  getForumControl: () => api.get("/admin/forum-control"),
+  toggleForumPin: (id) => api.put(`/admin/forum/posts/${id}/pin`),
+  deleteForumPost: (id) => api.delete(`/admin/forum/posts/${id}`),
 };
