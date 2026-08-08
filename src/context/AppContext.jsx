@@ -70,6 +70,10 @@ export function AppProvider({ children }) {
   const [toast, setToast] = useState(null);
   const [teamContact, setTeamContact] = useState(null);
 
+  const updateCurrentUser = useCallback((updates) => {
+    setCurrentUser(previous => ({ ...previous, ...updates }));
+  }, []);
+
   // ─── Token Helper sécurisé pour les requêtes natives ──────
   const getAccessToken = useCallback(() => {
     return localStorage.getItem("launchpad_access_token") || "";
@@ -776,6 +780,7 @@ export function AppProvider({ children }) {
     teamContact,
     setTeamContact,
     getAccessToken,
+    updateCurrentUser,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

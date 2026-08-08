@@ -23,6 +23,7 @@ import Messages from "../pages/Messages";
 import Notification from "../pages/Notification";
 import ProfileStudent from "../pages/ProfileStudent";
 import ProfileInvestor from "../pages/ProfileInverstor";
+import ProfileEdit from "../pages/ProfileEdit";
 import ProfileDetail from "../pages/ProfileDetail";
 import Admin from "../pages/Admin";
 import SavedProjects from "../pages/SavedProjects";
@@ -129,6 +130,7 @@ export default function AppRoutes() {
           <Route path="/notifications" element={<Notification />} />
           <Route path="/profile/student" element={<ProfileStudent />} />
           <Route path="/profile/investor" element={<ProfileInvestor />} />
+          <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/profile/:userId" element={<ProfileDetail />} />
           <Route path="/saved" element={<SavedProjects />} />
           <Route path="/investor-requests" element={<InvestorRequests />} />

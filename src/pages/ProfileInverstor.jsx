@@ -1,21 +1,45 @@
-﻿// ============================================================
+// ============================================================
 // LAUNCHPAD — Profile Investor Page
 // Chemin : src/pages/ProfileInverstor.jsx
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { usersApi, paymentsApi } from "../utils/api";
 import { useApp } from "../context/AppContext";
-import { Avatar, Badge } from "../components/UI";
-import { paymentsApi } from "../utils/api";
+import { Badge } from "../components/UI";
 import "./OtherPages.css";
 
 export default function ProfileInvestor() {
-  const { navigate, currentUser } = useApp();
+  const { navigate, currentUser, showToast, updateCurrentUser } = useApp();
+  const [uploading, setUploading] = useState("");
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const avatarInput = useRef(null);
+  const coverInput = useRef(null);
   const user = currentUser || {};
   const profile = user.profile || {};
   const interests = user.interests || profile.interests || [];
+  const coverUrl = profile.coverImageUrl;
+  const avatarUrl = user.avatarUrl;
+  const isInvestor = user.role === "investor";
+  const initials = useMemo(() => `${user.firstName?.[0] || "U"}${user.lastName?.[0] || ""}`.toUpperCase(), [user.firstName, user.lastName]);
+
+  async function upload(kind, file) {
+    if (!file) return;
+    setUploading(kind);
+    try {
+      const response = kind === "avatar"
+        ? await usersApi.uploadAvatar(user.id, file)
+        : await usersApi.uploadCover(user.id, file);
+      const updated = response.data?.user || response.user || response.data || response;
+      updateCurrentUser?.({ ...user, ...updated, profile: { ...user.profile, ...(kind === "cover" ? updated.profile || updated : {}) } });
+      showToast(kind === "avatar" ? "Photo de profil mise à jour." : "Photo de couverture mise à jour.", "success");
+    } catch (e) {
+      showToast(e.message || "Erreur lors de l'envoi de la photo.", "error");
+    } finally {
+      setUploading("");
+    }
+  }
 
   useEffect(() => {
     if (!currentUser?.id) {
@@ -41,20 +65,23 @@ export default function ProfileInvestor() {
   return (
     <div className="animate-fadeUp">
       <div style={{ position: "relative", marginBottom: 60 }}>
-        <div
-          className="profile-cover"
-          style={{
-            background: "linear-gradient(135deg, rgba(34,197,94,.12), rgba(91,115,245,.10))",
-          }}
-        />
-        <div className="profile-avatar-wrap">
-          <Avatar
-            label={user.avatarUrl || user.avatar || user.firstName?.[0] || "I"}
-            size="2xl"
-            ring
-            style={{ background: "linear-gradient(135deg, #22C55E, #5B73F5)" }}
-          />
-        </div>
+          <div className="profile-cover" style={{
+            background: coverUrl ? `url(${coverUrl}) center/cover` : "linear-gradient(135deg, rgba(34,197,94,.12), rgba(91,115,245,.10))",
+          }}>
+            <button type="button" className="profile-edit-photo-btn" onClick={() => coverInput.current?.click()} disabled={uploading === "cover"} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px" }}>
+              {uploading === "cover" ? "Envoi…" : "📷 Modifier"}
+            </button>
+            <input ref={coverInput} hidden type="file" accept="image/*" onChange={e => upload("cover", e.target.files?.[0])} />
+          </div>
+          <div className="profile-avatar-wrap">
+            <div className="profile-edit-avatar" style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}>
+              {!avatarUrl && initials}
+            </div>
+            <button type="button" className="profile-edit-avatar-btn" onClick={() => avatarInput.current?.click()} disabled={uploading === "avatar"} style={{ position: "absolute", bottom: -10, left: 0, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px" }}>
+              {uploading === "avatar" ? "…" : "📷"}
+            </button>
+            <input ref={avatarInput} hidden type="file" accept="image/*" onChange={e => upload("avatar", e.target.files?.[0])} />
+          </div>
 
         <div className="profile-header-bar" style={{ paddingLeft: 160 }}>
           <div>
@@ -77,7 +104,7 @@ export default function ProfileInvestor() {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={() => navigate("messages")}>💬 Contacter</button>
+          <div className="profile-header-actions">          <button className="btn btn-secondary profile-edit-trigger" style={{ minWidth: 0 }} onClick={() => navigate("/profile/edit")}>✏️ Modifier</button>          <button className="btn btn-primary" onClick={() => navigate("messages")}>💬 Contacter</button></div>
         </div>
       </div>
 

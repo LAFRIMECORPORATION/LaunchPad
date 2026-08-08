@@ -480,6 +480,36 @@
   border: 1px dashed rgba(239, 68, 68, 0.3);
 }
 
+/* Modern edit button */
+.profile-edit-trigger {
+  background: linear-gradient(135deg, #22C55E, #5B73F5);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.profile-edit-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.profile-edit-photo-btn,
+.profile-edit-avatar-btn {
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.profile-edit-photo-btn:hover,
+.profile-edit-avatar-btn:hover {
+  background: rgba(0,0,0,0.8);
+}
+
 .kyc-badge--pending:hover {
   background: rgba(239, 68, 68, 0.18);
   transform: translateY(-1px);

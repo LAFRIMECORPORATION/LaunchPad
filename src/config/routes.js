@@ -19,6 +19,7 @@ export const ROUTE_PATHS = {
   notifications: '/notifications',
   'profile-student': '/profile/student',
   'profile-investor': '/profile/investor',
+  'profile-edit': '/profile/edit',
   'saved-projects': '/saved',
   'investor-requests': '/investor-requests',
   admin: '/admin',

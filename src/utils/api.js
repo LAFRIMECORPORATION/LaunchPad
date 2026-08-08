@@ -234,6 +234,7 @@ export const usersApi = {
   getById: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
   uploadAvatar: (id, file) => api.upload(`/users/${id}/avatar`, file, "avatar"),
+  uploadCover: (id, file) => api.upload(`/users/${id}/cover`, file, "cover"),
 };
 
 export const kycApi = {

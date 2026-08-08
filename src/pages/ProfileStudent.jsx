@@ -48,7 +48,7 @@ export default function ProfileStudent() {
         <div
           className="profile-cover"
           style={{
-            background: "linear-gradient(135deg, rgba(91,115,245,.15), rgba(139,92,246,.12))",
+            background: profile.coverImageUrl ? `url(${profile.coverImageUrl}) center/cover` : "linear-gradient(135deg, rgba(91,115,245,.15), rgba(139,92,246,.12))",
           }}
         />
         <div className="profile-avatar-wrap">
@@ -79,7 +79,7 @@ export default function ProfileStudent() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {isOwn ? (
-              <button className="btn btn-secondary" style={{ minWidth: 0 }} onClick={() => navigate("profile-edit")}>Modifier</button>
+                <button className="btn btn-secondary profile-edit-trigger" style={{ minWidth: 0 }} onClick={() => navigate("/profile/edit")}>✏️ Modifier</button>
             ) : (
               <>
                 <button className="btn btn-secondary" onClick={() => navigate("messages", { targetUserId: currentUser?.id })}>
