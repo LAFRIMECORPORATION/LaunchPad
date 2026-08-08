@@ -474,7 +474,7 @@ export default function Messages() {
               >
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   <Avatar
-                    label={`${conv.other?.firstName} ${conv.other?.lastName}`}
+                    label={conv.other?.avatarUrl || `${conv.other?.firstName} ${conv.other?.lastName}`}
                     size="md"
                   />
                 </div>
@@ -538,7 +538,7 @@ export default function Messages() {
             >
               <div style={{ position: "relative" }}>
                 <Avatar
-                  label={`${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
+                  label={activeConv.other?.avatarUrl || `${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
                   size="md"
                 />
               </div>
@@ -653,7 +653,7 @@ export default function Messages() {
                           : "Envoyé"
                         : null,
                   }}
-                  senderLabel={`${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
+                  senderLabel={msg.sender?.avatarUrl || activeConv.other?.avatarUrl || `${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
                 />
               ))
             )}

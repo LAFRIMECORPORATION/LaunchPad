@@ -3,16 +3,20 @@
 // Chemin : src/pages/ProfileStudent.jsx
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge, ProjectCard } from "../components/UI";
-import { projectsApi } from "../utils/api";
+import { projectsApi, usersApi } from "../utils/api";
 import "./OtherPages.css";
 
 export default function ProfileStudent() {
-  const { navigate, currentUser } = useApp();
+  const { navigate, currentUser, showToast, updateCurrentUser } = useApp();
   const [myProjects, setMyProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState("");
+  const avatarInput = useRef(null);
+  const coverInput = useRef(null);
+
   const user = currentUser || {};
   const profile = user.profile || {};
   const projectCount = myProjects.length;
@@ -23,6 +27,26 @@ export default function ProfileStudent() {
     portfolio: profile.portfolioUrl || user.links?.portfolio || "",
   };
   const isOwn = currentUser?.role === "student";
+
+  async function upload(kind, file) {
+    if (!file) return;
+    setUploading(kind);
+    try {
+      const response = kind === "avatar"
+        ? await usersApi.uploadAvatar(user.id, file)
+        : await usersApi.uploadCover(user.id, file);
+      
+      const refreshed = await usersApi.getById(user.id);
+      const fullUser = refreshed.data?.user || refreshed.user || refreshed.data || refreshed;
+      updateCurrentUser?.(fullUser);
+      
+      showToast(kind === "avatar" ? "Photo de profil mise à jour." : "Photo de couverture mise à jour.", "success");
+    } catch (e) {
+      showToast(e.message || "Erreur lors de l'envoi de la photo.", "error");
+    } finally {
+      setUploading("");
+    }
+  }
 
   useEffect(() => {
     if (!currentUser?.id) {
@@ -50,9 +74,39 @@ export default function ProfileStudent() {
           style={{
             background: profile.coverImageUrl ? `url(${profile.coverImageUrl}) center/cover` : "linear-gradient(135deg, rgba(91,115,245,.15), rgba(139,92,246,.12))",
           }}
-        />
-        <div className="profile-avatar-wrap">
-          <Avatar label={user.avatarUrl || user.avatar || user.firstName?.[0] || "E"} size="2xl" ring />
+        >
+          {isOwn && (
+            <>
+              <button
+                type="button"
+                className="profile-edit-photo-btn"
+                onClick={() => coverInput.current?.click()}
+                disabled={uploading === "cover"}
+                style={{ position: "absolute", top: 12, right: 12 }}
+              >
+                {uploading === "cover" ? "Envoi…" : "📷 Couverture"}
+              </button>
+              <input ref={coverInput} hidden type="file" accept="image/*" onChange={e => upload("cover", e.target.files?.[0])} />
+            </>
+          )}
+        </div>
+
+        <div className="profile-avatar-wrap" style={{ position: "absolute", bottom: -30, left: 32 }}>
+          <Avatar label={user.avatarUrl || user.firstName?.[0] || "E"} size="2xl" ring />
+          {isOwn && (
+            <>
+              <button
+                type="button"
+                className="profile-edit-avatar-btn"
+                onClick={() => avatarInput.current?.click()}
+                disabled={uploading === "avatar"}
+                style={{ position: "absolute", bottom: 0, right: 0 }}
+              >
+                {uploading === "avatar" ? "…" : "📷"}
+              </button>
+              <input ref={avatarInput} hidden type="file" accept="image/*" onChange={e => upload("avatar", e.target.files?.[0])} />
+            </>
+          )}
         </div>
 
         <div className="profile-header-bar" style={{ paddingLeft: 160 }}>
@@ -79,7 +133,7 @@ export default function ProfileStudent() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {isOwn ? (
-                <button className="btn btn-secondary profile-edit-trigger" style={{ minWidth: 0 }} onClick={() => navigate("/profile/edit")}>✏️ Modifier</button>
+                <button className="btn btn-primary profile-edit-trigger-modern" onClick={() => navigate("profile-edit")}>✏️ Modifier le profil</button>
             ) : (
               <>
                 <button className="btn btn-secondary" onClick={() => navigate("messages", { targetUserId: currentUser?.id })}>

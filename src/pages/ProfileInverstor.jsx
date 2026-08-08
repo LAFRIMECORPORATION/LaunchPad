@@ -28,11 +28,14 @@ export default function ProfileInvestor() {
     if (!file) return;
     setUploading(kind);
     try {
-      const response = kind === "avatar"
-        ? await usersApi.uploadAvatar(user.id, file)
-        : await usersApi.uploadCover(user.id, file);
-      const updated = response.data?.user || response.user || response.data || response;
-      updateCurrentUser?.({ ...user, ...updated, profile: { ...user.profile, ...(kind === "cover" ? updated.profile || updated : {}) } });
+      await (kind === "avatar"
+        ? usersApi.uploadAvatar(user.id, file)
+        : usersApi.uploadCover(user.id, file));
+      
+      const refreshed = await usersApi.getById(user.id);
+      const fullUser = refreshed.data?.user || refreshed.user || refreshed.data || refreshed;
+      updateCurrentUser?.(fullUser);
+      
       showToast(kind === "avatar" ? "Photo de profil mise à jour." : "Photo de couverture mise à jour.", "success");
     } catch (e) {
       showToast(e.message || "Erreur lors de l'envoi de la photo.", "error");
@@ -68,16 +71,16 @@ export default function ProfileInvestor() {
           <div className="profile-cover" style={{
             background: coverUrl ? `url(${coverUrl}) center/cover` : "linear-gradient(135deg, rgba(34,197,94,.12), rgba(91,115,245,.10))",
           }}>
-            <button type="button" className="profile-edit-photo-btn" onClick={() => coverInput.current?.click()} disabled={uploading === "cover"} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px" }}>
-              {uploading === "cover" ? "Envoi…" : "📷 Modifier"}
+            <button type="button" className="profile-edit-photo-btn" onClick={() => coverInput.current?.click()} disabled={uploading === "cover"} style={{ position: "absolute", top: 12, right: 12 }}>
+              {uploading === "cover" ? "Envoi…" : "📷 Couverture"}
             </button>
             <input ref={coverInput} hidden type="file" accept="image/*" onChange={e => upload("cover", e.target.files?.[0])} />
           </div>
-          <div className="profile-avatar-wrap">
+          <div className="profile-avatar-wrap" style={{ position: "absolute", bottom: -30, left: 32 }}>
             <div className="profile-edit-avatar" style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}>
               {!avatarUrl && initials}
             </div>
-            <button type="button" className="profile-edit-avatar-btn" onClick={() => avatarInput.current?.click()} disabled={uploading === "avatar"} style={{ position: "absolute", bottom: -10, left: 0, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px" }}>
+            <button type="button" className="profile-edit-avatar-btn" onClick={() => avatarInput.current?.click()} disabled={uploading === "avatar"} style={{ position: "absolute", bottom: 0, right: 0 }}>
               {uploading === "avatar" ? "…" : "📷"}
             </button>
             <input ref={avatarInput} hidden type="file" accept="image/*" onChange={e => upload("avatar", e.target.files?.[0])} />
@@ -104,7 +107,10 @@ export default function ProfileInvestor() {
             </div>
           </div>
 
-          <div className="profile-header-actions">          <button className="btn btn-secondary profile-edit-trigger" style={{ minWidth: 0 }} onClick={() => navigate("/profile/edit")}>✏️ Modifier</button>          <button className="btn btn-primary" onClick={() => navigate("messages")}>💬 Contacter</button></div>
+          <div className="profile-header-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button className="btn btn-primary profile-edit-trigger-modern" onClick={() => navigate("profile-edit")}>✏️ Modifier le profil</button>
+            <button className="btn btn-secondary" onClick={() => navigate("messages")}>💬 Contacter</button>
+          </div>
         </div>
       </div>
 

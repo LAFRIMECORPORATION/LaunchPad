@@ -6,7 +6,24 @@
 import { useApp } from "../context/AppContext";
 
 /* ── AVATAR ── */
-export function Avatar({ label, size = "md", ring = false, style = {} }) {
+export function Avatar({ label, src, size = "md", ring = false, style = {} }) {
+  const imageUrl = src || (typeof label === "string" && (label.startsWith("http://") || label.startsWith("https://") || label.startsWith("data:")) ? label : null);
+
+  if (imageUrl) {
+    return (
+      <div
+        className={`avatar avatar-${size}${ring ? " avatar-ring" : ""}`}
+        style={{ ...style, padding: 0, overflow: "hidden" }}
+      >
+        <img
+          src={imageUrl}
+          alt="Avatar"
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`avatar avatar-${size}${ring ? " avatar-ring" : ""}`}
@@ -683,7 +700,7 @@ export function Navbar() {
                 )
               }
             >
-              <Avatar label={currentUser.avatar} size="sm" />
+              <Avatar label={currentUser.avatarUrl || currentUser.avatar || currentUser.firstName?.[0] || "U"} size="sm" />
               <span style={{ fontSize: 13.5, fontWeight: 600 }}>
                 {currentUser.firstName}
               </span>
@@ -856,7 +873,7 @@ export function Sidebar() {
           )
         }
       >
-        <Avatar label={currentUser.avatar} size="sm" />
+        <Avatar label={currentUser.avatarUrl || currentUser.avatar || currentUser.firstName?.[0] || "U"} size="sm" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="sidebar-user-name">{currentUser.name}</div>
           <div className="sidebar-user-role">

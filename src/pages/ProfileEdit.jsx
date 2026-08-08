@@ -33,6 +33,7 @@ export default function ProfileEdit() {
   function update(field, value) { setForm(current => ({ ...current, [field]: value })); }
   function list(value) { return value.split(",").map(item => item.trim()).filter(Boolean); }
 
+
   async function saveProfile(event) {
     event.preventDefault();
     setSaving(true);
@@ -53,14 +54,17 @@ export default function ProfileEdit() {
           investmentRegions: list(form.investmentRegions),
         },
       };
-      const response = await usersApi.update(currentUser.id, payload);
-      const updated = response.data?.user || response.user || response.data || response;
-      updateCurrentUser?.({ ...currentUser, ...updated, profile: { ...currentUser.profile, ...payload.profile } });
+      await usersApi.update(currentUser.id, payload);
+      // Refresh user data to ensure all fields (including description) are up‑to‑date
+      const refreshed = await usersApi.getById(currentUser.id);
+      updateCurrentUser?.(refreshed?.data?.user || refreshed);
       showToast("Profil mis à jour.", "success");
       navigate(isInvestor ? "profile-investor" : "profile-student");
     } catch (error) {
       showToast(error.message || "Impossible de mettre à jour le profil.", "error");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function upload(kind, file) {
@@ -94,8 +98,8 @@ export default function ProfileEdit() {
       <div className="profile-edit-hero">
         <div className="profile-edit-cover" style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}>
           <span className="profile-edit-cover-label">Photo de couverture</span>
-          <button type="button" className="profile-edit-photo-btn" onClick={() => coverInput.current?.click()} disabled={uploading === "cover"}>
-            {uploading === "cover" ? "Envoi…" : "📷 Modifier"}
+          <button type="button" className="profile-edit-trigger" onClick={() => coverInput.current?.click()} disabled={uploading === "cover"}>
+            {uploading === "cover" ? "Envoi…" : "Modifier la couverture"}
           </button>
           <input ref={coverInput} hidden type="file" accept="image/*" onChange={event => upload("cover", event.target.files?.[0])} />
         </div>

@@ -295,7 +295,7 @@
    ══════════════════════════════════════════════════════════ */
 
 .profile-cover {
-    height: 180px;
+    height: 220px;
     border-radius: var(--r-xl);
     border: 1px solid var(--border);
     position: relative;
@@ -1009,13 +1009,13 @@
 }
 
 .profile-edit-avatar {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--purple));
     color: white;
     font-weight: 800;
-    font-size: 32px;
+    font-size: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1225,4 +1225,35 @@
     .profile-edit-actions .btn {
         width: 100%;
     }
+}
+
+/* ── BOUTON MODIFIER MODERNE & CLEANUP UI ── */
+.profile-edit-trigger-modern {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.profile-edit-trigger-modern:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    filter: brightness(1.08);
+}
+
+.profile-edit-trigger-modern:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.file-name {
+    display: none !important;
 }
