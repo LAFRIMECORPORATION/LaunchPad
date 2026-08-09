@@ -37,6 +37,9 @@ export default function Messages() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const [otherUserLastSeen, setOtherUserLastSeen] = useState(null);
+  const [showUserList, setShowUserList] = useState(false);
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const typingTimer = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -326,6 +329,32 @@ export default function Messages() {
     }
   };
 
+  // ── Charger la liste des utilisateurs (Admin) ───────────────
+  const loadUsersList = useCallback(async () => {
+    if (currentUser.role !== "admin") return;
+    
+    setLoadingUsers(true);
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await res.json();
+      setUsersList(data.data?.data || data.data || []);
+    } catch (err) {
+      console.error("Erreur chargement utilisateurs :", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [currentUser.role]);
+
+  // ── Ouvrir conversation avec un utilisateur depuis la liste ──
+  const handleStartConversation = async (userId) => {
+    setShowUserList(false);
+    await openConvWithUser(userId);
+  };
+
   // ── Indicateur de frappe ───────────────────────────────
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -448,6 +477,18 @@ export default function Messages() {
             placeholder="🔍 Rechercher…"
             style={{ fontSize: 13, padding: "8px 12px" }}
           />
+          {currentUser.role === "admin" && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setShowUserList(true);
+                loadUsersList();
+              }}
+              style={{ marginTop: 8, width: "100%" }}
+            >
+              � Voir tous les utilisateurs
+            </button>
+          )}
         </div>
 
         <div className="conv-list-body">
@@ -704,6 +745,97 @@ export default function Messages() {
           <div className="chat-empty-title">Sélectionnez une conversation</div>
           <div className="chat-empty-sub">
             Choisissez une conversation dans la liste pour commencer à échanger.
+          </div>
+        </div>
+      )}
+      
+      {/* ── Modal Liste Utilisateurs (Admin) ── */}
+      {showUserList && (
+        <div className="modal-overlay" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+          <div className="card" style={{
+            padding: 24,
+            maxWidth: 600,
+            width: "90%",
+            maxHeight: "80vh",
+            overflow: "auto"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+                👥 Tous les utilisateurs
+              </h3>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowUserList(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {loadingUsers ? (
+              <div style={{ textAlign: "center", padding: 20 }}>
+                Chargement des utilisateurs...
+              </div>
+            ) : usersList.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)" }}>
+                Aucun utilisateur trouvé
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {usersList.map((user) => (
+                  <div
+                    key={user.id}
+                    className="card"
+                    style={{
+                      padding: 12,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      cursor: "pointer",
+                      transition: "var(--tr-fast)"
+                    }}
+                    onClick={() => handleStartConversation(user.id)}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                  >
+                    <Avatar
+                      label={user.avatarUrl || `${user.firstName} ${user.lastName}`}
+                      size="md"
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                        {user.email}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                        {user.role === "student" ? "🎓 Étudiant" : user.role === "investor" ? "💼 Investisseur" : "👤 Utilisateur"}
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartConversation(user.id);
+                      }}
+                    >
+                      💬 Écrire
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -455,6 +455,9 @@ export function NotificationItem({ notif, onClick }) {
 
 /* ── CHAT MESSAGE ── */
 export function ChatMessage({ message, senderLabel }) {
+  const { currentUser } = useApp();
+  const isAdmin = message.sender?.role === "admin" || message.senderId === currentUser?.role === "admin";
+  
   return (
     <div
       style={{
@@ -504,6 +507,9 @@ export function ChatMessage({ message, senderLabel }) {
           }}
         >
           <span>{message.time}</span>
+          {isAdmin && (
+            <span style={{ fontSize: 10, color: "#3B82F6" }}>✓ Certifié</span>
+          )}
           {message.me && message.readLabel ? (
             <span
               style={{
@@ -523,7 +529,13 @@ export function ChatMessage({ message, senderLabel }) {
 /* ── STEP INDICATOR ── */
 export function StepIndicator({ steps, currentStep }) {
   return (
-    <div className="steps">
+    <div className="steps" style={{ 
+      display: "flex", 
+      alignItems: "center", 
+      gap: "4px",
+      flexWrap: "wrap",
+      justifyContent: "center"
+    }}>
       {steps.map((label, i) => {
         const n = i + 1;
         const isDone = n < currentStep;
@@ -534,21 +546,35 @@ export function StepIndicator({ steps, currentStep }) {
             style={{
               display: "flex",
               alignItems: "center",
-              flex: i < steps.length - 1 ? 1 : "none",
+              gap: "4px",
+              flex: "0 1 auto",
+              minWidth: "max-content"
             }}
           >
             <div
               className={`step-circle${isOn ? " active" : ""}${isDone ? " done" : ""}`}
+              style={{ 
+                width: "24px", 
+                height: "24px", 
+                fontSize: "11px",
+                flexShrink: 0
+              }}
             >
               {isDone ? "✓" : n}
             </div>
             <span
               className={`step-label${isOn ? " active" : ""}${isDone ? " done" : ""}`}
+              style={{ fontSize: "11px", whiteSpace: "nowrap" }}
             >
               {label}
             </span>
             {i < steps.length - 1 && (
-              <div className={`step-line${isDone ? " done" : ""}`} />
+              <div className={`step-line${isDone ? " done" : ""}`} style={{ 
+                width: "12px", 
+                height: "2px", 
+                flexShrink: 0,
+                display: i === steps.length - 2 ? "none" : "block"
+              }} />
             )}
           </div>
         );
@@ -782,8 +808,8 @@ export function Sidebar() {
   const adminItems = [
     { id: "admin", icon: "📊", label: "Vue d'ensemble" },
     { id: "explore", icon: "📦", label: "Projets" },
-    { id: "messages", icon: "👥", label: "Utilisateurs" },
-    { id: "notifications", icon: "🚨", label: "Modération", badge: unreadCount },
+    { id: "messages", icon: "💬", label: "Messagerie", badge: unreadMessages },
+    { id: "notifications", icon: "🔔", label: "Modération", badge: unreadCount },
   ];
 
   const items =

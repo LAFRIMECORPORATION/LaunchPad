@@ -288,6 +288,8 @@ export const messagesApi = {
     api.post("/messages", { conversationId: convId, content: text }),
   send: (convId, text) =>
     api.post("/messages", { conversationId: convId, content: text }),
+  sendGlobalMessage: (content) =>
+    api.post("/messages/global", { content }),
   getUnreadCount: () => api.get("/messages/unread-count"),
   markRead: (convId) => api.post(`/conversations/${convId}/read`),
 };

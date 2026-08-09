@@ -120,6 +120,31 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-width: 100%;
+}
+
+/* Step Indicator responsive - flex wrap layout */
+.auth-form .steps {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.auth-form .step-circle {
+    flex-shrink: 0;
+}
+
+.auth-form .step-line {
+    width: 12px;
+    height: 2px;
+    flex-shrink: 0;
+}
+
+.auth-form .step-label {
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 /* Role toggle */
@@ -228,8 +253,48 @@
         padding: 24px 16px;
     }
 
+    .auth-card {
+        max-width: 100%;
+    }
+
     .auth-title {
         font-size: 26px;
+    }
+
+    .auth-form {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .auth-role-card {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .auth-role-icon {
+        font-size: 22px;
+    }
+
+    .auth-role-title {
+        font-size: 13px;
+    }
+
+    .auth-role-desc {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .chip-row {
+        gap: 6px;
+    }
+
+    .tag {
+        font-size: 12px;
+        padding: 4px 10px;
     }
 }
 
@@ -239,20 +304,72 @@
     }
 
     .auth-form {
-        padding: 20px;
+        padding: 18px;
     }
 
     .auth-title {
         font-size: 22px;
+    }
+
+    .auth-sub {
+        font-size: 13px;
+    }
+
+    .form-input {
+        padding: 9px 12px;
+        font-size: 13px;
+    }
+
+    .form-label {
+        font-size: 12px;
+    }
+
+    .auth-role-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    .auth-role-icon {
+        font-size: 20px;
+    }
+
+    .auth-role-desc {
+        font-size: 11px;
+    }
+
+    .chip-row {
+        gap: 5px;
+    }
+
+    .tag {
+        font-size: 11px;
+        padding: 4px 8px;
+        white-space: nowrap;
     }
 }
 
-@media (max-width: 375px) {
+@media (max-width: 400px) {
     .auth-panel {
-        padding: 16px 12px;
+        padding: 16px 10px;
+    }
+
+    .auth-form {
+        padding: 16px;
+        max-width: 400px;
+        width: 100%;
     }
 
     .auth-title {
-        font-size: 22px;
+        font-size: 20px;
+    }
+
+    .auth-role-card {
+        padding: 10px;
+    }
+
+    .tag {
+        font-size: 10px;
+        padding: 3px 7px;
     }
 }

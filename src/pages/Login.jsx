@@ -72,7 +72,7 @@ export default function Login() {
 
                         {/* role toggle — Utilisé pour le Mode Démo ou l'affichage visuel */}
                         <div className="auth-role-toggle">
-                            {[["student", "🎓 Étudiant"], ["investor", "💼 Investisseur"], ["admin", "⚙️ Admin"]].map(([r, l]) => (
+                            {[["student", "🎓 Étudiant"], ["investor", "💼 Investisseur"]].map(([r, l]) => (
                                 <button 
                                     key={r} 
                                     className={`auth-role-btn${role === r ? " active" : ""}`}
