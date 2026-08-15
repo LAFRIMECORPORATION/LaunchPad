@@ -1,27 +1,37 @@
 // ============================================================
-// LAUNCHPAD — InvestorRequests.jsx  ✅ BRANCHÉ SUR L'API RÉELLE
+// LAUNCHPAD — InvestorRequests.jsx  ✅ MARKETPLACE & CANDIDATURES
 // Chemin : src/pages/InvestorRequests.jsx
 // ============================================================
 
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { investorRequestsApi, projectsApi } from "../utils/api";
+import { Avatar, Badge } from "../components/UI";
 import "./InvestorRequests.css";
 
 const TYPE_LABELS = {
-  equity:    { label: "💼 Equity",     color: "#5B73F5" },
-  loan:      { label: "🏦 Prêt",       color: "#22C55E" },
-  grant:     { label: "🎁 Subvention", color: "#F59E0B" },
-  mentoring: { label: "🧠 Mentorat",   color: "#8B5CF6" },
+  equity:    { label: "💼 Equity",            color: "#5B73F5" },
+  loan:      { label: "🏦 Prêt",              color: "#22C55E" },
+  grant:     { label: "🎁 Subvention",        color: "#F59E0B" },
+  mentoring: { label: "🧠 Mentorat",          color: "#8B5CF6" },
+  job:       { label: "👔 Offre d'emploi",    color: "#EC4899" },
 };
 
 const FILTERS = [
-  { id: "all",      label: "Tous"        },
-  { id: "equity",   label: "💼 Equity"   },
-  { id: "loan",     label: "🏦 Prêts"   },
-  { id: "grant",    label: "🎁 Subventions"},
-  { id: "mentoring",label: "🧠 Mentorat" },
+  { id: "all",       label: "Tous"                },
+  { id: "equity",    label: "💼 Equity"          },
+  { id: "loan",      label: "🏦 Prêts"          },
+  { id: "grant",     label: "🎁 Subventions"      },
+  { id: "mentoring", label: "🧠 Mentorat"        },
+  { id: "job",       label: "👔 Offres d'emploi"  },
 ];
+
+const APP_STATUS_CONFIG = {
+  pending:     { label: "⏳ En attente",      cls: "badge-warning" },
+  shortlisted: { label: "⭐ Pré-sélectionné", cls: "badge-info"    },
+  accepted:    { label: "✅ Accepté",         cls: "badge-success" },
+  rejected:    { label: "❌ Refusé",          cls: "badge-danger"  },
+};
 
 const MARKETPLACE_SECTORS = [
   "AgriTech", "FinTech", "HealthTech", "EdTech", "GreenTech",
@@ -78,18 +88,18 @@ function PublishModal({ onClose, onSubmit, submitting }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">📢 Publier une offre</h2>
+          <h2 className="modal-title">📢 Publier une offre sur la Marketplace</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
           <div className="form-group">
-            <label className="form-label">Titre <span className="req">*</span></label>
-            <input className="form-input" placeholder="Ex : Cherche startup AgriTech Cameroun" value={form.title} onChange={e => set("title", e.target.value)} />
+            <label className="form-label">Titre de l'offre <span className="req">*</span></label>
+            <input className="form-input" placeholder="Ex : Cherche Développeur FullStack / Startup AgriTech" value={form.title} onChange={e => set("title", e.target.value)} />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Type d'offre</label>
+            <label className="form-label">Type d'opportunité</label>
             <select className="form-input form-select" value={form.type} onChange={e => set("type", e.target.value)}>
               {Object.entries(TYPE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -98,18 +108,18 @@ function PublishModal({ onClose, onSubmit, submitting }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description <span className="req">*</span></label>
-            <textarea className="form-input" rows={4} placeholder="Décrivez votre offre, vos critères et ce que vous apportez…" value={form.description} onChange={e => set("description", e.target.value)} />
+            <label className="form-label">Description complète <span className="req">*</span></label>
+            <textarea className="form-input" rows={4} placeholder="Décrivez votre offre, vos attentes et ce que vous apportez…" value={form.description} onChange={e => set("description", e.target.value)} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Montant min (XAF)</label>
-              <input className="form-input" type="number" placeholder="5 000 000" value={form.minAmount} onChange={e => set("minAmount", e.target.value)} />
+              <label className="form-label">{form.type === "job" ? "Rémunération min (XAF)" : "Montant min (XAF)"}</label>
+              <input className="form-input" type="number" placeholder="500 000" value={form.minAmount} onChange={e => set("minAmount", e.target.value)} />
             </div>
             <div className="form-group">
-              <label className="form-label">Montant max (XAF)</label>
-              <input className="form-input" type="number" placeholder="50 000 000" value={form.maxAmount} onChange={e => set("maxAmount", e.target.value)} />
+              <label className="form-label">{form.type === "job" ? "Rémunération max (XAF)" : "Montant max (XAF)"}</label>
+              <input className="form-input" type="number" placeholder="2 000 000" value={form.maxAmount} onChange={e => set("maxAmount", e.target.value)} />
             </div>
           </div>
 
@@ -127,21 +137,18 @@ function PublishModal({ onClose, onSubmit, submitting }) {
                 </label>
               ))}
             </div>
-            <span className="marketplace-field-hint">
-              {form.sectors.length > 0 ? `${form.sectors.length} secteur(s) sélectionné(s)` : "Sélectionnez un ou plusieurs secteurs"}
-            </span>
           </div>
 
-          {form.type === "equity" && (
+          {["equity", "job"].includes(form.type) && (
             <div className="form-group">
-              <label className="form-label">Fourchette d'equity attendue</label>
-              <input className="form-input" placeholder="Ex : 10-25%" value={form.equityRange} onChange={e => set("equityRange", e.target.value)} />
+              <label className="form-label">Equity / Part de capital proposée</label>
+              <input className="form-input" placeholder="Ex : 5-15% equity" value={form.equityRange} onChange={e => set("equityRange", e.target.value)} />
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label">Critères requis</label>
-            <textarea className="form-input" rows={2} placeholder="MVP fonctionnel, équipe technique, marché local validé…" value={form.requirements} onChange={e => set("requirements", e.target.value)} />
+            <label className="form-label">Profil / Critères requis</label>
+            <textarea className="form-input" rows={2} placeholder="Ex: Développeur React/Node.js, autonomie, basé à Douala ou Remote…" value={form.requirements} onChange={e => set("requirements", e.target.value)} />
           </div>
 
           <div className="form-group">
@@ -199,7 +206,7 @@ function ApplyModal({ request, onClose, onSubmit, submitting, myProjects }) {
             <textarea
               className="form-input"
               rows={5}
-              placeholder="Présentez votre projet et expliquez pourquoi vous correspondez à cette offre…"
+              placeholder="Présentez votre profil, votre motivation et expliquez pourquoi vous correspondez à cette offre…"
               value={message}
               onChange={e => setMessage(e.target.value)}
             />
@@ -212,7 +219,7 @@ function ApplyModal({ request, onClose, onSubmit, submitting, myProjects }) {
             disabled={!message.trim() || submitting}
             onClick={() => onSubmit({ message: message.trim(), projectId: projectId || undefined })}
           >
-            {submitting ? "Envoi…" : "✉️ Envoyer la candidature"}
+            {submitting ? "Envoi…" : "✉️ Envoyer ma candidature"}
           </button>
         </div>
       </div>
@@ -221,11 +228,11 @@ function ApplyModal({ request, onClose, onSubmit, submitting, myProjects }) {
 }
 
 /* ── Card d'une offre ──────────────────────────────────────── */
-function RequestCard({ request, currentUser, onApply, onDelete }) {
+function RequestCard({ request, currentUser, onApply, onDelete, onManageApps }) {
   const typeConfig = TYPE_LABELS[request.type] || { label: request.type, color: "#94A3B8" };
   const isOwner    = request.investor?.id === currentUser?.id;
-
-  const isExpired = request.deadline && new Date(request.deadline) < new Date();
+  const isExpired  = request.deadline && new Date(request.deadline) < new Date();
+  const appCount   = request.applications?.length || request._count?.applications || 0;
 
   return (
     <article className="marketplace-card">
@@ -294,8 +301,10 @@ function RequestCard({ request, currentUser, onApply, onDelete }) {
         </button>
       )}
       {isOwner && (
-        <div className="marketplace-owner-note">
-          👤 Votre offre — gérez les candidatures via votre profil
+        <div style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center" }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => onManageApps(request)}>
+            📋 Gérer les candidatures ({appCount})
+          </button>
         </div>
       )}
     </article>
@@ -304,18 +313,24 @@ function RequestCard({ request, currentUser, onApply, onDelete }) {
 
 /* ── MAIN PAGE ─────────────────────────────────────────────── */
 export default function InvestorRequests() {
-  const { currentUser, showToast } = useApp();
+  const { currentUser, navigate, showToast } = useApp();
   const isInvestor = currentUser?.role === "investor";
 
-  const [filter,      setFilter]      = useState("all");
-  const [requests,    setRequests]    = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [showPublish, setShowPublish] = useState(false);
-  const [publishing,  setPublishing]  = useState(false);
-  const [applyTarget, setApplyTarget] = useState(null);
-  const [applying,    setApplying]    = useState(false);
-  const [myProjects,  setMyProjects]  = useState([]);
-  const [search,      setSearch]      = useState("");
+  const [activeTab,    setActiveTab]   = useState("browse"); // "browse" | "applications"
+  const [filter,       setFilter]      = useState("all");
+  const [requests,     setRequests]    = useState([]);
+  const [myOffers,     setMyOffers]    = useState([]);
+  const [selectedOffer,setSelectedOffer]= useState(null);
+  const [offerDetail,  setOfferDetail] = useState(null);
+  const [loading,      setLoading]     = useState(true);
+  const [showPublish,  setShowPublish] = useState(false);
+  const [publishing,   setPublishing]  = useState(false);
+  const [applyTarget,  setApplyTarget] = useState(null);
+  const [applying,     setApplying]    = useState(false);
+  const [myProjects,   setMyProjects]  = useState([]);
+  const [search,       setSearch]      = useState("");
+  const [updatingAppId,setUpdatingAppId]= useState(null);
+  const [appFilter,    setAppFilter]   = useState("all");
 
   const loadRequests = useCallback(async (type) => {
     setLoading(true);
@@ -332,7 +347,35 @@ export default function InvestorRequests() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => { loadRequests(filter); }, [filter, loadRequests]);
+  const loadMyOffers = useCallback(async () => {
+    if (!isInvestor) return;
+    try {
+      const res = await investorRequestsApi.mine();
+      const list = res.data || [];
+      setMyOffers(list);
+      if (list.length > 0 && !selectedOffer) {
+        setSelectedOffer(list[0]);
+      }
+    } catch (err) {
+      console.error("Erreur chargement mes offres:", err);
+    }
+  }, [isInvestor, selectedOffer]);
+
+  useEffect(() => {
+    if (activeTab === "browse") loadRequests(filter);
+    else if (activeTab === "applications") loadMyOffers();
+  }, [activeTab, filter, loadRequests, loadMyOffers]);
+
+  // Charger détail de l'offre sélectionnée avec ses candidatures réelles
+  useEffect(() => {
+    if (activeTab === "applications" && selectedOffer?.id) {
+      investorRequestsApi.getOne(selectedOffer.id)
+        .then(res => {
+          setOfferDetail(res.data || res);
+        })
+        .catch(console.error);
+    }
+  }, [activeTab, selectedOffer]);
 
   // Charger les projets de l'utilisateur connecté (si étudiant) pour postuler
   useEffect(() => {
@@ -349,6 +392,7 @@ export default function InvestorRequests() {
       const res = await investorRequestsApi.create(data);
       const newReq = res.data || res;
       setRequests(prev => [newReq, ...prev]);
+      setMyOffers(prev => [newReq, ...prev]);
       setShowPublish(false);
       showToast("Offre publiée avec succès !", "success");
     } catch (err) {
@@ -376,11 +420,34 @@ export default function InvestorRequests() {
     try {
       await investorRequestsApi.remove(requestId);
       setRequests(prev => prev.filter(r => r.id !== requestId));
+      setMyOffers(prev => prev.filter(r => r.id !== requestId));
       showToast("Offre supprimée.", "info");
     } catch (err) {
       showToast(err.message || "Erreur lors de la suppression.", "error");
     }
   }
+
+  async function handleUpdateAppStatus(appId, newStatus) {
+    if (!selectedOffer) return;
+    setUpdatingAppId(appId);
+    try {
+      await investorRequestsApi.updateApplicationStatus(selectedOffer.id, appId, newStatus);
+      showToast("Statut de candidature mis à jour avec succès !", "success");
+      // Rafraîchir
+      const updated = await investorRequestsApi.getOne(selectedOffer.id);
+      setOfferDetail(updated.data || updated);
+    } catch (err) {
+      showToast(err.message || "Erreur lors de la mise à jour.", "error");
+    } finally {
+      setUpdatingAppId(null);
+    }
+  }
+
+  const applicationsList = offerDetail?.applications || [];
+  const filteredApps = applicationsList.filter(app => {
+    if (appFilter === "all") return true;
+    return app.status === appFilter;
+  });
 
   return (
     <div className="marketplace-page">
@@ -392,72 +459,240 @@ export default function InvestorRequests() {
           <h1 className="marketplace-title">Des opportunités qui avancent.</h1>
           <p className="marketplace-subtitle">
             {isInvestor
-              ? "Publiez votre thèse d’investissement et découvrez les projets qui correspondent à votre vision."
-              : "Trouvez un investisseur, un mentor ou un partenaire pour faire grandir votre projet."
+              ? "Publiez votre thèse d’investissement, proposez des offres d'emploi et gérez les candidatures réelles des étudiants."
+              : "Trouvez un investisseur, une offre d'emploi, un mentor ou un partenaire pour faire grandir votre projet."
             }
           </p>
         </div>
         {isInvestor && (
-            <button className="btn btn-primary marketplace-hero-action" onClick={() => setShowPublish(true)}>
-              ➕ Publier une offre
-            </button>
+          <button className="btn btn-primary marketplace-hero-action" onClick={() => setShowPublish(true)}>
+            ➕ Publier une offre
+          </button>
         )}
       </section>
 
-      <div className="marketplace-toolbar">
-        <div className="marketplace-search">
-          <span>⌕</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && loadRequests(filter)} placeholder="Rechercher une offre, un secteur…" />
-        </div>
-        <div className="marketplace-role-note">{isInvestor ? "Votre espace investisseur" : "Votre espace étudiant"}</div>
-      </div>
-
-      {/* Filters */}
-      <div className="marketplace-filters">
-        {FILTERS.map(f => (
+      {/* Navigation Onglets (Pour Investisseurs) */}
+      {isInvestor && (
+        <div className="filter-tabs" style={{ marginBottom: 20 }}>
           <button
-            key={f.id}
-            className={`marketplace-filter${filter === f.id ? " active" : ""}`}
-            onClick={() => setFilter(f.id)}
+            className={`filter-tab${activeTab === "browse" ? " active" : ""}`}
+            onClick={() => setActiveTab("browse")}
           >
-            {f.label}
+            🛒 Marketplace (Toutes les offres)
           </button>
-        ))}
-      </div>
-
-      {/* Loading */}
-      {loading && (
-            <div className="marketplace-loading">
-          <div className="spinner" />
-          <div className="loading-state__title">Chargement des offres…</div>
+          <button
+            className={`filter-tab${activeTab === "applications" ? " active" : ""}`}
+            onClick={() => setActiveTab("applications")}
+          >
+            📋 Gestion de mes candidatures ({myOffers.length})
+          </button>
         </div>
       )}
 
-      {/* Liste */}
-      {!loading && (
+      {activeTab === "browse" ? (
         <>
-          {requests.length === 0 ? (
-            <div className="marketplace-empty">
-              <div className="marketplace-empty-icon">⌁</div>
-              <div className="marketplace-empty-title">Aucune offre disponible</div>
-              {isInvestor && (
-                <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={() => setShowPublish(true)}>
-                  Publier la première offre
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="marketplace-list">{requests.map(r => (
-              <RequestCard
-                key={r.id}
-                request={r}
-                currentUser={currentUser}
-                onApply={setApplyTarget}
-                onDelete={handleDelete}
+          <div className="marketplace-toolbar">
+            <div className="marketplace-search">
+              <span>⌕</span>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && loadRequests(filter)}
+                placeholder="Rechercher une offre, un emploi, un secteur…"
               />
-            ))}</div>
+            </div>
+            <div className="marketplace-role-note">
+              {isInvestor ? "Votre espace investisseur" : "Votre espace étudiant"}
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="marketplace-filters">
+            {FILTERS.map(f => (
+              <button
+                key={f.id}
+                className={`marketplace-filter${filter === f.id ? " active" : ""}`}
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Loading */}
+          {loading && (
+            <div className="marketplace-loading">
+              <div className="spinner" />
+              <div className="loading-state__title">Chargement des offres…</div>
+            </div>
+          )}
+
+          {/* Liste */}
+          {!loading && (
+            <>
+              {requests.length === 0 ? (
+                <div className="marketplace-empty">
+                  <div className="marketplace-empty-icon">⌁</div>
+                  <div className="marketplace-empty-title">Aucune offre disponible pour le moment</div>
+                  {isInvestor && (
+                    <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={() => setShowPublish(true)}>
+                      Publier une offre sur la Marketplace
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="marketplace-list">
+                  {requests.map(r => (
+                    <RequestCard
+                      key={r.id}
+                      request={r}
+                      currentUser={currentUser}
+                      onApply={setApplyTarget}
+                      onDelete={handleDelete}
+                      onManageApps={(offer) => {
+                        setSelectedOffer(offer);
+                        setActiveTab("applications");
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
+      ) : (
+        /* Vue Espace Candidatures (Côté Investisseur) */
+        <div className="card" style={{ padding: 24 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+            📋 Candidatures reçues pour vos offres
+          </h2>
+
+          {myOffers.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 30, color: "var(--text-muted)" }}>
+              Vous n'avez pas encore publié d'offres.
+              <br />
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={() => setShowPublish(true)}>
+                Publier une offre
+              </button>
+            </div>
+          ) : (
+            <div>
+              {/* Sélecteur d'offre */}
+              <div style={{ marginBottom: 20 }}>
+                <label className="form-label" style={{ fontWeight: 600 }}>Sélectionnez l'offre à examiner :</label>
+                <select
+                  className="form-input form-select"
+                  value={selectedOffer?.id || ""}
+                  onChange={e => {
+                    const found = myOffers.find(o => o.id === e.target.value);
+                    if (found) setSelectedOffer(found);
+                  }}
+                >
+                  {myOffers.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.title} ({o.applications?.length || o._count?.applications || 0} candidatures)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtres de statut de candidature */}
+              <div className="filter-tabs" style={{ marginBottom: 16 }}>
+                {[
+                  ["all", "Toutes"],
+                  ["pending", "⏳ En attente"],
+                  ["shortlisted", "⭐ Pré-sélectionnés"],
+                  ["accepted", "✅ Acceptés"],
+                  ["rejected", "❌ Refusés"],
+                ].map(([stId, stLabel]) => (
+                  <button
+                    key={stId}
+                    className={`filter-tab${appFilter === stId ? " active" : ""}`}
+                    onClick={() => setAppFilter(stId)}
+                  >
+                    {stLabel}
+                  </button>
+                ))}
+              </div>
+
+              {/* Liste des candidats */}
+              {filteredApps.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 30, color: "var(--text-muted)" }}>
+                  Aucune candidature trouvée pour ce filtre.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {filteredApps.map(app => {
+                    const candidate = app.applicant || {};
+                    const st = APP_STATUS_CONFIG[app.status] || APP_STATUS_CONFIG.pending;
+                    return (
+                      <div key={app.id} className="card" style={{ padding: 18, border: "1px solid var(--border)", display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", gap: 14 }}>
+                          <Avatar
+                            label={candidate.avatarUrl || candidate.firstName?.[0] || "U"}
+                            size="lg"
+                          />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", gap: 10 }}>
+                              {candidate.firstName} {candidate.lastName}
+                              <span className={`badge ${st.cls}`}>{st.label}</span>
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>
+                              {candidate.profile?.university || "Étudiant / Porteur de projet"} · Postulé le {new Date(app.createdAt).toLocaleDateString("fr-FR")}
+                            </div>
+                            <div style={{ fontSize: 14, background: "var(--bg-light)", padding: "10px 14px", borderRadius: "var(--r-md)", borderLeft: "3px solid var(--primary)" }}>
+                              "{app.message || "Aucun message de motivation fourni."}"
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 160 }}>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => navigate("messages", { targetUserId: candidate.id })}
+                          >
+                            💬 Écrire
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate("appointments", { targetUserId: candidate.id })}
+                          >
+                            📅 Fixer RDV
+                          </button>
+
+                          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Changer le statut :</span>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              disabled={updatingAppId === app.id}
+                              onClick={() => handleUpdateAppStatus(app.id, "shortlisted")}
+                            >
+                              ⭐ Pré-sélectionner
+                            </button>
+                            <button
+                              className="btn btn-success btn-sm"
+                              disabled={updatingAppId === app.id}
+                              onClick={() => handleUpdateAppStatus(app.id, "accepted")}
+                            >
+                              ✅ Accepter
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              disabled={updatingAppId === app.id}
+                              onClick={() => handleUpdateAppStatus(app.id, "rejected")}
+                            >
+                              ❌ Refuser
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Modal Publier */}

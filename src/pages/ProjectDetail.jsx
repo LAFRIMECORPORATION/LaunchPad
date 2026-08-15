@@ -32,6 +32,58 @@ export default function ProjectDetail() {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [similarProjects, setSimilarProjects] = useState([]);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const isOwner = currentUser && project && (currentUser.id === project.authorId || currentUser.role === "admin");
+
+    const handleSaveEdit = async (updatedData) => {
+        setSaving(true);
+        try {
+            const envUrl = import.meta.env.VITE_API_URL || "";
+            const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+            const res = await fetch(`${cleanBaseUrl}/api/projects/${project.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(updatedData)
+            });
+            if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+            const body = await res.json();
+            const clean = body?.data?.project || body?.data || body;
+            setProject(prev => ({ ...prev, ...clean }));
+            setShowEditModal(false);
+            if (typeof showToast === "function") showToast("Projet mis à jour avec succès !", "success");
+        } catch (err) {
+            if (typeof showToast === "function") showToast(err.message || "Erreur lors de la mise à jour.", "error");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteProject = async () => {
+        if (!window.confirm("⚠️ SUPPRESSION DÉFINITIVE :\nÊtes-vous sûr de vouloir supprimer définitivement ce projet ?\nCette action est irréversible et supprimera le projet partout.")) {
+            return;
+        }
+        try {
+            const envUrl = import.meta.env.VITE_API_URL || "";
+            const cleanBaseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+            const res = await fetch(`${cleanBaseUrl}/api/projects/${project.id}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                }
+            });
+            if (!res.ok) throw new Error("Erreur lors de la suppression");
+            if (typeof showToast === "function") showToast("Projet supprimé définitivement.", "info");
+            if (navigate) navigate("explore");
+        } catch (err) {
+            if (typeof showToast === "function") showToast(err.message || "Erreur lors de la suppression.", "error");
+        }
+    };
 
     // ── 1. CHARGEMENT DEPUIS L'API + HARMONISATION DE L'ÉTAT DES LIKES ──
     const loadProjectDetail = useCallback(async () => {
@@ -332,6 +384,16 @@ export default function ProjectDetail() {
                                 Porteur de projet • {project.author?.profile?.university || "Étudiant"}
                             </div>
                         </div>
+                        {isOwner && (
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setShowEditModal(true)}>
+                                    ✏️ Éditer
+                                </button>
+                                <button className="btn btn-danger btn-sm" onClick={handleDeleteProject}>
+                                    🗑️ Supprimer
+                                </button>
+                            </div>
+                        )}
                         <div className="project-author-date">
                             {project.createdAt || project.publishedAt
                                 ? new Date(project.createdAt || project.publishedAt).toLocaleDateString("fr-FR", {
@@ -617,6 +679,109 @@ export default function ProjectDetail() {
                             ))}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {showEditModal && (
+                <EditProjectModal
+                    project={project}
+                    onClose={() => !saving && setShowEditModal(false)}
+                    onSave={handleSaveEdit}
+                    saving={saving}
+                />
+            )}
+        </div>
+    );
+}
+
+function EditProjectModal({ project, onClose, onSave, saving }) {
+    const [form, setForm] = useState({
+        title: project.title || "",
+        tagline: project.tagline || "",
+        description: project.description || "",
+        problem: project.problem || "",
+        solution: project.solution || "",
+        businessModel: project.businessModel || "",
+        stage: project.stage || "idea",
+        category: project.category || "FinTech",
+        goalAmount: project.goalAmount || 1000000,
+        equityPct: project.equityPct || "",
+        demoVideoUrl: project.demoVideoUrl || "",
+        githubUrl: project.githubUrl || "",
+    });
+
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" style={{ maxWidth: 650, width: "95%" }} onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">✏️ Éditer le projet</h2>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div className="form-group">
+                        <label className="form-label">Titre du projet <span className="req">*</span></label>
+                        <input className="form-input" value={form.title} onChange={e => set("title", e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Slogan / Phrase d'accroche <span className="req">*</span></label>
+                        <input className="form-input" value={form.tagline} onChange={e => set("tagline", e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Description détaillée <span className="req">*</span></label>
+                        <textarea className="form-input" rows={4} value={form.description} onChange={e => set("description", e.target.value)} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="form-group">
+                            <label className="form-label">Problème résolu</label>
+                            <textarea className="form-input" rows={2} value={form.problem} onChange={e => set("problem", e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Notre solution</label>
+                            <textarea className="form-input" rows={2} value={form.solution} onChange={e => set("solution", e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Modèle économique</label>
+                        <textarea className="form-input" rows={2} value={form.businessModel} onChange={e => set("businessModel", e.target.value)} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                        <div className="form-group">
+                            <label className="form-label">Catégorie</label>
+                            <input className="form-input" value={form.category} onChange={e => set("category", e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Stade</label>
+                            <select className="form-input form-select" value={form.stage} onChange={e => set("stage", e.target.value)}>
+                                <option value="idea">Idée</option>
+                                <option value="prototype">Prototype</option>
+                                <option value="mvp">MVP</option>
+                                <option value="beta">Bêta</option>
+                                <option value="launched">Lancé</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Objectif (XAF)</label>
+                            <input className="form-input" type="number" value={form.goalAmount} onChange={e => set("goalAmount", e.target.value)} />
+                        </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="form-group">
+                            <label className="form-label">Lien vidéo démo</label>
+                            <input className="form-input" placeholder="https://youtube.com/..." value={form.demoVideoUrl} onChange={e => set("demoVideoUrl", e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Lien GitHub / Démo</label>
+                            <input className="form-input" placeholder="https://github.com/..." value={form.githubUrl} onChange={e => set("githubUrl", e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={onClose} disabled={saving}>Annuler</button>
+                    <button className="btn btn-primary" disabled={saving || !form.title.trim()} onClick={() => onSave(form)}>
+                        {saving ? "Sauvegarde..." : "💾 Enregistrer les modifications"}
+                    </button>
                 </div>
             </div>
         </div>

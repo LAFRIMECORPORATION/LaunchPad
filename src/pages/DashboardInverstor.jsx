@@ -8,7 +8,7 @@ import {
   KycAlert,
 } from "../components/UI";
 import SocialActions from "../components/SocialActions";
-import { paymentsApi, projectsApi } from "../utils/api";
+import { paymentsApi, projectsApi, feedApi } from "../utils/api";
 import "./Dashboard.css";
 
 function fmt(n) {
@@ -20,9 +20,19 @@ export default function DashboardInvestor() {
 
   const [investments, setInvestments] = useState([]);
   const [recommendedProjects, setRecommendedProjects] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recommendLoading, setRecommendLoading] = useState(true);
   const [totalInvested, setTotalInvested] = useState(0);
+
+  useEffect(() => {
+    feedApi.get({ limit: 5 })
+      .then(res => {
+        const events = res.data?.events || res.data || [];
+        setRecentActivities(Array.isArray(events) ? events : []);
+      })
+      .catch(() => setRecentActivities([]));
+  }, []);
 
   useEffect(() => {
     paymentsApi
@@ -407,16 +417,17 @@ export default function DashboardInvestor() {
           className="two-col-side"
           style={{ display: "flex", flexDirection: "column", gap: 24 }}
         >
-          {/* CRITÈRES DE FILTRAGE */}
+          {/* CRITÈRES DE FILTRAGE RÉELS */}
           <div className="card" style={{ padding: 20 }}>
-            <div className="section-title" style={{ marginBottom: 14 }}>
-              Critères d'investissement
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div className="section-title">Critères d'investissement</div>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate("profile-investor")}>✏️ Modifier</button>
             </div>
             {[
-              ["💰", "Ticket minimum", "5M XAF"],
-              ["📈", "Ticket maximum", "75M XAF"],
-              ["📊", "Stade minimum", "MVP / Seed"],
-              ["🌍", "Zone géographique", "Cameroun (CEMAC)"],
+              ["💰", "Ticket minimum", currentUser?.profile?.minTicket ? `${fmt(currentUser.profile.minTicket)} XAF` : "Non défini"],
+              ["📈", "Ticket maximum", currentUser?.profile?.maxTicket ? `${fmt(currentUser.profile.maxTicket)} XAF` : "Non défini"],
+              ["📊", "Secteurs ciblés", (currentUser?.interests?.length ? currentUser.interests.join(", ") : (currentUser?.profile?.interests?.join(", ") || "Tous secteurs"))],
+              ["🌍", "Zones ciblées", (currentUser?.profile?.investmentRegions?.length ? currentUser.profile.investmentRegions.join(", ") : "Cameroun (CEMAC)")],
             ].map(([ico, label, val]) => (
               <div
                 key={label}
@@ -439,38 +450,30 @@ export default function DashboardInvestor() {
             ))}
           </div>
 
-          {/* ACTIVITÉ RÉCENTE */}
+          {/* ACTIVITÉ RÉCENTE DYNAMIQUE */}
           <div className="card" style={{ padding: 20 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
               Activité récente
             </div>
-            <div className="activity-feed">
-              {[
-                {
-                  ico: "📊",
-                  text: "EcoDeliv a atteint 37% de son objectif",
-                  time: "Il y a 2h",
-                },
-                {
-                  ico: "🆕",
-                  text: "5 nouveaux projets FinTech publiés",
-                  time: "Aujourd'hui",
-                },
-                {
-                  ico: "💬",
-                  text: "Un porteur de projet a répondu à votre message",
-                  time: "Hier",
-                },
-              ].map((a, i) => (
-                <div key={i} className="activity-item">
-                  <span className="activity-icon">{a.ico}</span>
-                  <div>
-                    <div className="activity-text">{a.text}</div>
-                    <div className="activity-time">{a.time}</div>
+            {recentActivities.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "10px 0" }}>
+                Aucune activité récente.
+              </div>
+            ) : (
+              <div className="activity-feed">
+                {recentActivities.map((a, i) => (
+                  <div key={a.id || i} className="activity-item">
+                    <span className="activity-icon">
+                      {a.eventType === "project_published" ? "📦" : a.eventType === "investment_made" ? "💰" : "📰"}
+                    </span>
+                    <div>
+                      <div className="activity-text">{a.metadata?.title || a.entityType || "Événement de la plateforme"}</div>
+                      <div className="activity-time">{new Date(a.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

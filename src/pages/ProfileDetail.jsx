@@ -6,8 +6,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { Avatar, Badge } from "../components/UI";
-import { usersApi, messagesApi } from "../utils/api";
+import { Avatar, Badge, ProjectCard } from "../components/UI";
+import { usersApi, messagesApi, projectsApi } from "../utils/api";
 import {
   getSocket,
   joinConversation,
@@ -18,11 +18,14 @@ import "./OtherPages.css";
 export default function ProfileDetail() {
   const { userId } = useParams();
   const location = useLocation();
-  const { navigate, currentUser } = useApp();
+  const { navigate, currentUser, showToast, updateCurrentUser } = useApp();
 
   const [user, setUser] = useState(null);
+  const [userProjects, setUserProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef(null);
 
   // Messages
   const [conversation, setConversation] = useState(null);
@@ -38,7 +41,10 @@ export default function ProfileDetail() {
     const loadProfile = async () => {
       try {
         setLoading(true);
-        const res = await usersApi.getById(userId);
+        const targetId = userId || currentUser?.id;
+        if (!targetId) return;
+
+        const res = await usersApi.getById(targetId);
         const loadedUser = res.data?.user || res.data;
         setUser({
           ...loadedUser,
@@ -50,6 +56,15 @@ export default function ProfileDetail() {
               : [],
         });
         setError(null);
+
+        // Charger les projets de l'utilisateur (étudiant/auteur)
+        projectsApi.list({ authorId: targetId, limit: 12 })
+          .then(projRes => {
+            const list = projRes.data?.projects || projRes.data || [];
+            setUserProjects(Array.isArray(list) ? list : []);
+          })
+          .catch(() => setUserProjects([]));
+
       } catch (err) {
         console.error("Erreur chargement profil :", err);
         setError(err.message || "Impossible de charger le profil");
@@ -59,27 +74,44 @@ export default function ProfileDetail() {
       }
     };
 
-    if (userId) {
-      loadProfile();
+    loadProfile();
+  }, [userId, currentUser?.id]);
+
+  // ── Upload de photo de couverture depuis le profil ─────
+  const handleCoverChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      setUploadingCover(true);
+      const res = await usersApi.uploadCover(user.id, file);
+      const coverUrl = res.data?.coverImageUrl || res.coverImageUrl || res.data?.profile?.coverImageUrl;
+      setUser(prev => ({
+        ...prev,
+        profile: { ...prev.profile, coverImageUrl: coverUrl }
+      }));
+      if (currentUser?.id === user.id && typeof updateCurrentUser === "function") {
+        updateCurrentUser({ profile: { ...currentUser.profile, coverImageUrl: coverUrl } });
+      }
+      showToast("Photo de couverture mise à jour !", "success");
+    } catch (err) {
+      showToast(err.message || "Erreur lors du changement de couverture.", "error");
+    } finally {
+      setUploadingCover(false);
     }
-  }, [userId]);
+  };
 
   // ── Créer ou récupérer la conversation ──────────────────
   const startConversation = async () => {
     try {
-      const res = await messagesApi.createDirect(userId);
+      const res = await messagesApi.createDirect(user.id);
       const conv = res.data?.conversation || res.data;
       setConversation(conv);
       setChatOpen(true);
-
-      // Rejoindre la conversation via socket avant chargement
       joinConversation(conv.id);
-
-      // Charger les messages existants
       await loadMessages(conv.id);
     } catch (err) {
       console.error("Erreur création conversation :", err);
-      alert("Erreur lors du démarrage de la conversation");
+      showToast("Erreur lors du démarrage de la conversation", "error");
     }
   };
 
@@ -89,14 +121,8 @@ export default function ProfileDetail() {
       const res = await messagesApi.getMessages(convId, { page: 1, limit: 50 });
       const loadedMessages = res.data?.data || res.data || [];
       setMessages(Array.isArray(loadedMessages) ? loadedMessages : []);
-
-      // Marquer comme lu
       await messagesApi.markRead?.(convId).catch(() => {});
-
-      setTimeout(
-        () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
-        100,
-      );
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (err) {
       console.error("Erreur chargement messages :", err);
     }
@@ -106,89 +132,54 @@ export default function ProfileDetail() {
   useEffect(() => {
     const socket = getSocket();
     if (!socket || !conversation?.id) return;
-
     const handleNewMessage = ({ message, conversationId }) => {
       if (conversationId === conversation.id) {
         setMessages((prev) => [...prev, message]);
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     };
-
     socket.on("new_message", handleNewMessage);
     return () => socket.off("new_message", handleNewMessage);
   }, [conversation?.id]);
 
-  // ── Envoyer un message ──────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || !conversation?.id || sendingMessage) return;
-
     try {
       setSendingMessage(true);
       const res = await messagesApi.sendMessage(conversation.id, input.trim());
       const sentMessage = res.data?.message || res.data;
       setMessages((prev) => [...prev, sentMessage]);
       setInput("");
-      setTimeout(
-        () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
-        50,
-      );
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (err) {
-      console.error("Erreur envoi message :", err);
-      alert("Erreur lors de l'envoi du message");
+      showToast("Erreur lors de l'envoi du message", "error");
     } finally {
       setSendingMessage(false);
     }
   };
 
-  // ── Nettoyer la conversation à la déconnexion ──────────
   useEffect(() => {
     return () => {
-      if (conversation?.id) {
-        leaveConversation(conversation.id);
-      }
+      if (conversation?.id) leaveConversation(conversation.id);
     };
   }, [conversation?.id]);
 
-  // ── Contenu du profil ──────────────────────────────────
   if (loading) {
     return (
-      <div
-        className="animate-fadeUp"
-        style={{ textAlign: "center", padding: 40 }}
-      >
-        <p style={{ color: "var(--text-secondary)" }}>
-          Chargement du profil...
-        </p>
+      <div className="animate-fadeUp" style={{ textAlign: "center", padding: 40 }}>
+        <p style={{ color: "var(--text-secondary)" }}>Chargement du profil...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !user) {
     return (
-      <div
-        className="animate-fadeUp"
-        style={{ textAlign: "center", padding: 40 }}
-      >
-        <p style={{ color: "var(--error)" }}>❌ {error}</p>
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate("home")}
-          style={{ marginTop: 20 }}
-        >
+      <div className="animate-fadeUp" style={{ textAlign: "center", padding: 40 }}>
+        <p style={{ color: "var(--error)" }}>❌ {error || "Profil non trouvé"}</p>
+        <button className="btn btn-secondary" onClick={() => navigate("home")} style={{ marginTop: 20 }}>
           Retour à l'accueil
         </button>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div
-        className="animate-fadeUp"
-        style={{ textAlign: "center", padding: 40 }}
-      >
-        <p style={{ color: "var(--text-secondary)" }}>Profil non trouvé</p>
       </div>
     );
   }
@@ -199,32 +190,53 @@ export default function ProfileDetail() {
 
   return (
     <div className="animate-fadeUp">
-      {returnConversationId ? (
+      {returnConversationId && (
         <div style={{ marginBottom: 16 }}>
           <button
             className="btn btn-secondary"
-            onClick={() =>
-              navigate("messages", {
-                targetConversationId: returnConversationId,
-              })
-            }
+            onClick={() => navigate("messages", { targetConversationId: returnConversationId })}
           >
             ← Retour à la discussion
           </button>
         </div>
-      ) : null}
-      {/* ─── En-tête du profil ─────────────────────────────── */}
+      )}
+
+      {/* ─── En-tête du profil avec photo de couverture modifiable ─── */}
       <div style={{ position: "relative", marginBottom: 60 }}>
         <div
           className="profile-cover"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(34,197,94,.12), rgba(91,115,245,.10))",
+            backgroundImage: profile.coverImageUrl ? `url(${profile.coverImageUrl})` : "none",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "var(--bg-secondary)",
           }}
-        />
+        >
+          {isOwnProfile && (
+            <div style={{ position: "absolute", top: 12, right: 12 }}>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleCoverChange}
+              />
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                style={{ background: "rgba(0,0,0,0.6)", color: "white", border: "none" }}
+              >
+                📷 {uploadingCover ? "Upload…" : "Changer la couverture"}
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="profile-avatar-wrap">
           <Avatar
-            label={user.avatarUrl || user.avatar || user.firstName?.[0] || "U"}
+            label={user.avatarUrl || user.firstName?.[0] || "U"}
             size="2xl"
             ring
             style={{ background: "linear-gradient(135deg, #22C55E, #5B73F5)" }}
@@ -237,187 +249,115 @@ export default function ProfileDetail() {
               {`${user.firstName || "Utilisateur"} ${user.lastName || ""}`.trim()}
             </div>
             <div className="profile-sub">
-              {user.role === "investor"
-                ? "Investisseur"
-                : user.role === "student"
-                  ? "Étudiant"
-                  : "Utilisateur"}{" "}
-              · {profile.location || "Non spécifié"}
+              {user.role === "investor" ? "Investisseur" : user.role === "student" ? "Étudiant" : "Utilisateur"}
+              {profile.location ? ` · ${profile.location}` : ""}
             </div>
             <div style={{ marginTop: 10 }}>
               {user.kycValidated ? (
-                <span className="kyc-badge kyc-badge--verified">
-                  ✅ Compte vérifié
-                </span>
-              ) : user.kycStatus === "submitted" ? (
-                <span className="kyc-badge kyc-badge--submitted">
-                  ⏳ Vérification en cours
-                </span>
+                <span className="kyc-badge kyc-badge--verified">✅ Compte vérifié</span>
               ) : (
-                <span className="kyc-badge kyc-badge--pending">
-                  ⚠️ Compte non vérifié
-                </span>
+                <span className="kyc-badge kyc-badge--pending">⚠️ Non vérifié</span>
               )}
             </div>
           </div>
 
           {!isOwnProfile && (
-            <button
-              className="btn btn-primary"
-              onClick={startConversation}
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
-            >
-              💬 Écrire un message
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-primary" onClick={startConversation}>
+                💬 Écrire
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate("appointments", { targetUserId: user.id })}>
+                📅 Fixer RDV
+              </button>
+            </div>
           )}
         </div>
       </div>
 
       {/* ─── Section principale ────────────────────────────── */}
       <div className="two-col">
-        <div
-          className="two-col-main"
-          style={{ display: "flex", flexDirection: "column", gap: 20 }}
-        >
+        <div className="two-col-main" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* À propos */}
           <div className="card" style={{ padding: 22 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>
-              À propos
-            </div>
+            <div className="section-title" style={{ marginBottom: 12 }}>À propos</div>
             <p className="profile-about-text">
               {user.bio || profile.bio || "Aucune description disponible."}
             </p>
             {interests.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 12,
-                }}
-              >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {interests.map((interest) => (
-                  <Badge key={interest} color="green">
-                    {interest}
-                  </Badge>
+                  <Badge key={interest} color="green">{interest}</Badge>
                 ))}
               </div>
             )}
           </div>
 
-          {/* ─── Section messages ──────────────────────────── */}
+          {/* Domaines cibles pour Investisseurs */}
+          {user.role === "investor" && (
+            <div className="card" style={{ padding: 22 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>💼 Domaines d'investissement visés</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {(interests.length > 0 ? interests : ["AgriTech", "FinTech", "HealthTech", "GreenTech"]).map(sector => (
+                  <Badge key={sector} color="purple">{sector}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projets publiés par l'étudiant / utilisateur */}
+          <div className="card" style={{ padding: 22 }}>
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              🚀 Projets publiés ({userProjects.length})
+            </div>
+            {userProjects.length === 0 ? (
+              <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
+                Cet utilisateur n'a pas encore publié de projets.
+              </p>
+            ) : (
+              <div className="grid-2">
+                {userProjects.map(p => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    onClick={() => navigate("project-detail", { project: p })}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Chat modal s'il est ouvert */}
           {chatOpen && conversation && (
-            <div
-              className="card"
-              style={{
-                padding: 20,
-                minHeight: 300,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 16,
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <div className="section-title">
-                  Conversation avec {user.firstName}
-                </div>
-                <button
-                  className="btn btn-text"
-                  onClick={() => setChatOpen(false)}
-                  style={{ padding: "4px 8px", fontSize: "14px" }}
-                >
-                  ✕
-                </button>
+            <div className="card" style={{ padding: 20, minHeight: 300, display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--border)" }}>
+                <div className="section-title">Conversation avec {user.firstName}</div>
+                <button className="btn btn-text" onClick={() => setChatOpen(false)}>✕</button>
               </div>
 
-              {/* Messages */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  marginBottom: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 12,
-                }}
-              >
-                {messages.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-secondary)",
-                      margin: "auto",
-                    }}
-                  >
-                    Aucun message pour le moment. Démarrez la conversation !
-                  </div>
-                ) : (
-                  messages.map((msg, idx) => {
-                    const isOwn = msg.senderId === currentUser?.id;
-                    return (
-                      <div
-                        key={msg.id || idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: isOwn ? "flex-end" : "flex-start",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <div
-                          style={{
-                            maxWidth: "70%",
-                            padding: "10px 14px",
-                            borderRadius: 12,
-                            background: isOwn
-                              ? "var(--primary)"
-                              : "var(--bg-secondary)",
-                            color: isOwn ? "white" : "var(--text)",
-                            wordBreak: "break-word",
-                            fontSize: "14px",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {msg.content}
-                        </div>
+              <div style={{ flex: 1, overflowY: "auto", marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                {messages.map((msg, idx) => {
+                  const isOwn = msg.senderId === currentUser?.id;
+                  return (
+                    <div key={msg.id || idx} style={{ display: "flex", justifyContent: isOwn ? "flex-end" : "flex-start" }}>
+                      <div style={{ maxWidth: "70%", padding: "10px 14px", borderRadius: 12, background: isOwn ? "var(--primary)" : "var(--bg-secondary)", color: isOwn ? "white" : "var(--text)", fontSize: "14px" }}>
+                        {msg.content}
                       </div>
-                    );
-                  })
-                )}
+                    </div>
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Formulaire d'envoi */}
-              <form
-                onSubmit={handleSendMessage}
-                style={{ display: "flex", gap: 8 }}
-              >
+              <form onSubmit={handleSendMessage} style={{ display: "flex", gap: 8 }}>
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Votre message..."
-                  style={{
-                    flex: 1,
-                    padding: "10px 12px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 6,
-                    fontSize: "14px",
-                  }}
+                  style={{ flex: 1, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: "14px" }}
                   disabled={sendingMessage}
                 />
-                <button
-                  type="submit"
-                  disabled={sendingMessage || !input.trim()}
-                  className="btn btn-primary"
-                  style={{ padding: "10px 16px" }}
-                >
+                <button type="submit" disabled={sendingMessage || !input.trim()} className="btn btn-primary" style={{ padding: "10px 16px" }}>
                   {sendingMessage ? "..." : "Envoyer"}
                 </button>
               </form>
@@ -427,69 +367,35 @@ export default function ProfileDetail() {
 
         {/* ─── Barre latérale ────────────────────────────── */}
         <div className="two-col-side">
-          {/* Critères (investisseurs) */}
           {user.role === "investor" && (
-            <div className="card" style={{ padding: 20 }}>
-              <div className="section-title" style={{ marginBottom: 14 }}>
-                Critères d'investissement
-              </div>
+            <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+              <div className="section-title" style={{ marginBottom: 14 }}>Critères d'investissement</div>
               {[
-                [
-                  "💰",
-                  "Ticket minimum",
-                  profile.minTicket || user.criteria?.minTicket,
-                ],
-                [
-                  "📈",
-                  "Ticket maximum",
-                  profile.maxTicket || user.criteria?.maxTicket,
-                ],
-                ["📊", "Stade minimum", profile.stage || user.criteria?.stage],
-                [
-                  "🌍",
-                  "Zone géographique",
-                  profile.region || user.criteria?.region,
-                ],
+                ["💰", "Ticket minimum", profile.minTicket ? `${Number(profile.minTicket).toLocaleString("fr-FR")} XAF` : "Non spécifié"],
+                ["📈", "Ticket maximum", profile.maxTicket ? `${Number(profile.maxTicket).toLocaleString("fr-FR")} XAF` : "Non spécifié"],
+                ["📊", "Stade privilégié", profile.stage || "MVP / Growth"],
+                ["🌍", "Zones ciblées", profile.investmentRegions?.length ? profile.investmentRegions.join(", ") : "Cameroun (CEMAC)"],
               ].map(([icon, label, value]) => (
-                <div key={label} className="profile-info-row">
+                <div key={label} className="profile-info-row" style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                   <span>{icon}</span>
-                  <span className="profile-info-key">{label}</span>
-                  <span className="profile-info-value">
-                    {value || "Non spécifié"}
-                  </span>
+                  <span style={{ color: "var(--text-secondary)", flex: 1 }}>{label}</span>
+                  <span style={{ fontWeight: 700 }}>{value}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Informations générales */}
           <div className="card" style={{ padding: 20 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>
-              Informations
-            </div>
+            <div className="section-title" style={{ marginBottom: 12 }}>Informations</div>
             {[
-              [
-                "📅",
-                "Membre depuis",
-                user.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString("fr-FR")
-                  : "Non spécifié",
-              ],
-              [
-                "🏢",
-                "Société",
-                profile.company || user.company || "Non spécifié",
-              ],
-              [
-                "📍",
-                "Localisation",
-                profile.location || user.location || "Non spécifié",
-              ],
+              ["📅", "Membre depuis", user.createdAt ? new Date(user.createdAt).toLocaleDateString("fr-FR") : "—"],
+              ["🏢", "Société / Université", profile.company || profile.university || "Non spécifié"],
+              ["📍", "Localisation", profile.location || "Cameroun"],
             ].map(([icon, label, value]) => (
-              <div key={label} className="profile-info-row">
+              <div key={label} className="profile-info-row" style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                 <span>{icon}</span>
-                <span className="profile-info-key">{label}</span>
-                <span className="profile-info-value">{value}</span>
+                <span style={{ color: "var(--text-secondary)", flex: 1 }}>{label}</span>
+                <span style={{ fontWeight: 700 }}>{value}</span>
               </div>
             ))}
           </div>

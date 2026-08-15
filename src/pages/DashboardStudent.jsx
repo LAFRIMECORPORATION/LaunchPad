@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { StatCard, AIBadge, KycAlert } from "../components/UI";
-import { projectsApi } from "../utils/api";
+import { projectsApi, feedApi } from "../utils/api";
 import SocialActions from "../components/SocialActions";
 import "./Dashboard.css";
 
@@ -9,8 +9,18 @@ export default function DashboardStudent() {
   const { navigate, currentUser, setCollabStep } = useApp();
   const [myProjects, setMyProjects] = useState([]);
   const [recommendedProjects, setRecommendedProjects] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recommendLoading, setRecommendLoading] = useState(false);
+
+  useEffect(() => {
+    feedApi.get({ limit: 5 })
+      .then(res => {
+        const events = res.data?.events || res.data || [];
+        setRecentActivities(Array.isArray(events) ? events : []);
+      })
+      .catch(() => setRecentActivities([]));
+  }, []);
 
   // Récupération dynamique des projets de l'étudiant connecté via l'API
   useEffect(() => {
@@ -429,43 +439,30 @@ export default function DashboardStudent() {
             </button>
           </div>
 
-          {/* FIL D'ACTIVITÉ */}
+          {/* FIL D'ACTIVITÉ RÉEL */}
           <div className="card" style={{ padding: 20, marginBottom: 20 }}>
             <div className="section-header">
               <span className="section-title">Activité récente</span>
             </div>
-            <div className="activity-feed">
-              {[
-                {
-                  ico: "💼",
-                  text: "Marc Leblanc a consulté votre projet",
-                  time: "Il y a 2h",
-                },
-                {
-                  ico: "🤝",
-                  text: "Demande de collaboration de Sophie T.",
-                  time: "Il y a 5h",
-                },
-                {
-                  ico: "⭐",
-                  text: "Votre projet a été mis en vedette",
-                  time: "Hier",
-                },
-                {
-                  ico: "💬",
-                  text: "Nouveau message de BioFund Capital",
-                  time: "Hier à 14:30",
-                },
-              ].map((a, i) => (
-                <div key={i} className="activity-item">
-                  <span className="activity-icon">{a.ico}</span>
-                  <div>
-                    <div className="activity-text">{a.text}</div>
-                    <div className="activity-time">{a.time}</div>
+            {recentActivities.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "10px 0" }}>
+                Aucune activité récente.
+              </div>
+            ) : (
+              <div className="activity-feed">
+                {recentActivities.map((a, i) => (
+                  <div key={a.id || i} className="activity-item">
+                    <span className="activity-icon">
+                      {a.eventType === "project_published" ? "📦" : a.eventType === "collaboration_formed" ? "🤝" : "📰"}
+                    </span>
+                    <div>
+                      <div className="activity-text">{a.metadata?.title || a.entityType || "Événement récent"}</div>
+                      <div className="activity-time">{new Date(a.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ACTIONS SUBALTERNES */}

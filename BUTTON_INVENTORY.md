@@ -55,7 +55,7 @@ Ces boutons ont une logique complète et sont prêts pour la production.
    → "➕ Nouveau projet"
    → Action: navigate("publish", { kycCheck: true })
 
-✅ DashboardStudent.jsx (ligne 88-93)
+✅ DashboardStudent.jsx (ligne 88-93)K
    → "Explorer →" / Quick actions (4)
    → Action: navigate() → toutes les destinations sont valides
 

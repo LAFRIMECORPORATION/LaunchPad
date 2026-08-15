@@ -368,6 +368,8 @@ export const investorRequestsApi = {
   mine: () => api.get("/investor-requests/mine"),
   update: (id, data) => api.put(`/investor-requests/${id}`, data),
   remove: (id) => api.delete(`/investor-requests/${id}`),
+  updateApplicationStatus: (reqId, appId, status) =>
+    api.put(`/investor-requests/${reqId}/applications/${appId}/status`, { status }),
 };
 
 export const adminApi = {
