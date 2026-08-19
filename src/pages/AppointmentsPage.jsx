@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar, KycAlert, Badge } from "../components/UI";
-import { appointmentsApi, usersApi, projectsApi } from "../utils/api";
+import { appointmentsApi, usersApi, projectsApi, messagesApi } from "../utils/api";
 import "./Appointments.css";
 
 const STATUS_CONFIG = {
@@ -58,21 +58,49 @@ function ScheduleModal({ onClose, onSubmit, submitting, defaultTargetUserId }) {
   const [loadingUsers, setLoadingUsers] = useState(false);
 
   useEffect(() => {
-    // Charger liste de contacts / utilisateurs pour la sélection
-    setLoadingUsers(true);
-    adminUsersOrCurrentRole();
-    projectsApi.list({ limit: 20 })
-      .then(res => setProjectsList(res.data?.projects || res.data || []))
-      .catch(() => {});
-  }, []);
+    const loadContactsAndProjects = async () => {
+      setLoadingUsers(true);
+      try {
+        const contactsMap = new Map();
 
-  async function adminUsersOrCurrentRole() {
-    try {
-      const res = await usersApi.getById("me").catch(() => null);
-      // fallback
-    } catch(e) {}
-    setLoadingUsers(false);
-  }
+        // 1. Charger les discussions existantes
+        const convsRes = await messagesApi.getConversations().catch(() => null);
+        const convs = convsRes?.data?.conversations || convsRes?.data || convsRes || [];
+        if (Array.isArray(convs)) {
+          convs.forEach(c => {
+            const partner = c.user1?.id === defaultTargetUserId ? c.user1 : c.user2;
+            if (partner && partner.id) contactsMap.set(partner.id, partner);
+          });
+        }
+
+        // 2. Si un ID cible par défaut est passé
+        if (defaultTargetUserId && !contactsMap.has(defaultTargetUserId)) {
+          const uRes = await usersApi.getById(defaultTargetUserId).catch(() => null);
+          const u = uRes?.data?.user || uRes?.data || uRes?.user;
+          if (u) contactsMap.set(u.id, u);
+        }
+
+        // 3. Charger les auteurs de projets
+        const projRes = await projectsApi.list({ limit: 20 }).catch(() => null);
+        const projs = projRes?.data?.projects || projRes?.data || [];
+        setProjectsList(Array.isArray(projs) ? projs : []);
+
+        if (Array.isArray(projs)) {
+          projs.forEach(p => {
+            if (p.author && p.author.id) contactsMap.set(p.author.id, p.author);
+          });
+        }
+
+        setUsersList(Array.from(contactsMap.values()));
+      } catch (err) {
+        console.error("Erreur chargement contacts:", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadContactsAndProjects();
+  }, [defaultTargetUserId]);
 
   const canSubmit = title.trim() && date && participantId;
 
@@ -110,16 +138,28 @@ function ScheduleModal({ onClose, onSubmit, submitting, defaultTargetUserId }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Identifiant du participant (ID Utilisateur) <span className="req">*</span></label>
-            <input
-              className="form-input"
-              placeholder="Saisissez l'ID ou collez l'ID de l'utilisateur"
+            <label className="form-label">Destinataire (Sélectionner par NOM) <span className="req">*</span></label>
+            <select
+              className="form-input form-select"
               value={participantId}
               onChange={e => setParticipantId(e.target.value)}
-            />
-            <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-              Vous pouvez aussi planifier un RDV directement depuis la page de profil ou de message.
-            </span>
+            >
+              <option value="">— Choisir la personne dans vos contacts / opportunités —</option>
+              {usersList.map(u => (
+                <option key={u.id} value={u.id}>
+                  👤 {u.firstName} {u.lastName} {u.role ? `(${u.role === "investor" ? "Investisseur" : "Étudiant/Porteur"})` : ""}
+                </option>
+              ))}
+            </select>
+            {usersList.length === 0 && !loadingUsers && (
+              <input
+                className="form-input"
+                style={{ marginTop: 6 }}
+                placeholder="Ou collez directement l'ID de l'utilisateur"
+                value={participantId}
+                onChange={e => setParticipantId(e.target.value)}
+              />
+            )}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

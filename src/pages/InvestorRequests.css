@@ -617,4 +617,13 @@
     .marketplace-sector-checkboxes {
         grid-template-columns: 1fr;
     }
+
+    .marketplace-candidate-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .marketplace-candidate-card > div {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
 }

@@ -335,15 +335,34 @@ export default function Messages() {
     
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/users`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+      const token = localStorage.getItem('launchpad_access_token');
+      console.log("Token:", token ? "présent" : "absent");
+      
+      const res = await fetch(`${BASE_URL}/users`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log("Status API:", res.status);
       const data = await res.json();
-      setUsersList(data.data?.data || data.data || []);
+      console.log("Réponse API complète:", data);
+      
+      if (!res.ok) {
+        console.error("Erreur API:", data);
+        setUsersList([]);
+        return;
+      }
+      
+      // La réponse paginée est { data: users, page, limit, total }
+      const users = data.data || [];
+      console.log("Utilisateurs extraits:", users);
+      setUsersList(users);
     } catch (err) {
       console.error("Erreur chargement utilisateurs :", err);
+      setUsersList([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -351,6 +370,11 @@ export default function Messages() {
 
   // ── Ouvrir conversation avec un utilisateur depuis la liste ──
   const handleStartConversation = async (userId) => {
+    console.log("handleStartConversation appelé avec userId:", userId);
+    if (!userId) {
+      console.error("userId est undefined!");
+      return;
+    }
     setShowUserList(false);
     await openConvWithUser(userId);
   };
@@ -372,12 +396,16 @@ export default function Messages() {
   // ── Ouvrir une conversation avec un utilisateur ────────
   const openConvWithUser = useCallback(
     async (targetUserId) => {
+      console.log("Ouverture conversation avec utilisateur ID:", targetUserId);
       const res = await messagesApi.createDirect(targetUserId);
+      console.log("Réponse createDirect:", res);
       const conv = res?.data?.conversation;
 
       if (!conv?.id) {
+        console.error("Conversation invalide, réponse:", res);
         throw new Error("Conversation invalide.");
       }
+      console.log("Conversation créée/récupérée:", conv.id);
       setConversations((prev) =>
         prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev],
       );
@@ -674,7 +702,9 @@ export default function Messages() {
                 Début de la conversation
               </div>
             ) : (
-              messages.map((msg) => (
+              messages.map((msg) => {
+                console.log("Message mappé:", msg);
+                return (
                 <ChatMessage
                   key={msg.id}
                   message={{
@@ -687,6 +717,7 @@ export default function Messages() {
                     }),
                     me: msg.senderId === currentUser.id,
                     isRead: Boolean(msg.isRead),
+                    senderRole: msg.sender?.role,
                     readLabel:
                       msg.senderId === currentUser.id
                         ? msg.isRead
@@ -696,7 +727,8 @@ export default function Messages() {
                   }}
                   senderLabel={msg.sender?.avatarUrl || activeConv.other?.avatarUrl || `${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
                 />
-              ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -792,7 +824,9 @@ export default function Messages() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {usersList.map((user) => (
+                {usersList.map((user) => {
+                  console.log("Utilisateur mappé:", user);
+                  return (
                   <div
                     key={user.id}
                     className="card"
@@ -804,7 +838,10 @@ export default function Messages() {
                       cursor: "pointer",
                       transition: "var(--tr-fast)"
                     }}
-                    onClick={() => handleStartConversation(user.id)}
+                    onClick={() => {
+                      console.log("Clic sur utilisateur, ID:", user.id);
+                      handleStartConversation(user.id);
+                    }}
                     onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
                     onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                   >
@@ -827,13 +864,15 @@ export default function Messages() {
                       className="btn btn-primary btn-sm"
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log("Clic bouton écrire, ID:", user.id);
                         handleStartConversation(user.id);
                       }}
                     >
                       💬 Écrire
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

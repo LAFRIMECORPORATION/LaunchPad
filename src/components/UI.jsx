@@ -456,7 +456,7 @@ export function NotificationItem({ notif, onClick }) {
 /* ── CHAT MESSAGE ── */
 export function ChatMessage({ message, senderLabel }) {
   const { currentUser } = useApp();
-  const isAdmin = message.sender?.role === "admin" || message.senderId === currentUser?.role === "admin";
+  const isAdmin = message.senderRole === "admin" || message.sender?.role === "admin";
   
   return (
     <div
@@ -471,6 +471,11 @@ export function ChatMessage({ message, senderLabel }) {
     >
       {!message.me && <Avatar label={senderLabel} size="xs" />}
       <div style={{ maxWidth: "min(68%, 100%)", minWidth: 0 }}>
+        {!message.me && isAdmin && (
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", marginBottom: 2 }}>
+            adminlaunchpad ✓
+          </div>
+        )}
         <div
           style={{
             padding: "10px 14px",
@@ -479,9 +484,9 @@ export function ChatMessage({ message, senderLabel }) {
               : "16px 16px 16px 4px",
             background: message.me
               ? "linear-gradient(135deg, var(--accent), var(--purple))"
-              : "var(--bg-card)",
-            border: message.me ? "none" : "1px solid var(--border)",
-            color: message.me ? "white" : "var(--text-primary)",
+              : isAdmin ? "linear-gradient(135deg, #3B82F6, #1E40AF)" : "var(--bg-card)",
+            border: message.me ? "none" : isAdmin ? "1px solid #3B82F6" : "1px solid var(--border)",
+            color: message.me ? "white" : isAdmin ? "white" : "var(--text-primary)",
             fontSize: 14,
             lineHeight: 1.5,
             boxShadow: "var(--shadow-xs)",
@@ -507,9 +512,6 @@ export function ChatMessage({ message, senderLabel }) {
           }}
         >
           <span>{message.time}</span>
-          {isAdmin && (
-            <span style={{ fontSize: 10, color: "#3B82F6" }}>✓ Certifié</span>
-          )}
           {message.me && message.readLabel ? (
             <span
               style={{

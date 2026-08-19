@@ -614,4 +614,41 @@
     .two-col-side-lg {
         width: 100% !important;
     }
+
+    /* Modal Responsive Overrides */
+    .modal-overlay {
+        padding: 10px !important;
+    }
+
+    .modal {
+        max-height: 95vh !important;
+        width: 100% !important;
+        border-radius: var(--r-md) !important;
+    }
+
+    .modal-header {
+        padding: 14px 16px !important;
+    }
+
+    .modal-body {
+        padding: 16px !important;
+        gap: 12px !important;
+    }
+
+    .modal-footer {
+        padding: 12px 16px !important;
+        flex-direction: column-reverse !important;
+        gap: 8px !important;
+    }
+
+    .modal-footer .btn {
+        width: 100% !important;
+    }
+
+    .modal-body div[style*="display: grid"],
+    .modal-body div[style*="grid-template-columns"],
+    .modal-body div[style*="gridTemplateColumns"] {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
 }

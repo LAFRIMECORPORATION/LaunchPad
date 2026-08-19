@@ -624,16 +624,17 @@ export default function InvestorRequests() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {filteredApps.map(app => {
                     const candidate = app.applicant || {};
+                    const candidateId = candidate.id || app.applicantId || app.applicant?.id;
                     const st = APP_STATUS_CONFIG[app.status] || APP_STATUS_CONFIG.pending;
                     return (
-                      <div key={app.id} className="card" style={{ padding: 18, border: "1px solid var(--border)", display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", gap: 14 }}>
+                      <div key={app.id} className="card marketplace-candidate-card" style={{ padding: 18, border: "1px solid var(--border)", display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: 14, flex: 1, minWidth: 240 }}>
                           <Avatar
                             label={candidate.avatarUrl || candidate.firstName?.[0] || "U"}
                             size="lg"
                           />
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                               {candidate.firstName} {candidate.lastName}
                               <span className={`badge ${st.cls}`}>{st.label}</span>
                             </div>
@@ -646,16 +647,18 @@ export default function InvestorRequests() {
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 160 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 160, width: "100%", maxWidth: 200 }}>
                           <button
                             className="btn btn-primary btn-sm"
-                            onClick={() => navigate("messages", { targetUserId: candidate.id })}
+                            disabled={!candidateId}
+                            onClick={() => navigate("messages", { targetUserId: candidateId })}
                           >
                             💬 Écrire
                           </button>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => navigate("appointments", { targetUserId: candidate.id })}
+                            disabled={!candidateId}
+                            onClick={() => navigate("appointments", { targetUserId: candidateId })}
                           >
                             📅 Fixer RDV
                           </button>
