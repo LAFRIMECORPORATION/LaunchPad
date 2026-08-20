@@ -8,11 +8,6 @@ import { useLocation, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, Badge, ProjectCard } from "../components/UI";
 import { usersApi, messagesApi, projectsApi } from "../utils/api";
-import {
-  getSocket,
-  joinConversation,
-  leaveConversation,
-} from "../utils/socket";
 import "./OtherPages.css";
 
 export default function ProfileDetail() {
@@ -26,14 +21,6 @@ export default function ProfileDetail() {
   const [error, setError] = useState(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef(null);
-
-  // Messages
-  const [conversation, setConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const messagesEndRef = useRef(null);
   const returnConversationId = location.state?.fromConversationId || null;
 
   // ── Charger le profil de l'utilisateur ──────────────────
@@ -100,70 +87,17 @@ export default function ProfileDetail() {
     }
   };
 
-  // ── Créer ou récupérer la conversation ──────────────────
+  // ── Créer ou récupérer la conversation et rediriger ─────
   const startConversation = async () => {
     try {
       const res = await messagesApi.createDirect(user.id);
       const conv = res.data?.conversation || res.data;
-      setConversation(conv);
-      setChatOpen(true);
-      joinConversation(conv.id);
-      await loadMessages(conv.id);
+      navigate("messages", { targetConversationId: conv.id });
     } catch (err) {
       console.error("Erreur création conversation :", err);
       showToast("Erreur lors du démarrage de la conversation", "error");
     }
   };
-
-  // ── Charger les messages ────────────────────────────────
-  const loadMessages = async (convId) => {
-    try {
-      const res = await messagesApi.getMessages(convId, { page: 1, limit: 50 });
-      const loadedMessages = res.data?.data || res.data || [];
-      setMessages(Array.isArray(loadedMessages) ? loadedMessages : []);
-      await messagesApi.markRead?.(convId).catch(() => {});
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch (err) {
-      console.error("Erreur chargement messages :", err);
-    }
-  };
-
-  // ── Écouter les nouveaux messages via Socket.io ─────────
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket || !conversation?.id) return;
-    const handleNewMessage = ({ message, conversationId }) => {
-      if (conversationId === conversation.id) {
-        setMessages((prev) => [...prev, message]);
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }
-    };
-    socket.on("new_message", handleNewMessage);
-    return () => socket.off("new_message", handleNewMessage);
-  }, [conversation?.id]);
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || !conversation?.id || sendingMessage) return;
-    try {
-      setSendingMessage(true);
-      const res = await messagesApi.sendMessage(conversation.id, input.trim());
-      const sentMessage = res.data?.message || res.data;
-      setMessages((prev) => [...prev, sentMessage]);
-      setInput("");
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-    } catch (err) {
-      showToast("Erreur lors de l'envoi du message", "error");
-    } finally {
-      setSendingMessage(false);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (conversation?.id) leaveConversation(conversation.id);
-    };
-  }, [conversation?.id]);
 
   if (loading) {
     return (
@@ -325,44 +259,6 @@ export default function ProfileDetail() {
               </div>
             )}
           </div>
-
-          {/* Chat modal s'il est ouvert */}
-          {chatOpen && conversation && (
-            <div className="card" style={{ padding: 20, minHeight: 300, display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--border)" }}>
-                <div className="section-title">Conversation avec {user.firstName}</div>
-                <button className="btn btn-text" onClick={() => setChatOpen(false)}>✕</button>
-              </div>
-
-              <div style={{ flex: 1, overflowY: "auto", marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                {messages.map((msg, idx) => {
-                  const isOwn = msg.senderId === currentUser?.id;
-                  return (
-                    <div key={msg.id || idx} style={{ display: "flex", justifyContent: isOwn ? "flex-end" : "flex-start" }}>
-                      <div style={{ maxWidth: "70%", padding: "10px 14px", borderRadius: 12, background: isOwn ? "var(--primary)" : "var(--bg-secondary)", color: isOwn ? "white" : "var(--text)", fontSize: "14px" }}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-
-              <form onSubmit={handleSendMessage} style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Votre message..."
-                  style={{ flex: 1, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: "14px" }}
-                  disabled={sendingMessage}
-                />
-                <button type="submit" disabled={sendingMessage || !input.trim()} className="btn btn-primary" style={{ padding: "10px 16px" }}>
-                  {sendingMessage ? "..." : "Envoyer"}
-                </button>
-              </form>
-            </div>
-          )}
         </div>
 
         {/* ─── Barre latérale ────────────────────────────── */}

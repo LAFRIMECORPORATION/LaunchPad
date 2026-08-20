@@ -40,6 +40,7 @@ export default function Messages() {
   const [showUserList, setShowUserList] = useState(false);
   const [usersList, setUsersList] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [onlineStatus, setOnlineStatus] = useState(new Map()); // userId -> { online: boolean, lastSeen: Date }
   const typingTimer = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -216,16 +217,16 @@ export default function Messages() {
     const handleDisconnect = () => {
       setIsOtherUserOnline(false);
     };
-    const handlePresenceState = ({ userId, online, lastSeen }) => {
+    const handleUserOnline = ({ userId }) => {
       if (userId === activeOtherUserIdRef.current) {
-        setIsOtherUserOnline(Boolean(online));
-        setOtherUserLastSeen(lastSeen || null);
+        setIsOtherUserOnline(true);
+        setOtherUserLastSeen(null);
       }
     };
-    const handleUserOnline = ({ userId, online, lastSeen }) => {
+    const handleUserOffline = ({ userId, lastSeenAt }) => {
       if (userId === activeOtherUserIdRef.current) {
-        setIsOtherUserOnline(Boolean(online));
-        setOtherUserLastSeen(lastSeen || null);
+        setIsOtherUserOnline(false);
+        setOtherUserLastSeen(lastSeenAt ? new Date(lastSeenAt) : null);
       }
     };
     const handleMessagesRead = ({ conversationId, userId }) => {
@@ -239,8 +240,8 @@ export default function Messages() {
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
-    socket.on("presence_state", handlePresenceState);
     socket.on("user_online", handleUserOnline);
+    socket.on("user_offline", handleUserOffline);
     socket.on("messages_read", handleMessagesRead);
     socket.on("new_message", handleNewMessage);
     socket.on("user_typing", handleTyping);
@@ -249,8 +250,8 @@ export default function Messages() {
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
-      socket.off("presence_state", handlePresenceState);
       socket.off("user_online", handleUserOnline);
+      socket.off("user_offline", handleUserOffline);
       socket.off("messages_read", handleMessagesRead);
       socket.off("new_message", handleNewMessage);
       socket.off("user_typing", handleTyping);
@@ -423,6 +424,8 @@ export default function Messages() {
 
   // ── Ouvrir une conversation depuis pendingConversation ──
   useEffect(() => {
+    const locationState = location.state;
+    
     if (pendingConversation?.targetUserId) {
       queueMicrotask(() => {
         openConvWithUser(pendingConversation.targetUserId);
@@ -436,13 +439,15 @@ export default function Messages() {
         openConversation(pendingConversation.conversationId);
         setPendingConversation(null);
       });
+      return;
     }
-  }, [
-    pendingConversation,
-    openConvWithUser,
-    openConversation,
-    setPendingConversation,
-  ]);
+
+    if (locationState?.targetConversationId) {
+      queueMicrotask(() => {
+        openConversation(locationState.targetConversationId);
+      });
+    }
+  }, [pendingConversation, location.state, openConversation]);
 
   function formatLastSeen(value) {
     if (!value) return "Hors ligne";
@@ -450,6 +455,19 @@ export default function Messages() {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Hors ligne";
 
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    // Affichage relatif moderne
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Vu il y a ${diffMins} min`;
+    if (diffHours < 24) return `Vu il y a ${diffHours} h`;
+    if (diffDays < 7) return `Vu il y a ${diffDays} j`;
+    
+    // Pour les dates plus anciennes, afficher la date complète
     return `Vu le ${date.toLocaleDateString("fr-FR")} à ${date.toLocaleTimeString(
       "fr-FR",
       {
@@ -551,7 +569,29 @@ export default function Messages() {
                 <div className="conv-item-info">
                   <div className="conv-item-header">
                     <span className="conv-item-name">
-                      {conv.other?.firstName} {conv.other?.lastName}
+                      {conv.other?.role === "admin" ? (
+                        <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                          adminlaunchpad
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                        </span>
+                      ) : conv.other?.isVerified ? (
+                        <span style={{ 
+                          color: conv.other?.role === "investor" ? "#F59E0B" : "#22C55E", 
+                          fontWeight: 600, 
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: 4 
+                        }}>
+                          {conv.other?.firstName} {conv.other?.lastName}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill={conv.other?.role === "investor" ? "#F59E0B" : "#22C55E"}>
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                        </span>
+                      ) : (
+                        <>{conv.other?.firstName} {conv.other?.lastName}</>
+                      )}
                     </span>
                     <span className="conv-item-time">
                       {conv.lastMessage?.createdAt
@@ -620,7 +660,16 @@ export default function Messages() {
               title="Voir le profil"
             >
               <div className="chat-header-name">
-                {activeConv.other?.firstName} {activeConv.other?.lastName}
+                {activeConv.other?.role === "admin" ? (
+                  <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                    adminlaunchpad
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </span>
+                ) : (
+                  <>{activeConv.other?.firstName} {activeConv.other?.lastName}</>
+                )}
               </div>
               <div
                 className={`chat-header-status ${isOtherUserOnline ? "online" : "offline"}`}

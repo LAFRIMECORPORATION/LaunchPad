@@ -534,11 +534,22 @@ export function AppProvider({ children }) {
   // ─── Notifications ────────────────────────────────────────
   const unreadCount = notifications.filter((n) => n.unread ?? !n.isRead).length;
   const markAllRead = useCallback(async () => {
-    setNotifications((n) => n.map((x) => ({ ...x, unread: false })));
+    setNotifications((n) => n.map((x) => ({ ...x, unread: false, isRead: true })));
     try {
       await notificationsApi.markAllRead();
     } catch (error) {
       console.error("Erreur mark all read :", error);
+    }
+  }, []);
+
+  const markOneRead = useCallback(async (id) => {
+    setNotifications((n) =>
+      n.map((x) => (x.id === id || x.id === String(id) ? { ...x, unread: false, isRead: true } : x))
+    );
+    try {
+      await notificationsApi.markOneRead(id);
+    } catch (error) {
+      console.error("Erreur markOneRead :", error);
     }
   }, []);
 
@@ -751,9 +762,11 @@ export function AppProvider({ children }) {
     applyToRequest,
 
     notifications,
+    setNotifications,
     unreadCount,
     feedUnreadCount,
     markAllRead,
+    markOneRead,
 
     conversations,
     activeConvId,

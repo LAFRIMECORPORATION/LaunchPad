@@ -10,6 +10,7 @@ const SOCKET_URL =
   import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
 
 let socket = null;
+let heartbeatInterval = null;
 
 export function connectSocket() {
   if (socket?.connected) return socket;
@@ -22,14 +23,29 @@ export function connectSocket() {
 
   socket.on("connect", () => {
     console.log("⚡ Socket connecté");
+    // Démarrer le heartbeat toutes les 30 secondes
+    startHeartbeat();
   });
 
   socket.on("disconnect", () => {
     console.log("⚡ Socket déconnecté");
+    stopHeartbeat();
   });
 
   socket.on("connect_error", (err) => {
     console.error("Socket erreur :", err.message);
+  });
+
+  // Événements de présence
+  socket.on("user_online", ({ userId }) => {
+    console.log("🟢 Utilisateur en ligne:", userId);
+    // Émettre un événement personnalisé pour le composant Messages
+    window.dispatchEvent(new CustomEvent("user_online", { detail: { userId } }));
+  });
+
+  socket.on("user_offline", ({ userId, lastSeenAt }) => {
+    console.log("🔴 Utilisateur hors ligne:", userId, lastSeenAt);
+    window.dispatchEvent(new CustomEvent("user_offline", { detail: { userId, lastSeenAt } }));
   });
 
   // Réponse au ping de synchronisation
@@ -40,7 +56,22 @@ export function connectSocket() {
   return socket;
 }
 
+function startHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => {
+    socket?.emit("heartbeat");
+  }, 30000); // Heartbeat toutes les 30 secondes
+}
+
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
 export function disconnectSocket() {
+  stopHeartbeat();
   if (socket) {
     socket.disconnect();
     socket = null;

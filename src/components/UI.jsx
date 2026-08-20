@@ -472,8 +472,11 @@ export function ChatMessage({ message, senderLabel }) {
       {!message.me && <Avatar label={senderLabel} size="xs" />}
       <div style={{ maxWidth: "min(68%, 100%)", minWidth: 0 }}>
         {!message.me && isAdmin && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", marginBottom: 2 }}>
-            adminlaunchpad ✓
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
+            adminlaunchpad
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#3B82F6">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
           </div>
         )}
         <div

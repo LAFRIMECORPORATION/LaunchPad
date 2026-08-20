@@ -41,7 +41,7 @@ function timeAgo(dateStr) {
 }
 
 export default function Notifications() {
-    const { showToast } = useApp();
+    const { showToast, markAllRead: globalMarkAllRead, markOneRead: globalMarkOneRead, navigate, currentUser } = useApp();
     const [filter, setFilter] = useState("all");
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -71,9 +71,12 @@ export default function Notifications() {
     useEffect(() => { loadNotifications(filter); }, [filter, loadNotifications]);
 
     async function handleMarkAllRead() {
-        // Optimistic update
+        // Optimistic update local et global
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         setUnreadCount(0);
+        if (globalMarkAllRead) {
+            globalMarkAllRead();
+        }
 
         try {
             await notificationsApi.markAllRead();
@@ -85,15 +88,54 @@ export default function Notifications() {
     }
 
     async function handleNotifClick(notif) {
-        // Marquer comme lue localement si pas déjà fait
+        // Marquer comme lue localement & globalement si pas déjà fait
         if (!notif.isRead) {
             setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
             setUnreadCount(c => Math.max(0, c - 1));
-            notificationsApi.markOneRead(notif.id).catch(() => loadNotifications(filter));
+            if (globalMarkOneRead) {
+                globalMarkOneRead(notif.id);
+            } else {
+                notificationsApi.markOneRead(notif.id).catch(() => loadNotifications(filter));
+            }
         }
-        // Naviguer si actionUrl présent (à adapter selon ton système de routes)
-        if (notif.actionUrl) {
-            window.location.href = notif.actionUrl;
+
+        // Navigation SPA directe vers la destination concernée (évite le reload et la redirection vers /login)
+        let targetPath = notif.actionUrl;
+
+        if (!targetPath) {
+            switch (notif.type) {
+                case "kyc":
+                    targetPath = "/kyc";
+                    break;
+                case "investment":
+                    targetPath = "/payment";
+                    break;
+                case "message":
+                    targetPath = "/messages";
+                    break;
+                case "forum":
+                    targetPath = "/forum";
+                    break;
+                case "appointment":
+                    targetPath = "/appointments";
+                    break;
+                case "badge":
+                    targetPath = "/badges";
+                    break;
+                case "system":
+                    targetPath = currentUser?.role === "admin" ? "/admin" : "/dashboard/student";
+                    break;
+                case "like":
+                case "project":
+                    targetPath = "/explore";
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (targetPath) {
+            navigate(targetPath);
         }
     }
 
