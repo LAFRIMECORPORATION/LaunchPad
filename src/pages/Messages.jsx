@@ -217,13 +217,15 @@ export default function Messages() {
     const handleDisconnect = () => {
       setIsOtherUserOnline(false);
     };
-    const handleUserOnline = ({ userId }) => {
+    const handleUserOnline = (e) => {
+      const { userId } = e.detail;
       if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(true);
         setOtherUserLastSeen(null);
       }
     };
-    const handleUserOffline = ({ userId, lastSeenAt }) => {
+    const handleUserOffline = (e) => {
+      const { userId, lastSeenAt } = e.detail;
       if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(false);
         setOtherUserLastSeen(lastSeenAt ? new Date(lastSeenAt) : null);
@@ -240,22 +242,24 @@ export default function Messages() {
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
-    socket.on("user_online", handleUserOnline);
-    socket.on("user_offline", handleUserOffline);
     socket.on("messages_read", handleMessagesRead);
     socket.on("new_message", handleNewMessage);
     socket.on("user_typing", handleTyping);
     socket.on("user_stop_typing", handleStopTyping);
 
+    // Écouter les événements window personnalisés pour la présence
+    window.addEventListener("user_online", handleUserOnline);
+    window.addEventListener("user_offline", handleUserOffline);
+
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
-      socket.off("user_online", handleUserOnline);
-      socket.off("user_offline", handleUserOffline);
       socket.off("messages_read", handleMessagesRead);
       socket.off("new_message", handleNewMessage);
       socket.off("user_typing", handleTyping);
       socket.off("user_stop_typing", handleStopTyping);
+      window.removeEventListener("user_online", handleUserOnline);
+      window.removeEventListener("user_offline", handleUserOffline);
     };
   }, [activeConv, activeConvId, currentUser.id, setUnreadMessagesCount]);
 
@@ -569,29 +573,43 @@ export default function Messages() {
                 <div className="conv-item-info">
                   <div className="conv-item-header">
                     <span className="conv-item-name">
-                      {conv.other?.role === "admin" ? (
-                        <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                          adminlaunchpad
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                        </span>
-                      ) : conv.other?.isVerified ? (
-                        <span style={{ 
-                          color: conv.other?.role === "investor" ? "#F59E0B" : "#22C55E", 
-                          fontWeight: 600, 
-                          display: "flex", 
-                          alignItems: "center", 
-                          gap: 4 
-                        }}>
-                          {conv.other?.firstName} {conv.other?.lastName}
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill={conv.other?.role === "investor" ? "#F59E0B" : "#22C55E"}>
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                        </span>
-                      ) : (
-                        <>{conv.other?.firstName} {conv.other?.lastName}</>
-                      )}
+                      {(() => {
+                        const isAdmin = conv.other?.role === "admin";
+                        const isStudent = conv.other?.role === "student";
+                        const isInvestor = conv.other?.role === "investor";
+                        const isVerified = conv.other?.kycValidated;
+                        
+                        if (isAdmin) {
+                          return (
+                            <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                              adminlaunchpad
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            </span>
+                          );
+                        } else if (isStudent && isVerified) {
+                          return (
+                            <span style={{ color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                              {conv.other?.firstName} {conv.other?.lastName}
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#10B981">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            </span>
+                          );
+                        } else if (isInvestor && isVerified) {
+                          return (
+                            <span style={{ color: "#F59E0B", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                              {conv.other?.firstName} {conv.other?.lastName}
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            </span>
+                          );
+                        } else {
+                          return <>{conv.other?.firstName} {conv.other?.lastName}</>;
+                        }
+                      })()}
                     </span>
                     <span className="conv-item-time">
                       {conv.lastMessage?.createdAt
@@ -660,16 +678,43 @@ export default function Messages() {
               title="Voir le profil"
             >
               <div className="chat-header-name">
-                {activeConv.other?.role === "admin" ? (
-                  <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                    adminlaunchpad
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                  </span>
-                ) : (
-                  <>{activeConv.other?.firstName} {activeConv.other?.lastName}</>
-                )}
+                {(() => {
+                  const isAdmin = activeConv.other?.role === "admin";
+                  const isStudent = activeConv.other?.role === "student";
+                  const isInvestor = activeConv.other?.role === "investor";
+                  const isVerified = activeConv.other?.kycValidated;
+                  
+                  if (isAdmin) {
+                    return (
+                      <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                        adminlaunchpad
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      </span>
+                    );
+                  } else if (isStudent && isVerified) {
+                    return (
+                      <span style={{ color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                        {activeConv.other?.firstName} {activeConv.other?.lastName}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#10B981">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      </span>
+                    );
+                  } else if (isInvestor && isVerified) {
+                    return (
+                      <span style={{ color: "#F59E0B", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                        {activeConv.other?.firstName} {activeConv.other?.lastName}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      </span>
+                    );
+                  } else {
+                    return <>{activeConv.other?.firstName} {activeConv.other?.lastName}</>;
+                  }
+                })()}
               </div>
               <div
                 className={`chat-header-status ${isOtherUserOnline ? "online" : "offline"}`}
@@ -784,18 +829,12 @@ export default function Messages() {
 
           {/* Input */}
           <div className="chat-input-area">
-            <input
-              ref={fileInputRef}
-              type="file"
-              style={{ display: "none" }}
-              onChange={handleSelectFile}
-            />
             <button
               className="btn btn-ghost btn-icon chat-attach-btn"
-              title="Fichier"
-              onClick={() => fileInputRef.current?.click()}
+              title="Prendre rendez-vous"
+              onClick={() => navigate("/appointments", { state: { targetUserId: activeConv.other?.id } })}
             >
-              📎
+              �
             </button>
             <textarea
               className="chat-input"

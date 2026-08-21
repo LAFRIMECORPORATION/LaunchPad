@@ -457,6 +457,24 @@ export function NotificationItem({ notif, onClick }) {
 export function ChatMessage({ message, senderLabel }) {
   const { currentUser } = useApp();
   const isAdmin = message.senderRole === "admin" || message.sender?.role === "admin";
+  const isStudent = message.senderRole === "student" || message.sender?.role === "student";
+  const isInvestor = message.senderRole === "investor" || message.sender?.role === "investor";
+  const isVerified = message.senderKycValidated || message.sender?.kycValidated;
+  
+  // Déterminer le badge et la couleur selon le rôle et le statut KYC
+  let badgeContent = null;
+  let badgeColor = null;
+  
+  if (isAdmin) {
+    badgeContent = "adminlaunchpad";
+    badgeColor = "#3B82F6"; // Bleu pour admin
+  } else if (isStudent && isVerified) {
+    badgeContent = "Étudiant vérifié";
+    badgeColor = "#10B981"; // Vert pour étudiant vérifié
+  } else if (isInvestor && isVerified) {
+    badgeContent = "Investisseur vérifié";
+    badgeColor = "#F59E0B"; // Orange pour investisseur vérifié
+  }
   
   return (
     <div
@@ -471,10 +489,10 @@ export function ChatMessage({ message, senderLabel }) {
     >
       {!message.me && <Avatar label={senderLabel} size="xs" />}
       <div style={{ maxWidth: "min(68%, 100%)", minWidth: 0 }}>
-        {!message.me && isAdmin && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
-            adminlaunchpad
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#3B82F6">
+        {!message.me && badgeContent && (
+          <div style={{ fontSize: 11, fontWeight: 600, color: badgeColor, marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
+            {badgeContent}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={badgeColor}>
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>

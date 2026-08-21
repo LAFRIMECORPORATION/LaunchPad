@@ -111,7 +111,20 @@ export default function ProfileDetail() {
     return (
       <div className="animate-fadeUp" style={{ textAlign: "center", padding: 40 }}>
         <p style={{ color: "var(--error)" }}>❌ {error || "Profil non trouvé"}</p>
-        <button className="btn btn-secondary" onClick={() => navigate("home")} style={{ marginTop: 20 }}>
+        <button className="btn btn-secondary" onClick={() => navigate("/home")} style={{ marginTop: 20 }}>
+          Retour à l'accueil
+        </button>
+      </div>
+    );
+  }
+
+  // Bloquer l'accès au profil admin pour les non-admins
+  if (user.role === "admin" && currentUser?.role !== "admin") {
+    return (
+      <div className="animate-fadeUp" style={{ textAlign: "center", padding: 40 }}>
+        <p style={{ color: "var(--error)" }}>❌ Accès refusé</p>
+        <p style={{ color: "var(--text-secondary)", marginTop: 10 }}>Vous n'avez pas accès au profil administrateur.</p>
+        <button className="btn btn-secondary" onClick={() => navigate("/home")} style={{ marginTop: 20 }}>
           Retour à l'accueil
         </button>
       </div>
@@ -200,7 +213,7 @@ export default function ProfileDetail() {
               <button className="btn btn-primary" onClick={startConversation}>
                 💬 Écrire
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate("appointments", { targetUserId: user.id })}>
+              <button className="btn btn-secondary" onClick={() => navigate("/appointments", { state: { targetUserId: user.id } })}>
                 📅 Fixer RDV
               </button>
             </div>

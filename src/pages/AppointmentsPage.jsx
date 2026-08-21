@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Avatar, KycAlert, Badge } from "../components/UI";
 import { appointmentsApi, usersApi, projectsApi, messagesApi } from "../utils/api";
@@ -238,6 +239,7 @@ function ScheduleModal({ onClose, onSubmit, submitting, defaultTargetUserId }) {
 
 export default function AppointmentsPage() {
   const { currentUser, navigate, showToast, pageOptions } = useApp();
+  const location = useLocation();
   const isInvestor = currentUser?.role === "investor";
 
   const [tab, setTab]                     = useState("upcoming"); // "upcoming" | "pending" | "past"
@@ -247,7 +249,7 @@ export default function AppointmentsPage() {
   const [showModal, setShowModal]         = useState(false);
   const [scheduling, setScheduling]       = useState(false);
 
-  const targetUserId = pageOptions?.targetUserId;
+  const targetUserId = location.state?.targetUserId || pageOptions?.targetUserId;
 
   const loadAppointments = useCallback(async (currentTab) => {
     setLoading(true);
