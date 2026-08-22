@@ -90,11 +90,20 @@ export default function ProfileDetail() {
   // ── Créer ou récupérer la conversation et rediriger ─────
   const startConversation = async () => {
     try {
+      console.log("🔍 Début création conversation avec user ID:", user.id);
+      console.log("🔍 User complet:", user);
+      console.log("🔍 Current user:", currentUser);
+      
       const res = await messagesApi.createDirect(user.id);
+      console.log("🔍 Réponse API:", res);
+      
       const conv = res.data?.conversation || res.data;
+      console.log("🔍 Conversation créée/récupérée:", conv);
+      
       navigate("messages", { targetConversationId: conv.id });
     } catch (err) {
-      console.error("Erreur création conversation :", err);
+      console.error("❌ Erreur création conversation :", err);
+      console.error("❌ Erreur détails:", err.response?.data || err.message);
       showToast("Erreur lors du démarrage de la conversation", "error");
     }
   };
@@ -190,14 +199,14 @@ export default function ProfileDetail() {
           />
         </div>
 
-        <div className="profile-header-bar" style={{ paddingLeft: 160 }}>
-          <div>
+        <div className="profile-header-bar">
+          <div className="profile-header-meta">
             <div className="profile-name">
               {`${user.firstName || "Utilisateur"} ${user.lastName || ""}`.trim()}
             </div>
             <div className="profile-sub">
-              {user.role === "investor" ? "Investisseur" : user.role === "student" ? "Étudiant" : "Utilisateur"}
-              {profile.location ? ` · ${profile.location}` : ""}
+              {user.role === "investor" ? "💼 Investisseur" : user.role === "student" ? "🎓 Porteur de projet" : "👤 Utilisateur"}
+              {profile.location ? ` · 📍 ${profile.location}` : ""}
             </div>
             <div style={{ marginTop: 10 }}>
               {user.kycValidated ? (
@@ -209,11 +218,14 @@ export default function ProfileDetail() {
           </div>
 
           {!isOwnProfile && (
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="profile-header-actions">
               <button className="btn btn-primary" onClick={startConversation}>
                 💬 Écrire
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate("/appointments", { state: { targetUserId: user.id } })}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => navigate("/appointments", { state: { targetUserId: user.id } })}
+              >
                 📅 Fixer RDV
               </button>
             </div>

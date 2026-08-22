@@ -311,11 +311,25 @@
 }
 
 .profile-header-bar {
-    padding: 48px 0 20px;
+    padding: 24px 0 20px 170px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.profile-header-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.profile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
@@ -792,10 +806,24 @@
     }
 
     .profile-header-bar {
-        padding-left: 0;
-        padding-top: 52px;
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 44px 0 16px 0 !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+    }
+
+    .profile-header-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .profile-header-actions .btn {
+        flex: 1 1 130px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
     }
 
     .profile-name {
@@ -852,8 +880,7 @@
     }
 
     .profile-header-bar {
-        padding-left: 0;
-        padding-top: 40px;
+        padding: 40px 0 16px 0 !important;
     }
 
     .portfolio-detail-header,
@@ -868,6 +895,13 @@
 }
 
 @media (max-width: 480px) {
+    .profile-header-actions {
+        flex-direction: column !important;
+    }
+
+    .profile-header-actions .btn {
+        width: 100% !important;
+    }
     .profile-stats-strip {
         grid-template-columns: 1fr 1fr;
     }

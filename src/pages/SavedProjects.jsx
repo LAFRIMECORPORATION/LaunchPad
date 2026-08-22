@@ -11,9 +11,12 @@ import "./SavedProjects.css";
 
 export default function SavedProjects() {
     const routerNavigate = useNavigate();
-    const { projects, savedProjects } = useApp();
+    const { projects, savedProjects, isProjectSaved } = useApp();
 
-    const saved = projects.filter(p => savedProjects.includes(p.id));
+    const saved = projects.filter(p => {
+        const id = p.id || p.project_id;
+        return (isProjectSaved && isProjectSaved(id)) || savedProjects.some(sId => String(sId) === String(id)) || p.isSaved;
+    });
 
     const handleNavigateToDetail = (projectId) => {
         routerNavigate(`/projects/${projectId}`);

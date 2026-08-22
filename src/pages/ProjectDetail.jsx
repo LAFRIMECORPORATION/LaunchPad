@@ -695,6 +695,7 @@ export default function ProjectDetail() {
 }
 
 function EditProjectModal({ project, onClose, onSave, saving }) {
+    const [activeTab, setActiveTab] = useState("general"); // "general" | "pitch" | "funding"
     const [form, setForm] = useState({
         title: project.title || "",
         tagline: project.tagline || "",
@@ -712,75 +713,249 @@ function EditProjectModal({ project, onClose, onSave, saving }) {
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+    const CATEGORIES = [
+        "FinTech", "AgriTech", "HealthTech", "EdTech", "GreenTech",
+        "SaaS", "Mobilité", "Cybersécurité", "E-Commerce", "Autre"
+    ];
+
+    const STAGES = [
+        { id: "idea", label: "💡 Idée / Concept" },
+        { id: "prototype", label: "🛠️ Prototype" },
+        { id: "mvp", label: "🚀 MVP Fonctionnel" },
+        { id: "beta", label: "🧪 Bêta Test" },
+        { id: "growth", label: "📈 En Croissance" },
+    ];
+
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" style={{ maxWidth: 650, width: "95%" }} onClick={e => e.stopPropagation()}>
+            <div className="modal modal-modern" style={{ maxWidth: 720, width: "95%" }} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">✏️ Éditer le projet</h2>
-                    <button className="modal-close" onClick={onClose}>✕</button>
+                    <h2 className="modal-title">
+                        <span style={{ fontSize: 22 }}>✏️</span> Modifier le projet
+                    </h2>
+                    <button className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
                 </div>
-                <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div className="form-group">
-                        <label className="form-label">Titre du projet <span className="req">*</span></label>
-                        <input className="form-input" value={form.title} onChange={e => set("title", e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Slogan / Phrase d'accroche <span className="req">*</span></label>
-                        <input className="form-input" value={form.tagline} onChange={e => set("tagline", e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Description détaillée <span className="req">*</span></label>
-                        <textarea className="form-input" rows={4} value={form.description} onChange={e => set("description", e.target.value)} />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <div className="form-group">
-                            <label className="form-label">Problème résolu</label>
-                            <textarea className="form-input" rows={2} value={form.problem} onChange={e => set("problem", e.target.value)} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Notre solution</label>
-                            <textarea className="form-input" rows={2} value={form.solution} onChange={e => set("solution", e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Modèle économique</label>
-                        <textarea className="form-input" rows={2} value={form.businessModel} onChange={e => set("businessModel", e.target.value)} />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                        <div className="form-group">
-                            <label className="form-label">Catégorie</label>
-                            <input className="form-input" value={form.category} onChange={e => set("category", e.target.value)} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Stade</label>
-                            <select className="form-input form-select" value={form.stage} onChange={e => set("stage", e.target.value)}>
-                                <option value="idea">Idée</option>
-                                <option value="prototype">Prototype</option>
-                                <option value="mvp">MVP</option>
-                                <option value="beta">Bêta</option>
-                                <option value="launched">Lancé</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Objectif (XAF)</label>
-                            <input className="form-input" type="number" value={form.goalAmount} onChange={e => set("goalAmount", e.target.value)} />
-                        </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <div className="form-group">
-                            <label className="form-label">Lien vidéo démo</label>
-                            <input className="form-input" placeholder="https://youtube.com/..." value={form.demoVideoUrl} onChange={e => set("demoVideoUrl", e.target.value)} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Lien GitHub / Démo</label>
-                            <input className="form-input" placeholder="https://github.com/..." value={form.githubUrl} onChange={e => set("githubUrl", e.target.value)} />
-                        </div>
-                    </div>
+
+                {/* Onglets de configuration */}
+                <div style={{ display: "flex", gap: 8, padding: "12px 24px 0", borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                    {[
+                        { id: "general", label: "📋 Présentation" },
+                        { id: "pitch", label: "💡 Problème & Solution" },
+                        { id: "funding", label: "💰 Financement & Liens" },
+                    ].map(t => (
+                        <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setActiveTab(t.id)}
+                            style={{
+                                padding: "8px 16px",
+                                border: "none",
+                                borderBottom: activeTab === t.id ? "2.5px solid var(--accent)" : "2.5px solid transparent",
+                                background: "transparent",
+                                color: activeTab === t.id ? "var(--accent)" : "var(--text-secondary)",
+                                fontWeight: activeTab === t.id ? 700 : 500,
+                                fontSize: 13,
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                            }}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
                 </div>
+
+                <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 16, maxHeight: "65vh" }}>
+                    {activeTab === "general" && (
+                        <>
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Titre du projet <span className="req" style={{ color: "var(--error)" }}>*</span>
+                                </label>
+                                <input
+                                    className="form-input"
+                                    placeholder="Ex: AgriLink"
+                                    value={form.title}
+                                    onChange={e => set("title", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Slogan / Phrase d'accroche <span className="req" style={{ color: "var(--error)" }}>*</span>
+                                </label>
+                                <input
+                                    className="form-input"
+                                    placeholder="Ex: La marketplace B2B reliant directement les agriculteurs aux marchés urbains"
+                                    value={form.tagline}
+                                    onChange={e => set("tagline", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Catégorie</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={form.category}
+                                        onChange={e => set("category", e.target.value)}
+                                        style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                    >
+                                        {CATEGORIES.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Stade d'avancement</label>
+                                    <select
+                                        className="form-input form-select"
+                                        value={form.stage}
+                                        onChange={e => set("stage", e.target.value)}
+                                        style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                    >
+                                        {STAGES.map(s => (
+                                            <option key={s.id} value={s.id}>{s.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Description détaillée du projet <span className="req" style={{ color: "var(--error)" }}>*</span>
+                                </label>
+                                <textarea
+                                    className="form-input"
+                                    rows={4}
+                                    placeholder="Décrivez en détail la vision, le public cible et le fonctionnement…"
+                                    value={form.description}
+                                    onChange={e => set("description", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "12px 14px", lineHeight: 1.5 }}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === "pitch" && (
+                        <>
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Problème identifié
+                                </label>
+                                <textarea
+                                    className="form-input"
+                                    rows={3}
+                                    placeholder="Quel problème concret rencontrent vos utilisateurs ou votre marché cible ?"
+                                    value={form.problem}
+                                    onChange={e => set("problem", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Notre solution
+                                </label>
+                                <textarea
+                                    className="form-input"
+                                    rows={3}
+                                    placeholder="Comment votre solution répond-elle à ce problème de manière innovante et efficace ?"
+                                    value={form.solution}
+                                    onChange={e => set("solution", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Modèle économique (Business Model)
+                                </label>
+                                <textarea
+                                    className="form-input"
+                                    rows={3}
+                                    placeholder="Comment le projet génère-t-il des revenus (commission, abonnement, freemium, vente directe) ?"
+                                    value={form.businessModel}
+                                    onChange={e => set("businessModel", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === "funding" && (
+                        <>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                        Objectif de collecte (XAF) <span className="req" style={{ color: "var(--error)" }}>*</span>
+                                    </label>
+                                    <input
+                                        className="form-input"
+                                        type="number"
+                                        value={form.goalAmount}
+                                        onChange={e => set("goalAmount", e.target.value)}
+                                        style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                        Part de capital offerte (Equity %)
+                                    </label>
+                                    <input
+                                        className="form-input"
+                                        type="number"
+                                        placeholder="Ex : 10"
+                                        value={form.equityPct}
+                                        onChange={e => set("equityPct", e.target.value)}
+                                        style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Lien vidéo de démonstration (YouTube / Loom / Vimeo)
+                                </label>
+                                <input
+                                    className="form-input"
+                                    placeholder="https://youtube.com/watch?v=..."
+                                    value={form.demoVideoUrl}
+                                    onChange={e => set("demoVideoUrl", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                                    Lien GitHub / Code source ou Démo Live
+                                </label>
+                                <input
+                                    className="form-input"
+                                    placeholder="https://github.com/votre-projet"
+                                    value={form.githubUrl}
+                                    onChange={e => set("githubUrl", e.target.value)}
+                                    style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+
                 <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose} disabled={saving}>Annuler</button>
-                    <button className="btn btn-primary" disabled={saving || !form.title.trim()} onClick={() => onSave(form)}>
-                        {saving ? "Sauvegarde..." : "💾 Enregistrer les modifications"}
+                    <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
+                        Annuler
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        disabled={saving || !form.title.trim()}
+                        onClick={() => onSave(form)}
+                        style={{ minWidth: 180, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                    >
+                        {saving ? "Sauvegarde en cours…" : "💾 Enregistrer les modifications"}
                     </button>
                 </div>
             </div>

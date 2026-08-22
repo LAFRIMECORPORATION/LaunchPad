@@ -39,13 +39,20 @@ export function connectSocket() {
   // Événements de présence
   socket.on("user_online", ({ userId }) => {
     console.log("🟢 Utilisateur en ligne:", userId);
-    // Émettre un événement personnalisé pour le composant Messages
     window.dispatchEvent(new CustomEvent("user_online", { detail: { userId } }));
   });
 
   socket.on("user_offline", ({ userId, lastSeenAt }) => {
     console.log("🔴 Utilisateur hors ligne:", userId, lastSeenAt);
     window.dispatchEvent(new CustomEvent("user_offline", { detail: { userId, lastSeenAt } }));
+  });
+
+  socket.on("online_users_list", ({ userIds }) => {
+    window.dispatchEvent(new CustomEvent("online_users_list", { detail: { userIds } }));
+  });
+
+  socket.on("presence_response", ({ userId, isOnline }) => {
+    window.dispatchEvent(new CustomEvent("presence_response", { detail: { userId, isOnline } }));
   });
 
   // Réponse au ping de synchronisation

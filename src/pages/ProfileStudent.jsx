@@ -109,8 +109,8 @@ export default function ProfileStudent() {
           )}
         </div>
 
-        <div className="profile-header-bar" style={{ paddingLeft: 160 }}>
-          <div>
+        <div className="profile-header-bar">
+          <div className="profile-header-meta">
             <div className="profile-name">{`${user.firstName || "Étudiant"} ${user.lastName || ""}`.trim()}</div>
             <div className="profile-sub">{profile.university || "Université inconnue"} · {profile.location || "Localisation inconnue"}</div>
 
@@ -131,7 +131,7 @@ export default function ProfileStudent() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="profile-header-actions">
             {isOwn ? (
                 <button className="btn btn-primary profile-edit-trigger-modern" onClick={() => navigate("profile-edit")}>✏️ Modifier le profil</button>
             ) : (

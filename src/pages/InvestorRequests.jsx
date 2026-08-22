@@ -86,80 +86,194 @@ function PublishModal({ onClose, onSubmit, submitting }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
+      <div className="modal modal-modern" style={{ maxWidth: 660 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">📢 Publier une offre sur la Marketplace</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <h2 className="modal-title">
+            <span style={{ fontSize: 22 }}>📢</span> Publier une offre sur la Marketplace
+          </h2>
+          <button className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
         </div>
-        <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
+        <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Titre */}
           <div className="form-group">
-            <label className="form-label">Titre de l'offre <span className="req">*</span></label>
-            <input className="form-input" placeholder="Ex : Cherche Développeur FullStack / Startup AgriTech" value={form.title} onChange={e => set("title", e.target.value)} />
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+              Titre de l'opportunité <span className="req" style={{ color: "var(--error)" }}>*</span>
+            </label>
+            <input
+              className="form-input"
+              placeholder="Ex : Recherche Co-fondateur CTO / Partenariat AgriTech"
+              value={form.title}
+              onChange={e => set("title", e.target.value)}
+              style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+            />
           </div>
 
+          {/* Type d'opportunité - Visual pills */}
           <div className="form-group">
-            <label className="form-label">Type d'opportunité</label>
-            <select className="form-input form-select" value={form.type} onChange={e => set("type", e.target.value)}>
-              {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
-              ))}
-            </select>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
+              Type d'opportunité
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
+              {Object.entries(TYPE_LABELS).map(([k, v]) => {
+                const isSelected = form.type === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => set("type", k)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "var(--r-md)",
+                      border: isSelected ? `2px solid ${v.color}` : "1.5px solid var(--border)",
+                      background: isSelected ? `${v.color}15` : "var(--bg-card)",
+                      color: isSelected ? v.color : "var(--text-primary)",
+                      fontWeight: isSelected ? 700 : 500,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <span>{v.icon}</span>
+                    <span>{v.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
+          {/* Description */}
           <div className="form-group">
-            <label className="form-label">Description complète <span className="req">*</span></label>
-            <textarea className="form-input" rows={4} placeholder="Décrivez votre offre, vos attentes et ce que vous apportez…" value={form.description} onChange={e => set("description", e.target.value)} />
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+              Description détaillée <span className="req" style={{ color: "var(--error)" }}>*</span>
+            </label>
+            <textarea
+              className="form-input"
+              rows={4}
+              placeholder="Exposez clairement l'objectif de votre offre, les compétences recherchées et la valeur ajoutée pour les candidats…"
+              value={form.description}
+              onChange={e => set("description", e.target.value)}
+              style={{ borderRadius: "var(--r-md)", padding: "12px 14px", lineHeight: 1.5 }}
+            />
           </div>
 
+          {/* Montants / Budget */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">{form.type === "job" ? "Rémunération min (XAF)" : "Montant min (XAF)"}</label>
-              <input className="form-input" type="number" placeholder="500 000" value={form.minAmount} onChange={e => set("minAmount", e.target.value)} />
+              <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                {form.type === "job" ? "Rémunération min (XAF)" : "Montant min (XAF)"}
+              </label>
+              <input
+                className="form-input"
+                type="number"
+                placeholder="Ex : 500 000"
+                value={form.minAmount}
+                onChange={e => set("minAmount", e.target.value)}
+              />
             </div>
             <div className="form-group">
-              <label className="form-label">{form.type === "job" ? "Rémunération max (XAF)" : "Montant max (XAF)"}</label>
-              <input className="form-input" type="number" placeholder="2 000 000" value={form.maxAmount} onChange={e => set("maxAmount", e.target.value)} />
+              <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                {form.type === "job" ? "Rémunération max (XAF)" : "Montant max (XAF)"}
+              </label>
+              <input
+                className="form-input"
+                type="number"
+                placeholder="Ex : 2 000 000"
+                value={form.maxAmount}
+                onChange={e => set("maxAmount", e.target.value)}
+              />
             </div>
           </div>
 
+          {/* Secteurs ciblés */}
           <div className="form-group">
-            <label className="form-label">Secteurs ciblés</label>
-            <div className="marketplace-sector-checkboxes">
-              {MARKETPLACE_SECTORS.map(sector => (
-                <label className={`marketplace-sector-option${form.sectors.includes(sector) ? " selected" : ""}`} key={sector}>
-                  <input
-                    type="checkbox"
-                    checked={form.sectors.includes(sector)}
-                    onChange={() => toggleSector(sector)}
-                  />
-                  <span>{sector}</span>
-                </label>
-              ))}
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
+              Secteurs ciblés
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {MARKETPLACE_SECTORS.map(sector => {
+                const isSelected = form.sectors.includes(sector);
+                return (
+                  <button
+                    key={sector}
+                    type="button"
+                    onClick={() => toggleSector(sector)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "20px",
+                      border: isSelected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+                      background: isSelected ? "var(--accent)" : "var(--bg-hover)",
+                      color: isSelected ? "#fff" : "var(--text-secondary)",
+                      fontSize: 12,
+                      fontWeight: isSelected ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {isSelected ? "✓ " : "+ "}{sector}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {["equity", "job"].includes(form.type) && (
             <div className="form-group">
-              <label className="form-label">Equity / Part de capital proposée</label>
-              <input className="form-input" placeholder="Ex : 5-15% equity" value={form.equityRange} onChange={e => set("equityRange", e.target.value)} />
+              <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                Part de capital proposée (Equity)
+              </label>
+              <input
+                className="form-input"
+                placeholder="Ex : 5% - 15% equity"
+                value={form.equityRange}
+                onChange={e => set("equityRange", e.target.value)}
+              />
             </div>
           )}
 
+          {/* Profil / Critères requis */}
           <div className="form-group">
-            <label className="form-label">Profil / Critères requis</label>
-            <textarea className="form-input" rows={2} placeholder="Ex: Développeur React/Node.js, autonomie, basé à Douala ou Remote…" value={form.requirements} onChange={e => set("requirements", e.target.value)} />
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+              Critères & Profil recherché
+            </label>
+            <textarea
+              className="form-input"
+              rows={2}
+              placeholder="Ex : Expérience React / Node.js, autonomie, basé à Douala ou 100% Remote…"
+              value={form.requirements}
+              onChange={e => set("requirements", e.target.value)}
+            />
           </div>
 
+          {/* Date limite */}
           <div className="form-group">
-            <label className="form-label">Date limite de candidature</label>
-            <input className="form-input" type="date" value={form.deadline} onChange={e => set("deadline", e.target.value)} min={new Date().toISOString().split("T")[0]} />
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+              Date limite de candidature (Optionnelle)
+            </label>
+            <input
+              className="form-input"
+              type="date"
+              value={form.deadline}
+              onChange={e => set("deadline", e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+            />
           </div>
-
         </div>
+
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>Annuler</button>
-          <button className="btn btn-primary" disabled={!canSubmit || submitting} onClick={handleSubmit}>
+          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>
+            Annuler
+          </button>
+          <button
+            className="btn btn-primary"
+            disabled={!canSubmit || submitting}
+            onClick={handleSubmit}
+            style={{ minWidth: 160, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
             {submitting ? "Publication…" : "🚀 Publier l'offre"}
           </button>
         </div>
@@ -173,53 +287,116 @@ function ApplyModal({ request, onClose, onSubmit, submitting, myProjects }) {
   const [message,   setMessage]   = useState("");
   const [projectId, setProjectId] = useState("");
 
+  const typeConfig = TYPE_LABELS[request.type] || { label: request.type, color: "#5B73F5", icon: "📌" };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal modal-modern" style={{ maxWidth: 580 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">✉️ Postuler à l'offre</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <h2 className="modal-title">
+            <span style={{ fontSize: 22 }}>✉️</span> Postuler à l'opportunité
+          </h2>
+          <button className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
         </div>
-        <div className="modal-body">
-          <div className="card" style={{ padding: 14, marginBottom: 14, background: "var(--bg-light)" }}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{request.title}</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {request.investor?.firstName} {request.investor?.lastName}
-              {request.investor?.profile?.company ? ` · ${request.investor.profile.company}` : ""}
+
+        <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Carte récapitulative élégante de l'offre */}
+          <div
+            style={{
+              padding: 16,
+              borderRadius: "var(--r-lg)",
+              background: "linear-gradient(135deg, rgba(91, 115, 245, 0.08), rgba(34, 197, 94, 0.05))",
+              border: "1px solid var(--border)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span
+                className="marketplace-type-badge"
+                style={{
+                  background: `${typeConfig.color}20`,
+                  color: typeConfig.color,
+                  border: `1px solid ${typeConfig.color}40`,
+                  padding: "3px 10px",
+                  borderRadius: "20px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {typeConfig.icon} {typeConfig.label}
+              </span>
+              {(request.minAmount || request.maxAmount) && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>
+                  💰 {request.minAmount ? `${fmt(request.minAmount)} XAF` : ""}
+                  {request.maxAmount ? ` - ${fmt(request.maxAmount)} XAF` : ""}
+                </span>
+              )}
+            </div>
+
+            <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)" }}>
+              {request.title}
+            </div>
+
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>👤 Proposé par <strong>{request.investor?.firstName} {request.investor?.lastName}</strong></span>
+              {request.investor?.profile?.company ? (
+                <span>· 🏢 {request.investor.profile.company}</span>
+              ) : null}
             </div>
           </div>
 
-          {myProjects.length > 0 && (
+          {/* Sélection du projet */}
+          {myProjects && myProjects.length > 0 && (
             <div className="form-group">
-              <label className="form-label">Projet à présenter</label>
-              <select className="form-input form-select" value={projectId} onChange={e => setProjectId(e.target.value)}>
-                <option value="">— Sélectionner un projet (optionnel) —</option>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                Associer un de vos projets (Optionnel)
+              </label>
+              <select
+                className="form-input form-select"
+                value={projectId}
+                onChange={e => setProjectId(e.target.value)}
+                style={{ borderRadius: "var(--r-md)", padding: "10px 14px" }}
+              >
+                <option value="">— Aucun projet particulier (candidature profil) —</option>
                 {myProjects.map(p => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
+                  <option key={p.id} value={p.id}>🚀 {p.title}</option>
                 ))}
               </select>
             </div>
           )}
 
+          {/* Message de motivation */}
           <div className="form-group">
-            <label className="form-label">Message de motivation <span className="req">*</span></label>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>
+              Message de motivation & Présentation <span className="req" style={{ color: "var(--error)" }}>*</span>
+            </label>
             <textarea
               className="form-input"
               rows={5}
-              placeholder="Présentez votre profil, votre motivation et expliquez pourquoi vous correspondez à cette offre…"
+              placeholder="Présentez votre profil, vos réalisations clés, et expliquez concrètement ce que vous pouvez apporter à cette opportunité…"
               value={message}
               onChange={e => setMessage(e.target.value)}
+              style={{ borderRadius: "var(--r-md)", padding: "12px 14px", lineHeight: 1.5 }}
             />
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+              💡 Conseil : Soyez précis sur vos disponibilités, vos compétences techniques et vos expériences passées.
+            </div>
           </div>
         </div>
+
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>Annuler</button>
+          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>
+            Annuler
+          </button>
           <button
             className="btn btn-primary"
             disabled={!message.trim() || submitting}
             onClick={() => onSubmit({ message: message.trim(), projectId: projectId || undefined })}
+            style={{ minWidth: 180, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
           >
-            {submitting ? "Envoi…" : "✉️ Envoyer ma candidature"}
+            {submitting ? "Envoi en cours…" : "✉️ Envoyer ma candidature"}
           </button>
         </div>
       </div>

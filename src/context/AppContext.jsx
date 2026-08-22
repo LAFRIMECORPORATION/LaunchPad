@@ -396,28 +396,49 @@ export function AppProvider({ children }) {
   }, []);
 
   const toggleSave = useCallback(async (projectId) => {
-    // Mise à jour optimiste immédiate
-    setSavedProjects((prev) =>
-      prev.includes(projectId)
-        ? prev.filter((id) => id !== projectId)
-        : [...prev, projectId],
-    );
+    // 1. Mise à jour optimiste immédiate avec persistance par utilisateur
+    setSavedProjects((prev) => {
+      const isAlreadySaved = prev.some(id => String(id) === String(projectId));
+      const nextSaved = isAlreadySaved
+        ? prev.filter((id) => String(id) !== String(projectId))
+        : [...prev, projectId];
+      
+      if (currentUser?.id) {
+        try {
+          localStorage.setItem(`launchpad_saved_${currentUser.id}`, JSON.stringify(nextSaved));
+        } catch (e) {
+          console.error("Erreur sauvegarde localStorage:", e);
+        }
+      }
+      return nextSaved;
+    });
+
+    // 2. Appel API backend
     try {
       await projectsApi.save(projectId);
     } catch (error) {
       // Annuler en cas d'erreur API
-      setSavedProjects((prev) =>
-        prev.includes(projectId)
-          ? prev.filter((id) => id !== projectId)
-          : [...prev, projectId],
-      );
+      setSavedProjects((prev) => {
+        const isAlreadySaved = prev.some(id => String(id) === String(projectId));
+        const reverted = isAlreadySaved
+          ? prev.filter((id) => String(id) !== String(projectId))
+          : [...prev, projectId];
+        if (currentUser?.id) {
+          try {
+            localStorage.setItem(`launchpad_saved_${currentUser.id}`, JSON.stringify(reverted));
+          } catch (e) {
+            console.error("Erreur rollback localStorage:", e);
+          }
+        }
+        return reverted;
+      });
       console.error("Erreur sauvegarde projet :", error);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   const isProjectSaved = useCallback(
     (projectId) => {
-      return savedProjects.includes(projectId);
+      return savedProjects.some(id => String(id) === String(projectId));
     },
     [savedProjects],
   );
@@ -568,13 +589,46 @@ export function AppProvider({ children }) {
 
   // ─── Chargement des données depuis l'API après login ─────
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      setSavedProjects([]);
+      return;
+    }
+
+    // Récupérer les projets sauvegardés persistés pour cet utilisateur
+    let localSaved = [];
+    try {
+      const stored = localStorage.getItem(`launchpad_saved_${currentUser.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localSaved = parsed;
+          setSavedProjects(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Erreur lecture savedProjects:", e);
+    }
 
     projectsApi
       .list()
       .then((res) => {
         const list = res?.projects ?? res?.data ?? res ?? [];
-        setProjects(Array.isArray(list) ? list : []);
+        const validList = Array.isArray(list) ? list : [];
+        setProjects(validList);
+
+        // Détecter les projets marqués isSaved par l'API et synchroniser
+        const apiSavedIds = validList.filter(p => p.isSaved).map(p => p.id);
+        if (apiSavedIds.length > 0) {
+          setSavedProjects((prev) => {
+            const combined = Array.from(new Set([...prev, ...apiSavedIds, ...localSaved]));
+            try {
+              localStorage.setItem(`launchpad_saved_${currentUser.id}`, JSON.stringify(combined));
+            } catch (err) {
+              console.error("Erreur sauvegarde sync:", err);
+            }
+            return combined;
+          });
+        }
       })
       .catch((err) => console.error("Erreur chargement projets :", err));
 

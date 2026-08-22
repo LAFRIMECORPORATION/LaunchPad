@@ -86,8 +86,8 @@ export default function ProfileInvestor() {
             <input ref={avatarInput} hidden type="file" accept="image/*" onChange={e => upload("avatar", e.target.files?.[0])} />
           </div>
 
-        <div className="profile-header-bar" style={{ paddingLeft: 160 }}>
-          <div>
+        <div className="profile-header-bar">
+          <div className="profile-header-meta">
             <div className="profile-name">{`${user.firstName || "Investor"} ${user.lastName || ""}`.trim()}</div>
             <div className="profile-sub">{profile.company || "Investisseur"} · {profile.location || "Non spécifié"}</div>
             <div style={{ marginTop: 10 }}>
@@ -107,7 +107,7 @@ export default function ProfileInvestor() {
             </div>
           </div>
 
-          <div className="profile-header-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="profile-header-actions">
             <button className="btn btn-primary profile-edit-trigger-modern" onClick={() => navigate("profile-edit")}>✏️ Modifier le profil</button>
             <button className="btn btn-secondary" onClick={() => navigate("messages")}>💬 Contacter</button>
           </div>

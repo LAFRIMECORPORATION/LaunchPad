@@ -17,6 +17,21 @@ import {
 import { Avatar, ChatMessage } from "../components/UI";
 import "./Messages.css";
 
+function formatLastSeen(date) {
+  if (!date) return "Hors ligne";
+  const now = new Date();
+  const diffMs = now - new Date(date);
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMin < 2) return "En ligne récemment";
+  if (diffMin < 60) return `Vu il y a ${diffMin} min`;
+  if (diffHours < 24) return `Vu il y a ${diffHours} h`;
+  if (diffDays === 1) return `Vu hier à ${new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+  return `Vu le ${new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`;
+}
+
 export default function Messages() {
   const {
     currentUser,
@@ -56,9 +71,15 @@ export default function Messages() {
     try {
       const res = await messagesApi.getConversations();
       const loadedConversations = res?.data?.conversations || res?.data || [];
-      setConversations(
-        Array.isArray(loadedConversations) ? loadedConversations : [],
-      );
+      const convList = Array.isArray(loadedConversations) ? loadedConversations : [];
+      setConversations(convList);
+
+      // Vérifier la présence de chaque contact
+      convList.forEach((c) => {
+        if (c.other?.id) {
+          requestPresence(c.other.id);
+        }
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -219,18 +240,58 @@ export default function Messages() {
     };
     const handleUserOnline = (e) => {
       const { userId } = e.detail;
+      setOnlineStatus((prev) => {
+        const next = new Map(prev);
+        next.set(userId, { online: true, lastSeen: null });
+        return next;
+      });
       if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(true);
         setOtherUserLastSeen(null);
       }
     };
+
     const handleUserOffline = (e) => {
       const { userId, lastSeenAt } = e.detail;
+      const lastSeenDate = lastSeenAt ? new Date(lastSeenAt) : new Date();
+      setOnlineStatus((prev) => {
+        const next = new Map(prev);
+        next.set(userId, { online: false, lastSeen: lastSeenDate });
+        return next;
+      });
       if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(false);
-        setOtherUserLastSeen(lastSeenAt ? new Date(lastSeenAt) : null);
+        setOtherUserLastSeen(lastSeenDate);
       }
     };
+
+    const handleOnlineUsersList = (e) => {
+      const { userIds } = e.detail;
+      if (Array.isArray(userIds)) {
+        setOnlineStatus((prev) => {
+          const next = new Map(prev);
+          userIds.forEach((id) => next.set(id, { online: true, lastSeen: null }));
+          return next;
+        });
+        if (activeOtherUserIdRef.current && userIds.includes(activeOtherUserIdRef.current)) {
+          setIsOtherUserOnline(true);
+          setOtherUserLastSeen(null);
+        }
+      }
+    };
+
+    const handlePresenceResponse = (e) => {
+      const { userId, isOnline } = e.detail;
+      setOnlineStatus((prev) => {
+        const next = new Map(prev);
+        next.set(userId, { online: isOnline, lastSeen: isOnline ? null : new Date() });
+        return next;
+      });
+      if (userId === activeOtherUserIdRef.current) {
+        setIsOtherUserOnline(isOnline);
+      }
+    };
+
     const handleMessagesRead = ({ conversationId, userId }) => {
       if (conversationId !== activeConvId || userId === currentUser.id) return;
       setMessages((prev) =>
@@ -250,6 +311,8 @@ export default function Messages() {
     // Écouter les événements window personnalisés pour la présence
     window.addEventListener("user_online", handleUserOnline);
     window.addEventListener("user_offline", handleUserOffline);
+    window.addEventListener("online_users_list", handleOnlineUsersList);
+    window.addEventListener("presence_response", handlePresenceResponse);
 
     return () => {
       socket.off("connect", handleConnect);
@@ -260,6 +323,8 @@ export default function Messages() {
       socket.off("user_stop_typing", handleStopTyping);
       window.removeEventListener("user_online", handleUserOnline);
       window.removeEventListener("user_offline", handleUserOffline);
+      window.removeEventListener("online_users_list", handleOnlineUsersList);
+      window.removeEventListener("presence_response", handlePresenceResponse);
     };
   }, [activeConv, activeConvId, currentUser.id, setUnreadMessagesCount]);
 
@@ -557,81 +622,90 @@ export default function Messages() {
               Aucune conversation
             </div>
           ) : (
-            conversations.map((conv) => (
-              <div
-                key={conv.id}
-                className={`conv-item${activeConvId === conv.id ? " active" : ""}`}
-                onClick={() => handleSelectConv(conv.id)}
-              >
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  <Avatar
-                    label={conv.other?.avatarUrl || `${conv.other?.firstName} ${conv.other?.lastName}`}
-                    size="md"
-                  />
-                </div>
+            conversations.map((conv) => {
+              const otherId = conv.other?.id;
+              const isOnline = onlineStatus.get(otherId)?.online ?? false;
 
-                <div className="conv-item-info">
-                  <div className="conv-item-header">
-                    <span className="conv-item-name">
-                      {(() => {
-                        const isAdmin = conv.other?.role === "admin";
-                        const isStudent = conv.other?.role === "student";
-                        const isInvestor = conv.other?.role === "investor";
-                        const isVerified = conv.other?.kycValidated;
-                        
-                        if (isAdmin) {
-                          return (
-                            <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                              adminlaunchpad
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                              </svg>
-                            </span>
-                          );
-                        } else if (isStudent && isVerified) {
-                          return (
-                            <span style={{ color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                              {conv.other?.firstName} {conv.other?.lastName}
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#10B981">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                              </svg>
-                            </span>
-                          );
-                        } else if (isInvestor && isVerified) {
-                          return (
-                            <span style={{ color: "#F59E0B", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                              {conv.other?.firstName} {conv.other?.lastName}
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                              </svg>
-                            </span>
-                          );
-                        } else {
-                          return <>{conv.other?.firstName} {conv.other?.lastName}</>;
-                        }
-                      })()}
-                    </span>
-                    <span className="conv-item-time">
-                      {conv.lastMessage?.createdAt
-                        ? new Date(
-                            conv.lastMessage.createdAt,
-                          ).toLocaleTimeString("fr-FR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
-                    </span>
+              return (
+                <div
+                  key={conv.id}
+                  className={`conv-item${activeConvId === conv.id ? " active" : ""}`}
+                  onClick={() => handleSelectConv(conv.id)}
+                >
+                  <div style={{ position: "relative", flexShrink: 0 }}>
+                    <Avatar
+                      label={conv.other?.avatarUrl || `${conv.other?.firstName} ${conv.other?.lastName}`}
+                      size="md"
+                    />
+                    <span
+                      className={`conv-presence-badge ${isOnline ? "online" : "offline"}`}
+                      title={isOnline ? "En ligne" : "Hors ligne"}
+                    />
                   </div>
-                  <div className="conv-item-preview">
-                    {conv.lastMessage?.content || "Nouveau message"}
-                  </div>
-                </div>
 
-                {conv.unread > 0 && (
-                  <div className="notif-badge">{conv.unread}</div>
-                )}
-              </div>
-            ))
+                  <div className="conv-item-info">
+                    <div className="conv-item-header">
+                      <span className="conv-item-name">
+                        {(() => {
+                          const isAdmin = conv.other?.role === "admin";
+                          const isStudent = conv.other?.role === "student";
+                          const isInvestor = conv.other?.role === "investor";
+                          const isVerified = conv.other?.kycValidated;
+                          
+                          if (isAdmin) {
+                            return (
+                              <span style={{ color: "#3B82F6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                adminlaunchpad
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3B82F6">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                              </span>
+                            );
+                          } else if (isStudent && isVerified) {
+                            return (
+                              <span style={{ color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                {conv.other?.firstName} {conv.other?.lastName}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#10B981">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                              </span>
+                            );
+                          } else if (isInvestor && isVerified) {
+                            return (
+                              <span style={{ color: "#F59E0B", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                {conv.other?.firstName} {conv.other?.lastName}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                              </span>
+                            );
+                          } else {
+                            return <>{conv.other?.firstName} {conv.other?.lastName}</>;
+                          }
+                        })()}
+                      </span>
+                      <span className="conv-item-time">
+                        {conv.lastMessage?.createdAt
+                          ? new Date(
+                              conv.lastMessage.createdAt,
+                            ).toLocaleTimeString("fr-FR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="conv-item-preview">
+                      {conv.lastMessage?.content || "Nouveau message"}
+                    </div>
+                  </div>
+
+                  {conv.unread > 0 && (
+                    <div className="notif-badge">{conv.unread}</div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -663,10 +737,14 @@ export default function Messages() {
               onClick={openOtherProfile}
               title="Voir le profil"
             >
-              <div style={{ position: "relative" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
                 <Avatar
                   label={activeConv.other?.avatarUrl || `${activeConv.other?.firstName} ${activeConv.other?.lastName}`}
                   size="md"
+                />
+                <span
+                  className={`conv-presence-badge ${isOtherUserOnline ? "online" : "offline"}`}
+                  title={isOtherUserOnline ? "En ligne" : "Hors ligne"}
                 />
               </div>
             </button>
@@ -717,13 +795,28 @@ export default function Messages() {
                 })()}
               </div>
               <div
-                className={`chat-header-status ${isOtherUserOnline ? "online" : "offline"}`}
+                className={`chat-header-status-pill ${
+                  typing ? "typing" : isOtherUserOnline ? "online" : "offline"
+                }`}
               >
-                {typing
-                  ? "En train d'écrire..."
-                  : isOtherUserOnline
-                    ? "En ligne"
-                    : formatLastSeen(otherUserLastSeen)}
+                {typing ? (
+                  <span className="typing-indicator-inline">
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span>En train d'écrire...</span>
+                  </span>
+                ) : isOtherUserOnline ? (
+                  <span className="status-online-text">
+                    <span className="status-pulse-dot" />
+                    <span>En ligne</span>
+                  </span>
+                ) : (
+                  <span className="status-offline-text">
+                    <span className="status-offline-dot" />
+                    <span>{formatLastSeen(otherUserLastSeen)}</span>
+                  </span>
+                )}
               </div>
             </button>
 
