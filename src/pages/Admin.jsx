@@ -189,6 +189,7 @@ export default function Admin() {
     }
   }, [showToast]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (tab === "overview") {
       loadProjects("pending");
@@ -200,6 +201,7 @@ export default function Admin() {
     else if (["investments", "academy", "forum"].includes(tab)) loadControl(tab);
     else if (tab === "audit")      loadAuditLogs();
   }, [tab, loadKyc, loadProjects, loadUsers, loadMarketplace, loadControl, loadAuditLogs]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Actions Projets ───────────────────────────────────────
   async function handleApproveProject(id) {
@@ -225,10 +227,10 @@ export default function Admin() {
   }
 
   // ── Actions KYC ───────────────────────────────────────────
-  async function handleApproveKyc(userId, name) {
+  async function handleApproveKyc(userId, _name) {
     try {
       await kycApi.approve(userId);
-      showToast(`✅ KYC de ${name} approuvé !`, "success");
+      showToast(`✅ KYC de ${_name} approuvé !`, "success");
       setKycList(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       showToast(err.message || "Erreur approbation KYC.", "error");
@@ -248,12 +250,12 @@ export default function Admin() {
   }
 
   async function handleRequestDocs(userId, name) {
-    const docsStr = window.prompt("Documents manquants (séparés par des virgules) :");
+    const docsStr = window.prompt(`Documents manquants pour ${name || "cet utilisateur"} (séparés par des virgules) :`);
     if (!docsStr?.trim()) return showToast("La liste ne peut pas être vide.", "error");
     const docs = docsStr.split(",").map(d => d.trim()).filter(Boolean);
     try {
       await kycApi.requestDocs(userId, docs);
-      showToast("Demande de documents envoyée.", "info");
+      showToast(`Demande de documents envoyée pour ${name || "cet utilisateur"}.`, "info");
     } catch (err) {
       showToast(err.message || "Erreur lors de la demande.", "error");
     }

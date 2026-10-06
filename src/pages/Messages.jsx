@@ -3,15 +3,16 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { messagesApi } from "../utils/api";
 import {
+  connectSocket,
   getSocket,
   joinConversation,
   leaveConversation,
   emitTyping,
   emitStopTyping,
-  emitConversationRead,
   requestPresence,
 } from "../utils/socket";
 import { Avatar, ChatMessage } from "../components/UI";
@@ -40,6 +41,7 @@ export default function Messages() {
     setUnreadMessagesCount,
     navigate,
   } = useApp();
+  const location = useLocation();
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -49,7 +51,6 @@ export default function Messages() {
 
   const [chatOpen, setChatOpen] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
-  const [selectedFileName, setSelectedFileName] = useState("");
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const [otherUserLastSeen, setOtherUserLastSeen] = useState(null);
   const [showUserList, setShowUserList] = useState(false);
@@ -58,7 +59,6 @@ export default function Messages() {
   const [onlineStatus, setOnlineStatus] = useState(new Map()); // userId -> { online: boolean, lastSeen: Date }
   const typingTimer = useRef(null);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const chatMessagesRef = useRef(null);
   const activeOtherUserIdRef = useRef(null);
 
@@ -74,11 +74,31 @@ export default function Messages() {
       const convList = Array.isArray(loadedConversations) ? loadedConversations : [];
       setConversations(convList);
 
-      // Vérifier la présence de chaque contact
+      // Initialiser la présence de chaque contact à partir de l'API et vérifier via Socket
+      const statusMap = new Map();
       convList.forEach((c) => {
         if (c.other?.id) {
+          statusMap.set(c.other.id, {
+            online: !!c.other.isOnline,
+            lastSeen: c.other.lastSeenAt ? new Date(c.other.lastSeenAt) : null,
+          });
           requestPresence(c.other.id);
         }
+      });
+      setOnlineStatus((prev) => {
+        const next = new Map(prev);
+        statusMap.forEach((v, k) => {
+          const cur = next.get(k);
+          if (!cur) {
+            next.set(k, v);
+          } else {
+            next.set(k, {
+              online: cur.online || v.online,
+              lastSeen: cur.lastSeen || v.lastSeen,
+            });
+          }
+        });
+        return next;
       });
     } catch (err) {
       console.error(err);
@@ -109,8 +129,8 @@ export default function Messages() {
   // ── Ouvrir une conversation ────────────────────────────
   const openConversation = useCallback(
     async (convId) => {
-      const previousUnread =
-        conversations.find((c) => c.id === convId)?.unread || 0;
+      const targetConv = conversations.find((c) => c.id === convId);
+      const previousUnread = targetConv?.unread || 0;
 
       if (activeConvId) leaveConversation(activeConvId);
 
@@ -119,8 +139,21 @@ export default function Messages() {
       setChatOpen(true);
       setTyping(false);
       setShowInfoPanel(false);
-      setIsOtherUserOnline(false);
-      setOtherUserLastSeen(null);
+
+      const otherUser = targetConv?.other;
+      if (otherUser?.id) {
+        activeOtherUserIdRef.current = otherUser.id;
+        const currentPresence = onlineStatus.get(otherUser.id);
+        setIsOtherUserOnline(currentPresence?.online ?? !!otherUser.isOnline);
+        setOtherUserLastSeen(
+          currentPresence?.lastSeen ??
+            (otherUser.lastSeenAt ? new Date(otherUser.lastSeenAt) : null),
+        );
+        requestPresence(otherUser.id);
+      } else {
+        setIsOtherUserOnline(false);
+        setOtherUserLastSeen(null);
+      }
 
       requestAnimationFrame(() => {
         const container = chatMessagesRef.current;
@@ -138,9 +171,6 @@ export default function Messages() {
       if (previousUnread > 0) {
         messagesApi
           .markRead(convId)
-          .then(() => {
-            emitConversationRead(convId);
-          })
           .catch(console.error);
       }
 
@@ -186,7 +216,6 @@ export default function Messages() {
           messagesApi
             .markRead(conversationId)
             .then(() => {
-              emitConversationRead(conversationId);
               setUnreadMessagesCount((count) => Math.max(0, count - 1));
             })
             .catch(console.error);
@@ -231,6 +260,7 @@ export default function Messages() {
       if (userId !== currentUser.id) setTyping(false);
     };
     const handleConnect = () => {
+      if (activeConvId) joinConversation(activeConvId);
       if (activeOtherUserIdRef.current) {
         requestPresence(activeOtherUserIdRef.current);
       }
@@ -281,14 +311,22 @@ export default function Messages() {
     };
 
     const handlePresenceResponse = (e) => {
-      const { userId, isOnline } = e.detail;
+      const { userId, isOnline, lastSeenAt } = e.detail;
+      const lastSeenDate = lastSeenAt ? new Date(lastSeenAt) : null;
       setOnlineStatus((prev) => {
         const next = new Map(prev);
-        next.set(userId, { online: isOnline, lastSeen: isOnline ? null : new Date() });
+        const cur = next.get(userId);
+        next.set(userId, {
+          online: isOnline,
+          lastSeen: isOnline ? null : lastSeenDate || cur?.lastSeen || null,
+        });
         return next;
       });
       if (userId === activeOtherUserIdRef.current) {
         setIsOtherUserOnline(isOnline);
+        if (!isOnline && lastSeenDate) {
+          setOtherUserLastSeen(lastSeenDate);
+        }
       }
     };
 
@@ -457,12 +495,6 @@ export default function Messages() {
     typingTimer.current = setTimeout(() => emitStopTyping(activeConvId), 1500);
   };
 
-  const handleSelectFile = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setSelectedFileName(file.name);
-  };
-
   // ── Ouvrir une conversation avec un utilisateur ────────
   const openConvWithUser = useCallback(
     async (targetUserId) => {
@@ -486,6 +518,7 @@ export default function Messages() {
 
   // ── Charger les conversations au montage ───────────────
   useEffect(() => {
+    connectSocket();
     queueMicrotask(() => {
       loadConversations();
     });
@@ -517,34 +550,6 @@ export default function Messages() {
       });
     }
   }, [pendingConversation, location.state, openConversation]);
-
-  function formatLastSeen(value) {
-    if (!value) return "Hors ligne";
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Hors ligne";
-
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    // Affichage relatif moderne
-    if (diffMins < 1) return "À l'instant";
-    if (diffMins < 60) return `Vu il y a ${diffMins} min`;
-    if (diffHours < 24) return `Vu il y a ${diffHours} h`;
-    if (diffDays < 7) return `Vu il y a ${diffDays} j`;
-    
-    // Pour les dates plus anciennes, afficher la date complète
-    return `Vu le ${date.toLocaleDateString("fr-FR")} à ${date.toLocaleTimeString(
-      "fr-FR",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      },
-    )}`;
-  }
 
   function openOtherProfile() {
     if (!activeConv?.other?.id) return;
@@ -937,11 +942,6 @@ export default function Messages() {
               onKeyDown={handleKeyDown}
               rows={1}
             />
-            {selectedFileName ? (
-              <div className="chat-selected-file" title={selectedFileName}>
-                📎 {selectedFileName}
-              </div>
-            ) : null}
             <button
               className="btn btn-primary chat-send-btn"
               onClick={handleSend}

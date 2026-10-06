@@ -3,7 +3,7 @@
 // Chemin : src/pages/FeedPage.jsx
 // ============================================================
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { Avatar } from "../components/UI";
 import { feedApi } from "../utils/api";
@@ -157,11 +157,13 @@ export default function FeedPage() {
   }, [unreadOnly]);
 
   // Reset et rechargement quand le filtre change
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setPage(1);
     setEvents([]);
     loadFeed(filter, 1, false);
   }, [filter, unreadOnly, loadFeed]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleEventClick(event) {
     if (!event.isRead) {

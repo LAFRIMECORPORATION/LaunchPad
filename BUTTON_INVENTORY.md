@@ -790,7 +790,7 @@ Pour chaque endpoint, lire ces fichiers du frontend:
 ### Projects
 - `src/pages/ProjectDetail.jsx` - Voir structure projet
 - `src/pages/Publish.jsx` - Voir création projet
-- `src/data/mockData.jsx` - Voir format des données
+- `src/utils/api.js` - `projectsApi.list()` récupère les projets du backend
 
 ### Admin
 - `src/pages/Admin.jsx` - Voir modération (lignes 1-350)

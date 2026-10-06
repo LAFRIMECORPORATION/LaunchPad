@@ -290,7 +290,7 @@ function RequestScreen({ target, onBack, navigate, showToast }) {
 }
 
 /* ── Sous-écran : Boîte de réception (demandes reçues/envoyées) ── */
-function InboxScreen({ showToast, navigate }) {
+function InboxScreen({ showToast }) {
     const [inbox, setInbox]     = useState({ received: [], sent: [] });
     const [loading, setLoading] = useState(true);
     const [tab, setTab]         = useState("received");
@@ -421,10 +421,11 @@ export default function Collaboration() {
     const [target, setTarget]         = useState(collabTarget || null);
     const [similarProjects, setSimilarProjects] = useState([]);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (collabStep) setLocalStep(collabStep);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [collabStep]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     function handleSimilarLoaded(projects) {
         setSimilarProjects(projects);
@@ -496,7 +497,7 @@ export default function Collaboration() {
             )}
 
             {localStep === "inbox" && (
-                <InboxScreen showToast={showToast} navigate={navigate} />
+                <InboxScreen showToast={showToast} />
             )}
 
         </div>

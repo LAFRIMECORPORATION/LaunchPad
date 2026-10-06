@@ -7,33 +7,47 @@ import { io } from "socket.io-client";
 import { getAccessToken } from "./api";
 
 const SOCKET_URL =
-  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
+  (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "") : "http://localhost:5000");
 
 let socket = null;
-let heartbeatInterval = null;
 
 export function connectSocket() {
+  const token = getAccessToken() || localStorage.getItem("launchpad_access_token") || localStorage.getItem("token");
+  if (!token) return null;
+
   if (socket?.connected) return socket;
+  if (socket) {
+    socket.auth = { token };
+    socket.connect();
+    return socket;
+  }
 
   socket = io(SOCKET_URL, {
-    auth: { token: getAccessToken() },
+    auth: { token },
+    extraHeaders: {
+      Authorization: `Bearer ${token}`,
+    },
     transports: ["websocket", "polling"],
     autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
   });
 
   socket.on("connect", () => {
     console.log("⚡ Socket connecté");
-    // Démarrer le heartbeat toutes les 30 secondes
-    startHeartbeat();
   });
 
   socket.on("disconnect", () => {
     console.log("⚡ Socket déconnecté");
-    stopHeartbeat();
   });
 
   socket.on("connect_error", (err) => {
     console.error("Socket erreur :", err.message);
+  });
+
+  socket.on("socket_error", (error) => {
+    console.error("Socket erreur :", error?.message || error);
   });
 
   // Événements de présence
@@ -51,34 +65,14 @@ export function connectSocket() {
     window.dispatchEvent(new CustomEvent("online_users_list", { detail: { userIds } }));
   });
 
-  socket.on("presence_response", ({ userId, isOnline }) => {
-    window.dispatchEvent(new CustomEvent("presence_response", { detail: { userId, isOnline } }));
-  });
-
-  // Réponse au ping de synchronisation
-  socket.on("pong_client", (data) => {
-    console.log("⚡ Pong reçu du serveur :", data?.message);
+  socket.on("presence_response", ({ userId, isOnline, lastSeenAt }) => {
+    window.dispatchEvent(new CustomEvent("presence_response", { detail: { userId, isOnline, lastSeenAt } }));
   });
 
   return socket;
 }
 
-function startHeartbeat() {
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-  heartbeatInterval = setInterval(() => {
-    socket?.emit("heartbeat");
-  }, 30000); // Heartbeat toutes les 30 secondes
-}
-
-function stopHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
-}
-
 export function disconnectSocket() {
-  stopHeartbeat();
   if (socket) {
     socket.disconnect();
     socket = null;
@@ -103,10 +97,6 @@ export function emitTyping(conversationId) {
 
 export function emitStopTyping(conversationId) {
   socket?.emit("stop_typing", { conversationId });
-}
-
-export function emitConversationRead(conversationId) {
-  socket?.emit("conversation_read", { conversationId });
 }
 
 export function requestPresence(userId) {

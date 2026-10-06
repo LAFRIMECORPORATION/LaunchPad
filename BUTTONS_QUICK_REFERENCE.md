@@ -357,13 +357,16 @@ Backend: None (UI-based)
 
 # 📊 STATISTIQUES D'INVESTISSEMENT: COMMENT ÇA FONCTIONNE
 
-## 🔴 ACTUELLEMENT: DONNÉES STATIQUES (Mock Data)
+## 🔴 EXEMPLE HISTORIQUE : DONNÉES STATIQUES
+
+Les exemples ci-dessous décrivent d'anciennes données de démonstration ; ils ne sont
+plus chargés par le frontend. Les projets affichés dans l'application proviennent de l'API.
 
 Les stats affichées (75M XAF d'objectif, 28M levés, 37%, 8 investisseurs, etc.) sont **codées en dur** dans le code:
 
 ### Exemple Actuel
 ```javascript
-// src/data/mockData.jsx - Projet EcoDeliv
+// Exemple historique uniquement — ne pas utiliser comme source de données
 {
   id: 1,
   title: "EcoDeliv",
@@ -391,7 +394,7 @@ Vous avez 2 options:
 ### ✅ OPTION A: Reset Complet (RECOMMANDÉE)
 ```
 AVANT production:
-1. Vider mockData de tous les chiffres
+1. Vérifier qu'aucune donnée de démonstration n'est importée dans l'application
 2. Tous les projets existants = archivés
 3. Database = vierge le jour du launch
 4. Les utilisateurs commencent de zéro
@@ -408,7 +411,7 @@ Inconvénients: ❌ Perte des données de démo
 ### Alternative: Migration
 ```
 AVANT production:
-1. Exporter mockData vers la database
+1. N'importer que des projets explicitement validés vers la base de données
 2. Garder l'historique comme "Legacy projects"
 3. Nouvelles données = en production réelle
 
@@ -1132,4 +1135,3 @@ const navigate = useCallback((page, opts = {}) => {
 ---
 
 Generated: June 3, 2026
-

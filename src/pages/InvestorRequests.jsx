@@ -538,10 +538,12 @@ export default function InvestorRequests() {
     }
   }, [isInvestor, selectedOffer]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (activeTab === "browse") loadRequests(filter);
     else if (activeTab === "applications") loadMyOffers();
   }, [activeTab, filter, loadRequests, loadMyOffers]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Charger détail de l'offre sélectionnée avec ses candidatures réelles
   useEffect(() => {

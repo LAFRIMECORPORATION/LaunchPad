@@ -21,7 +21,6 @@ export default function ProfileInvestor() {
   const interests = user.interests || profile.interests || [];
   const coverUrl = profile.coverImageUrl;
   const avatarUrl = user.avatarUrl;
-  const isInvestor = user.role === "investor";
   const initials = useMemo(() => `${user.firstName?.[0] || "U"}${user.lastName?.[0] || ""}`.toUpperCase(), [user.firstName, user.lastName]);
 
   async function upload(kind, file) {
@@ -44,6 +43,7 @@ export default function ProfileInvestor() {
     }
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!currentUser?.id) {
       setLoading(false);
@@ -61,6 +61,7 @@ export default function ProfileInvestor() {
       })
       .finally(() => setLoading(false));
   }, [currentUser?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const totalInvested = investments.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
   const portfolioCount = investments.length;

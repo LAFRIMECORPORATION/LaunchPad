@@ -24,10 +24,18 @@ export default function SocialActions({
     const [likesCount, setLikesCount] = useState(initialLikes);
     const [isLiked, setIsLiked] = useState(initialLiked);
 
+    const normalizedLikes = initialLikes ?? likesCount;
+    const normalizedLiked = initialLiked ?? isLiked;
+
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
-        setLikesCount(initialLikes);
-        setIsLiked(initialLiked);
+        setLikesCount((prev) => (prev === initialLikes ? prev : initialLikes));
+        setIsLiked((prev) => (prev === initialLiked ? prev : initialLiked));
     }, [initialLikes, initialLiked]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    const displayedLikes = likesCount === initialLikes ? normalizedLikes : likesCount;
+    const displayedLiked = isLiked === initialLiked ? normalizedLiked : isLiked;
 
     const btnClass = size === "sm" ? "social-btn social-btn-sm" : "social-btn";
 
@@ -54,7 +62,7 @@ export default function SocialActions({
                         (p.id === targetProjectId) ? { ...p, likes: nextLikes, likedByMe: nextLiked } : p
                     ));
                 }
-            } catch (err) {
+            } catch {
                 setLikesCount(prevLikes);
                 setIsLiked(prevLiked);
             }
@@ -78,12 +86,12 @@ export default function SocialActions({
             {/* ── Like ── */}
             <button
                 type="button"
-                className={`${btnClass}${isLiked ? " liked" : ""}`}
+                className={`${btnClass}${displayedLiked ? " liked" : ""}`}
                 onClick={handleLike}
-                title={isLiked ? "Retirer le like" : "Liker ce projet"}
+                title={displayedLiked ? "Retirer le like" : "Liker ce projet"}
             >
-                <span className="social-btn-icon">{isLiked ? "❤️" : "🤍"}</span>
-                <span className="social-btn-count">{likesCount}</span>
+                <span className="social-btn-icon">{displayedLiked ? "❤️" : "🤍"}</span>
+                <span className="social-btn-count">{displayedLikes}</span>
             </button>
 
             {/* ── Comment ── */}

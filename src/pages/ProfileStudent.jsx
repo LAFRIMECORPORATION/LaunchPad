@@ -32,9 +32,11 @@ export default function ProfileStudent() {
     if (!file) return;
     setUploading(kind);
     try {
-      const response = kind === "avatar"
-        ? await usersApi.uploadAvatar(user.id, file)
-        : await usersApi.uploadCover(user.id, file);
+      if (kind === "avatar") {
+        await usersApi.uploadAvatar(user.id, file);
+      } else {
+        await usersApi.uploadCover(user.id, file);
+      }
       
       const refreshed = await usersApi.getById(user.id);
       const fullUser = refreshed.data?.user || refreshed.user || refreshed.data || refreshed;
@@ -48,6 +50,7 @@ export default function ProfileStudent() {
     }
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!currentUser?.id) {
       setLoading(false);
@@ -65,6 +68,7 @@ export default function ProfileStudent() {
       })
       .finally(() => setLoading(false));
   }, [currentUser?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="animate-fadeUp">

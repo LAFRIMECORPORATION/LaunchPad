@@ -188,11 +188,11 @@ export default function Explore() {
                 </div>
             ) : globalProjects.length > 0 ? (
                 <div className="grid-auto" style={{ width: "100%", maxWidth: "100%" }}>
-                    {globalProjects.map(p => {
+                    {globalProjects.map((p, index) => {
                         const currentId = p?.id || p?.project_id || p?._id;
                         return (
                             <div 
-                                key={currentId || Math.random().toString()} 
+                                key={currentId || `project-${index}`} 
                                 style={{ display: "flex", flexDirection: "column", gap: 0, cursor: "pointer", width: "100%", maxWidth: "100%" }}
                                 onClick={() => routerNavigate(`/projects/${currentId}`)}
                             >

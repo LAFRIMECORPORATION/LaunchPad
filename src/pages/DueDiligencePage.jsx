@@ -86,9 +86,6 @@ export default function DueDiligencePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* KYC gate */
-  if (!currentUser?.kycValidated) return <KycBlocked navigate={navigate} />;
-
   const handleAnalyze = useCallback(async (project) => {
     setSelected(project);
     setResult(null);
@@ -118,6 +115,9 @@ export default function DueDiligencePage() {
     setErrorMsg(null);
     setAnalyzing(false);
   }
+
+  /* KYC gate */
+  if (!currentUser?.kycValidated) return <KycBlocked navigate={navigate} />;
 
   return (
     <div className="page-wrapper">

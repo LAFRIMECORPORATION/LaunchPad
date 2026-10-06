@@ -417,6 +417,7 @@ export default function AppointmentsPage() {
     }
   }, [showToast]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (currentUser?.kycValidated) {
       loadAppointments(tab);
@@ -429,6 +430,7 @@ export default function AppointmentsPage() {
       setShowModal(true);
     }
   }, [targetUserId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /* KYC gate */
   if (!currentUser?.kycValidated) {

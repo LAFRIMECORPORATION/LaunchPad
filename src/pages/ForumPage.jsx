@@ -133,7 +133,9 @@ export default function ForumPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => { loadPosts(cat); }, [cat, loadPosts]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleNewPost({ title, content, category }) {
     setSubmitting(true);

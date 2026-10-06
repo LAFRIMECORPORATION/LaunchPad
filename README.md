@@ -1,4 +1,4 @@
-# 🚀 LaunchPad - Frontend
+# LaunchPad
 
 Plateforme de financement participatif et de collaboration connectant des porteurs de projets étudiants et des investisseurs.
 
@@ -15,6 +15,18 @@ LaunchPad est une application web full-stack permettant aux étudiants entrepren
 - **ESLint** - Linting du code
 
 ## 🚀 Installation
+
+Lancer ces commandes depuis chaque dossier indiqué, dans deux terminaux séparés.
+
+Backend (`backEnd/`) — renseigner d'abord les variables d'environnement :
+
+```bash
+# Installer les dépendances et démarrer l'API
+npm install
+npm run dev
+```
+
+Frontend (`LaunchPad/`) :
 
 ```bash
 # Installer les dépendances
@@ -35,11 +47,16 @@ npm run lint
 
 ## 🔧 Configuration
 
-Créer un fichier `.env` à la racine du projet :
+Créer `LaunchPad/.env` pour le frontend :
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
+
+Le backend (`backEnd`) requiert au minimum `DATABASE_URL`, `JWT_SECRET` et
+`JWT_REFRESH_SECRET`. `FRONTEND_URL` sert à configurer CORS. Les intégrations
+Cloudinary, Resend et paiements nécessitent leurs propres identifiants selon les
+fonctionnalités activées ; ne jamais committer ces secrets.
 
 ## 📁 Structure du Projet
 
@@ -70,6 +87,8 @@ src/
 ## 🔌 API Backend
 
 Le frontend communique avec le backend LaunchPad via REST API et WebSockets.
+Le backend doit être démarré et relié à une base configurée pour valider les
+parcours réels. `VITE_API_URL` doit pointer vers sa racine `/api`.
 
 ### Modules Principaux
 
@@ -80,6 +99,31 @@ Le frontend communique avec le backend LaunchPad via REST API et WebSockets.
 - **KYC** : Soumission et validation documents
 - **Forum** : Posts et réponses
 - **Notifications** : In-app et push
+- **Academy** : catalogue, inscriptions et progression enregistrés via l'API
+
+### Contrats vérifiés dans le code
+
+- Lecture des messages : `GET /api/conversations/:id/messages`
+- Marquage comme lu : `POST /api/conversations/:id/read`
+- Investissements : `GET /api/investments?page=...`
+- Academy : `GET /api/academy/courses`, inscription et progression via les routes
+  `/api/academy/...`
+
+Les appels Socket.IO sont authentifiés par JWT. Un utilisateur ne peut rejoindre
+que les rooms de ses propres conversations.
+
+## ✅ État d'intégration et de validation
+
+| Niveau | Signification | État dans ce dépôt |
+|---|---|---|
+| Codé | L'interface et le traitement existent | Routes frontend/backend et parcours Academy présents |
+| Branché | Le frontend appelle les contrats backend | API messagerie, investissements, Academy et Socket.IO câblés |
+| Validé localement | Build/lint exécutés sans erreur bloquante | Build OK ; lint OK avec 9 avertissements Hook préexistants |
+| Validé end-to-end | Parcours vérifié avec base et services réels | Non revendiqué par ce README ; nécessite une configuration active |
+
+La présence d'une route ou d'un écran ne signifie pas que les paiements ont été
+validés auprès des opérateurs. Les webhooks, identifiants sandbox/production et
+parcours de remboursement doivent être testés dans leur environnement dédié.
 
 ## 🎯 Fonctionnalités Principales
 
@@ -150,4 +194,4 @@ Propriétaire - LaunchPad Platform
 
 ---
 
-**Dernière mise à jour** : 2026-07-30
+**Dernière mise à jour** : 2026-10-06

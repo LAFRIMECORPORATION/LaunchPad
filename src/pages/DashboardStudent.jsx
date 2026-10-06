@@ -13,6 +13,7 @@ export default function DashboardStudent() {
   const [loading, setLoading] = useState(false);
   const [recommendLoading, setRecommendLoading] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     feedApi.get({ limit: 5 })
       .then(res => {
@@ -63,6 +64,7 @@ export default function DashboardStudent() {
       })
       .finally(() => setRecommendLoading(false));
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handlePublishClick = () => {
     if (currentUser?.kycValidated) {

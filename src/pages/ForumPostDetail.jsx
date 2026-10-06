@@ -60,9 +60,11 @@ export default function ForumPostDetail() {
     }
   }, [postId, showToast, navigate]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadPost();
   }, [loadPost]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleReply() {
     if (!replyText.trim()) return;

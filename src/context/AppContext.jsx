@@ -157,22 +157,6 @@ export function AppProvider({ children }) {
   const login = useCallback(
     async (credentials) => {
       try {
-        if (typeof credentials === "string") {
-          setCurrentUser({
-            role: credentials,
-            name: `Démo ${credentials}`,
-            kycValidated: true,
-          });
-          const dashMap = {
-            student: "dashboard-student",
-            investor: "dashboard-investor",
-            admin: "admin",
-          };
-          navigate(dashMap[credentials] || "home");
-          showToast(`Mode démo : Connecté en tant que ${credentials}`, "info");
-          return;
-        }
-
         const response = await authApi.login(credentials);
         const { user, accessToken, refreshToken } = response.data;
 
@@ -434,7 +418,7 @@ export function AppProvider({ children }) {
       });
       console.error("Erreur sauvegarde projet :", error);
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   const isProjectSaved = useCallback(
     (projectId) => {
@@ -588,6 +572,7 @@ export function AppProvider({ children }) {
   }, [currentUser?.id]);
 
   // ─── Chargement des données depuis l'API après login ─────
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!currentUser?.id) {
       setSavedProjects([]);
@@ -664,6 +649,7 @@ export function AppProvider({ children }) {
       })
       .catch((err) => console.error("Erreur chargement annonces :", err));
   }, [currentUser?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -853,6 +839,7 @@ export function AppProvider({ children }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within AppProvider");

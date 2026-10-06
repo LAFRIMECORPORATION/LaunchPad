@@ -280,7 +280,6 @@ export const commentsApi = {
 
 export const messagesApi = {
   getConversations: () => api.get("/conversations"),
-  getConversation: (id) => api.get(`/conversations/${id}`),
   getMessages: (convId, p) => api.get(`/conversations/${convId}/messages`, p),
   createDirect: (targetUserId) =>
     api.post("/conversations/direct", { targetUserId }),
@@ -299,7 +298,7 @@ export const paymentsApi = {
   initOrange: (data) => api.post("/payments/orange/init", data),
   initStripe: (data) => api.post("/payments/stripe/init", data),
   getStatus: (id) => api.get(`/payments/${id}/status`),
-  list: (page) => api.get("/investments", { page: page || 1 }),
+  list: (page = 1) => api.get("/investments", { page }),
   getOne: (id) => api.get(`/investments/${id}`),
   getInvestments: (params) => api.get("/investments", params),
   getInvestment: (id) => api.get(`/investments/${id}`),
@@ -352,6 +351,15 @@ export const collaborationsApi = {
 export const badgesApi = {
   getMine: () => api.get("/badges/me"),
   getForUser: (userId) => api.get(`/badges/user/${userId}`),
+};
+
+export const academyApi = {
+  listCourses: (params) => api.get("/academy/courses", params),
+  getCourse: (id) => api.get(`/academy/courses/${id}`),
+  enroll: (id) => api.post(`/academy/courses/${id}/enroll`),
+  getMyCourses: () => api.get("/academy/my-courses"),
+  updateProgress: (id, progress) =>
+    api.put(`/academy/my-courses/${id}/progress`, { progress }),
 };
 
 export const feedApi = {

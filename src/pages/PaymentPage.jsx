@@ -126,8 +126,7 @@ export default function PaymentPage() {
   const [method,     setMethod]     = useState(METHODS[0]);
   const [phone,      setPhone]      = useState("");
   const [amount,     setAmount]     = useState("");
-  const [project,    setProject]    = useState(selectedProject || null);
-  const [investmentId, setInvestmentId] = useState(null);
+  const [project] = useState(selectedProject || null);
   const [paymentError, setPaymentError] = useState(null);
   const pollingRef = useRef(null);
 
@@ -145,6 +144,7 @@ export default function PaymentPage() {
 
     try {
       let result;
+      let createdInvestmentId = null;
 
       if (method.id === "mtn") {
         result = await paymentsApi.initMtn({
@@ -152,24 +152,24 @@ export default function PaymentPage() {
           amount: parseInt(amount),
           phoneNumber: phone,
         });
-        setInvestmentId(result.data.investmentId);
-        startPolling(result.data.investmentId);
+        createdInvestmentId = result.data.investmentId;
+        startPolling(createdInvestmentId);
       } else if (method.id === "orange") {
         result = await paymentsApi.initOrange({
           projectId: project.id,
           amount: parseInt(amount),
           phoneNumber: phone,
         });
-        setInvestmentId(result.data.investmentId);
-        startPolling(result.data.investmentId);
+        createdInvestmentId = result.data.investmentId;
+        startPolling(createdInvestmentId);
       } else if (method.id === "stripe") {
         result = await paymentsApi.initStripe({
           projectId: project.id,
           amount: parseInt(amount),
           currency: "XAF",
         });
-        setInvestmentId(result.data.investmentId);
-        startPolling(result.data.investmentId);
+        createdInvestmentId = result.data.investmentId;
+        startPolling(createdInvestmentId);
       }
     } catch (err) {
       setStep(1);

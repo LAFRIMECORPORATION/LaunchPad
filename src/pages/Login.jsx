@@ -70,7 +70,7 @@ export default function Login() {
 
                     <div className="auth-form">
 
-                        {/* role toggle — Utilisé pour le Mode Démo ou l'affichage visuel */}
+                        {/* Le rôle réellement associé au compte vient du backend après connexion. */}
                         <div className="auth-role-toggle">
                             {[["student", "🎓 Étudiant"], ["investor", "💼 Investisseur"]].map(([r, l]) => (
                                 <button 
@@ -78,9 +78,6 @@ export default function Login() {
                                     className={`auth-role-btn${role === r ? " active" : ""}`}
                                     onClick={() => {
                                         setRole(r);
-                                        // Optionnel : Permet de tester instantanément le mode démo en cliquant dessus
-                                        // si tu veux bypasser le formulaire d'API réelle :
-                                        // login(r); 
                                     }}
                                 >
                                     {l}

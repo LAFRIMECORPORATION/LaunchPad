@@ -180,9 +180,11 @@ export default function ProjectDetail() {
         }
     }, [id, token, showToast, globalProjects]);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         loadProjectDetail();
     }, [loadProjectDetail]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // ── 2. CHARGEMENT DES PROJETS SIMILAIRES DEPUIS L'API ──
     const similarLoadedRef = useRef(false);
@@ -214,13 +216,16 @@ export default function ProjectDetail() {
         }
     }, [id, token]);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (project && !similarLoadedRef.current) {
             loadSimilarProjects();
         }
     }, [project?.id]); // Ne dépend que de l'ID du projet, pas de l'objet project complet
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // ── 3. ÉCOUTEUR EN TEMPS RÉEL DU CATALOGUE DE PROJETS ──
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (!loading && project && globalProjects.length > 0) {
             const currentId = project.id || project.project_id;
@@ -243,6 +248,7 @@ export default function ProjectDetail() {
             }
         }
     }, [globalProjects, loading, project?.id]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // ── 4. CALCULS ET DÉRIVATIONS ──
     const raised = project?.raisedAmount ? parseFloat(project.raisedAmount) : 0;

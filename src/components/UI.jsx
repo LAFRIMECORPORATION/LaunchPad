@@ -455,7 +455,6 @@ export function NotificationItem({ notif, onClick }) {
 
 /* ── CHAT MESSAGE ── */
 export function ChatMessage({ message, senderLabel }) {
-  const { currentUser } = useApp();
   const isAdmin = message.senderRole === "admin" || message.sender?.role === "admin";
   const isStudent = message.senderRole === "student" || message.sender?.role === "student";
   const isInvestor = message.senderRole === "investor" || message.sender?.role === "investor";

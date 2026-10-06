@@ -3,9 +3,9 @@
 // Chemin : src/pages/AcademyPage.jsx
 // ============================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { COURSES } from "../data/courses";
+import { academyApi } from "../utils/api";
 import "./Academy.css";
 
 const FILTERS = [
@@ -23,26 +23,20 @@ const LEVEL_COLOR = {
   "Avancé": "badge-danger",
 };
 
+function getCourseResourceUrl(contentUrl) {
+  if (typeof contentUrl !== "string") return null;
+
+  try {
+    const url = new URL(contentUrl);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ── Modal d'apprentissage interactif (Lecteur de cours) ────── */
 function CoursePlayerModal({ course, progress, onUpdateProgress, onClose }) {
-  const [currentModule, setCurrentModule] = useState(0);
-
-  const modules = [
-    { title: "Module 1 : Introduction & Fondations", duration: "15 min", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", desc: "Comprendre les spécificités du marché africain et poser les bases solides de votre projet." },
-    { title: "Module 2 : Stratégie & Modèle Économique", duration: "25 min", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", desc: "Définir votre stratégie de monétisation, adapter vos prix en XAF et valider votre traction." },
-    { title: "Module 3 : Aspect Légal & Levée de Fonds", duration: "30 min", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", desc: "Structure juridique OHADA, pacte d'actionnaires et préparation des pitch decks pour investisseurs." },
-  ];
-
-  const currentMod = modules[currentModule];
-  const isLast = currentModule === modules.length - 1;
-
-  function handleCompleteModule() {
-    const nextProg = Math.min(100, Math.round(((currentModule + 1) / modules.length) * 100));
-    onUpdateProgress(course.id, nextProg);
-    if (!isLast) {
-      setCurrentModule(prev => prev + 1);
-    }
-  }
+  const resourceUrl = getCourseResourceUrl(course.contentUrl);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -64,34 +58,28 @@ function CoursePlayerModal({ course, progress, onUpdateProgress, onClose }) {
             </div>
           </div>
 
-          {/* Sommaire des modules */}
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-            {modules.map((m, idx) => (
-              <button
-                key={m.title}
-                className={`btn btn-sm ${currentModule === idx ? "btn-primary" : "btn-secondary"}`}
-                onClick={() => setCurrentModule(idx)}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                {idx + 1}. {m.title.split(":")[0]}
-              </button>
-            ))}
-          </div>
-
-          {/* Module actif */}
           <div className="card" style={{ padding: 18, background: "var(--bg-card)" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{currentMod.title}</h3>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 14 }}>{currentMod.desc}</p>
-            <div style={{ aspectRatio: "16/9", background: "#000", borderRadius: "var(--r-md)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 18 }}>
-              📺 [Vidéo du cours - {currentMod.title}]
-            </div>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 14 }}>
+              {course.description}
+            </p>
+            {resourceUrl ? (
+              <a className="btn btn-primary" href={resourceUrl} target="_blank" rel="noreferrer">
+                Ouvrir la ressource du cours
+              </a>
+            ) : (
+              <p>La ressource de ce cours n’est pas encore disponible.</p>
+            )}
           </div>
         </div>
 
         <div className="modal-footer" style={{ justifyContent: "space-between" }}>
           <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
-          <button className="btn btn-success" onClick={handleCompleteModule}>
-            {isLast ? "🏆 Terminer la formation" : "✅ Valider et passer au module suivant →"}
+          <button
+            className="btn btn-success"
+            onClick={() => onUpdateProgress(course.id, 100)}
+            disabled={progress >= 100}
+          >
+            {progress >= 100 ? "Formation terminée" : "Marquer la formation comme terminée"}
           </button>
         </div>
       </div>
@@ -101,48 +89,38 @@ function CoursePlayerModal({ course, progress, onUpdateProgress, onClose }) {
 
 /* ── Modal de détails du cours ──────────────────────────────── */
 function CourseModal({ course, onClose, onEnroll }) {
+  const resourceUrl = getCourseResourceUrl(course.contentUrl);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal academy-modal" onClick={e => e.stopPropagation()}>
         <div className="academy-modal__cover">{course.icon}</div>
         <div className="modal-body">
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-            <span className="badge badge-gray">{course.type}</span>
+            <span className="badge badge-gray">{course.courseType}</span>
             <span className={`badge ${LEVEL_COLOR[course.level] || "badge-gray"}`}>{course.level}</span>
-            {course.premium && <span className="badge badge-warning">⭐ Premium</span>}
+            {course.isPremium && <span className="badge badge-warning">⭐ Premium</span>}
           </div>
           <h2 className="modal-title" style={{ marginBottom: 10 }}>{course.title}</h2>
           <div className="academy-modal__stats">
-            <span>⏱️ {course.duration}</span>
-            <span>👥 {course.enrolled} inscrits</span>
-            <span>⭐ {course.rating}/5</span>
+            <span>⏱️ {course.durationMin ? `${course.durationMin} min` : "Durée non précisée"}</span>
+            <span>👥 {course.enrollCount} inscrits</span>
+            <span>⭐ {Number(course.rating).toFixed(1)}/5</span>
           </div>
-          <p className="academy-modal__desc">
-            Ce {course.type.toLowerCase()} couvre les aspects essentiels pour les entrepreneurs
-            camerounais souhaitant développer leur startup. Conçu par des experts locaux avec
-            des exemples concrets du marché africain.
-          </p>
-          <div className="academy-modal__includes">
-            <div className="academy-modal__includes-title">Ce que vous apprendrez :</div>
-            {[
-              "Concepts fondamentaux appliqués au contexte africain",
-              "Exemples concrets du marché camerounais",
-              "Outils pratiques et templates téléchargeables",
-              "Accès aux sessions de mentoring en direct",
-            ].map(item => (
-              <div key={item} className="academy-modal__includes-item">
-                <span>✅</span><span>{item}</span>
-              </div>
-            ))}
-          </div>
+          <p className="academy-modal__desc">{course.description}</p>
+          {resourceUrl && (
+            <a href={resourceUrl} target="_blank" rel="noreferrer">
+              Voir la ressource du cours
+            </a>
+          )}
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
           <button
-            className={`btn ${course.premium ? "btn-warning" : "btn-primary"}`}
+            className={`btn ${course.isPremium ? "btn-warning" : "btn-primary"}`}
             onClick={() => onEnroll(course)}
           >
-            {course.premium ? "⭐ Accès Premium" : "▶️ Dérouler la formation"}
+            {course.isPremium ? "⭐ Accès Premium" : "▶️ Dérouler la formation"}
           </button>
         </div>
       </div>
@@ -151,41 +129,120 @@ function CourseModal({ course, onClose, onEnroll }) {
 }
 
 export default function AcademyPage() {
-  const { showToast } = useApp();
+  const { showToast, currentUser, navigate } = useApp();
 
   const [filter, setFilter]           = useState("all");
-  const [enrolled, setEnrolled]       = useState({}); // { courseId: progressPct }
+  const [courses, setCourses]         = useState([]);
+  const [enrolled, setEnrolled]       = useState({});
+  const [loading, setLoading]         = useState(true);
+  const [loadError, setLoadError]     = useState("");
   const [activeCourse, setActiveCourse] = useState(null);
   const [playerCourse, setPlayerCourse] = useState(null);
 
-  const filtered = COURSES.filter(c => {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCourses() {
+      setLoading(true);
+      setLoadError("");
+      try {
+        const response = await academyApi.listCourses();
+        if (!Array.isArray(response?.courses)) {
+          throw new Error("Réponse invalide lors du chargement des cours.");
+        }
+        if (!cancelled) setCourses(response.courses);
+      } catch (error) {
+        if (!cancelled) setLoadError(error.message || "Impossible de charger les cours.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadCourses();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadEnrollments() {
+      if (!currentUser?.id) {
+        setEnrolled({});
+        return;
+      }
+
+      try {
+        const response = await academyApi.getMyCourses();
+        if (!Array.isArray(response)) {
+          throw new Error("Réponse invalide lors du chargement de vos cours.");
+        }
+        if (!cancelled) {
+          setEnrolled(Object.fromEntries(
+            response.map(({ courseId, progress }) => [courseId, progress]),
+          ));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          showToast(error.message || "Impossible de charger vos inscriptions.", "error");
+        }
+      }
+    }
+
+    loadEnrollments();
+    return () => { cancelled = true; };
+  }, [currentUser?.id, showToast]);
+
+  const filtered = courses.filter(c => {
     if (filter === "all") return true;
-    if (filter === "free") return !c.premium;
-    if (filter === "premium") return c.premium;
-    return c.type === filter;
+    if (filter === "free") return !c.isPremium;
+    if (filter === "premium") return c.isPremium;
+    return c.courseType === filter;
   });
 
-  function handleEnroll(course) {
-    if (course.premium) {
+  async function handleEnroll(course) {
+    if (!currentUser) {
+      showToast("Connectez-vous pour vous inscrire à un cours.", "info");
+      navigate("login");
+      return;
+    }
+    if (course.isPremium) {
       showToast("Abonnement Premium bientôt disponible — restez connecté !", "info");
-    } else {
-      setEnrolled(prev => ({ ...prev, [course.id]: prev[course.id] || 10 }));
+      setActiveCourse(null);
+      return;
+    }
+
+    try {
+      const enrollment = await academyApi.enroll(course.id);
+      if (enrollment?.courseId !== course.id) {
+        throw new Error("Réponse invalide lors de l’inscription au cours.");
+      }
+      setEnrolled(prev => ({ ...prev, [course.id]: enrollment.progress }));
       showToast(`Inscription à "${course.title}" confirmée !`, "success");
       setPlayerCourse(course);
+    } catch (error) {
+      showToast(error.message || "Impossible de vous inscrire à ce cours.", "error");
     }
     setActiveCourse(null);
   }
 
-  function handleUpdateProgress(courseId, newProg) {
-    setEnrolled(prev => ({ ...prev, [courseId]: newProg }));
-    if (newProg >= 100) {
-      showToast("🎉 Félicitations ! Formation terminée. +50 points de réputation attribués !", "success");
-    } else {
-      showToast(`Progression mise à jour : ${newProg}%`, "info");
+  async function handleUpdateProgress(courseId, newProg) {
+    try {
+      const enrollment = await academyApi.updateProgress(courseId, newProg);
+      if (enrollment?.courseId !== courseId) {
+        throw new Error("Réponse invalide lors de la mise à jour de la progression.");
+      }
+      setEnrolled(prev => ({ ...prev, [courseId]: enrollment.progress }));
+      showToast("Formation terminée. Progression enregistrée.", "success");
+      setPlayerCourse(null);
+    } catch (error) {
+      showToast(error.message || "Impossible d’enregistrer votre progression.", "error");
     }
   }
 
   const enrolledCourseIds = Object.keys(enrolled);
+  const averageRating = courses.length
+    ? (courses.reduce((sum, course) => sum + Number(course.rating || 0), 0) / courses.length).toFixed(1)
+    : "—";
 
   return (
     <div className="page-wrapper">
@@ -210,7 +267,7 @@ export default function AcademyPage() {
           </div>
         </div>
         <div className="academy-hero__stats">
-          {[["15+", "Cours"], ["3 000+", "Apprenants"], ["4.8★", "Note moy."]].map(([v, l]) => (
+          {[[courses.length, "Cours"], [courses.reduce((sum, course) => sum + (course.enrollCount || 0), 0), "Inscriptions"], [`${averageRating}★`, "Note moy."]].map(([v, l]) => (
             <div key={l} className="academy-hero__stat">
               <div className="academy-hero__stat-val">{v}</div>
               <div className="academy-hero__stat-lbl">{l}</div>
@@ -226,7 +283,7 @@ export default function AcademyPage() {
             📖 Mes cours en cours ({enrolledCourseIds.length})
           </div>
           <div className="academy-progress__list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {COURSES.filter(c => enrolledCourseIds.includes(c.id)).map(c => {
+            {courses.filter(c => enrolledCourseIds.includes(c.id)).map(c => {
               const prog = enrolled[c.id] || 0;
               return (
                 <div key={c.id} className="academy-progress__item" style={{ display: "flex", alignItems: "center", gap: 14, padding: 12, border: "1px solid var(--border)", borderRadius: "var(--r-md)" }}>
@@ -263,7 +320,7 @@ export default function AcademyPage() {
 
       {/* Course grid */}
       <div className="grid-auto">
-        {filtered.map(course => {
+        {loading ? <p>Chargement des cours…</p> : loadError ? <p role="alert">{loadError}</p> : filtered.length === 0 ? <p>Aucun cours disponible pour ce filtre.</p> : filtered.map(course => {
           const isEnrolled = enrolledCourseIds.includes(course.id);
           const prog = enrolled[course.id] || 0;
           return (
@@ -277,30 +334,30 @@ export default function AcademyPage() {
               <div className="course-card__cover">{course.icon}</div>
               <div className="course-card__body">
                 <div className="course-card__badges">
-                  <span className="badge badge-gray">{course.type}</span>
+                  <span className="badge badge-gray">{course.courseType}</span>
                   <span className={`badge ${LEVEL_COLOR[course.level] || "badge-gray"}`}>
                     {course.level}
                   </span>
-                  {course.premium && <span className="badge badge-warning">⭐ Premium</span>}
+                  {course.isPremium && <span className="badge badge-warning">⭐ Premium</span>}
                   {isEnrolled && (
                     <span className="badge badge-success">✅ {prog}%</span>
                   )}
                 </div>
                 <div className="course-card__title">{course.title}</div>
                 <div className="course-card__stats">
-                  <span>⏱️ {course.duration}</span>
-                  <span>👥 {course.enrolled}</span>
-                  <span>⭐ {course.rating}</span>
+                  <span>⏱️ {course.durationMin ? `${course.durationMin} min` : "—"}</span>
+                  <span>👥 {course.enrollCount}</span>
+                  <span>⭐ {Number(course.rating).toFixed(1)}</span>
                 </div>
                 <button
-                  className={`btn btn-full btn-sm ${course.premium ? "btn-secondary" : "btn-primary"}`}
+                  className={`btn btn-full btn-sm ${course.isPremium ? "btn-secondary" : "btn-primary"}`}
                   onClick={e => {
                     e.stopPropagation();
                     if (isEnrolled) setPlayerCourse(course);
                     else setActiveCourse(course);
                   }}
                 >
-                  {isEnrolled ? "▶️ Continuer la leçon" : course.premium ? "🔒 Aperçu Premium" : "▶️ Commencer le cours"}
+                  {isEnrolled ? "▶️ Continuer la leçon" : course.isPremium ? "🔒 Aperçu Premium" : "▶️ Commencer le cours"}
                 </button>
               </div>
             </div>
@@ -321,7 +378,7 @@ export default function AcademyPage() {
       {playerCourse && (
         <CoursePlayerModal
           course={playerCourse}
-          progress={enrolled[playerCourse.id] || 10}
+          progress={enrolled[playerCourse.id] || 0}
           onUpdateProgress={handleUpdateProgress}
           onClose={() => setPlayerCourse(null)}
         />

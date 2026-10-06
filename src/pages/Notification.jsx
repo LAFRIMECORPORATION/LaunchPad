@@ -68,7 +68,9 @@ export default function Notifications() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => { loadNotifications(filter); }, [filter, loadNotifications]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     async function handleMarkAllRead() {
         // Optimistic update local et global
