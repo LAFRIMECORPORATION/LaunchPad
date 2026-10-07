@@ -12,11 +12,13 @@ import "./Forum.css";
 
 function authorName(author) {
   if (!author) return "Anonyme";
+  if (author.role === "admin") return "adminlaunchpad";
   return `${author.firstName || ""} ${author.lastName || ""}`.trim() || "Anonyme";
 }
 
 function authorInitials(author) {
   if (!author) return "??";
+  if (author.role === "admin") return "AL";
   const a = (author.firstName || "?")[0];
   const b = (author.lastName || "?")[0];
   return `${a}${b}`.toUpperCase();

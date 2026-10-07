@@ -108,6 +108,85 @@
   padding: 5px 0;
 }
 
+.academy-course-social {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.academy-comments {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.academy-comments h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.academy-comments > p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.academy-comment-form {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.academy-comment-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg, #fff);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.academy-comment-list {
+  display: grid;
+  gap: 10px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.academy-comment {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-light, #f8f9fc);
+}
+
+.academy-comment strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.academy-comment p {
+  margin: 6px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.academy-comment time {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 /* Coming soon */
 .academy-coming-soon {
   display: flex;

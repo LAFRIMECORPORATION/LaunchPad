@@ -1,5 +1,12 @@
 # Analyse du front LaunchPad
 
+> **Mise à jour 2026-10-07 :** cet état remplace les constats antérieurs quand
+> ils divergent. Le détail Academy charge maintenant les auteurs de commentaires
+> par la relation Prisma correcte (`user`) et utilise une authentification
+> facultative pour déterminer `likedByMe`. Les likes et commentaires sont
+> connectés aux mutations backend ; leur validation avec une base active reste
+> à réaliser.
+
 ## 1. Vue fonctionnelle
 
 Le front correspond à une plateforme sociale et d’investissement qui couvre :
@@ -83,3 +90,16 @@ Les correctifs principaux ont été appliqués et vérifiés :
 ## 8. Recommandation finale
 
 Le front est désormais dans un état de stabilité exploitable : il compile correctement et les erreurs bloquantes de lint ont été traitées. Les points restants sont surtout des recommandations de qualité et de structure, sans blocage fonctionnel immédiat.
+
+## État Academy et interfaces d'administration
+
+- `AcademyPage.jsx` consomme `academyApi` : consultation du catalogue et du
+  détail, inscription, progression, like explicite et publication de
+  commentaires. Les actions de like/commentaire demandent une session.
+- `Admin.jsx` monte des panneaux dédiés pour l'Academy, les investissements et
+  le forum. `ForumAdminPanel.jsx` publie les annonces d'un administrateur sous
+  le nom public `adminlaunchpad`.
+- La commande ESLint ciblée sur `AcademyPage.jsx` et `api.js` a réussi après
+  les correctifs. Le lint global et le build étaient également passés lors de
+  la vérification précédente, mais ces résultats ne démontrent pas le
+  fonctionnement de services externes ni un parcours end-to-end.

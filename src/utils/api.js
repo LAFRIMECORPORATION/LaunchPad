@@ -261,11 +261,7 @@ export const projectsApi = {
   comment: (id, content) => api.post(`/projects/${id}/comments`, { content }),
   reply: (id, content, parentId) => api.post(`/projects/${id}/comments`, { content, parentId }),
   similar: (id) => api.get(`/projects/${id}/similar`),
-  approve: (id, note) => api.put(`/admin/projects/${id}/approve`, { note }),
-  reject: (id, reason) => api.put(`/admin/projects/${id}/reject`, { reason }),
-  getPending: (params) => api.get("/admin/projects/pending", params),
 
-  // 🚀 CORRECTION INJECTÉE : Utilisation propre de postFormData pour l'image de couverture
   uploadCover: (id, file) => {
     const formData = new FormData();
     formData.append("cover", file);
@@ -356,6 +352,9 @@ export const badgesApi = {
 export const academyApi = {
   listCourses: (params) => api.get("/academy/courses", params),
   getCourse: (id) => api.get(`/academy/courses/${id}`),
+  getMyLikes: () => api.get("/academy/my-likes"),
+  setLike: (id, liked) => api.put(`/academy/courses/${id}/like`, { liked }),
+  addComment: (id, content) => api.post(`/academy/courses/${id}/comments`, { content }),
   enroll: (id) => api.post(`/academy/courses/${id}/enroll`),
   getMyCourses: () => api.get("/academy/my-courses"),
   updateProgress: (id, progress) =>
@@ -404,8 +403,14 @@ export const adminApi = {
   getInvestmentsControl: (params) => api.get("/admin/investments-control", params),
   refundInvestment: (id, reason) => api.post(`/admin/investments/${id}/refund`, { reason }),
   getAcademyControl: () => api.get("/admin/academy-control"),
+  getAcademyCourses: () => api.get("/admin/academy/courses"),
+  createAcademyCourse: (data) => api.post("/admin/academy/courses", data),
+  updateAcademyCourse: (id, data) => api.put(`/admin/academy/courses/${id}`, data),
   deleteAcademyCourse: (id) => api.delete(`/admin/academy/courses/${id}`),
-  getForumControl: () => api.get("/admin/forum-control"),
+  getForumControl: (params) => api.get("/admin/forum-control", params),
+  createForumPost: (data) => api.post("/admin/forum/posts", data),
+  updateForumPost: (id, data) => api.put(`/admin/forum/posts/${id}`, data),
   toggleForumPin: (id) => api.put(`/admin/forum/posts/${id}/pin`),
   deleteForumPost: (id) => api.delete(`/admin/forum/posts/${id}`),
+  restoreForumPost: (id) => api.put(`/admin/forum/posts/${id}/restore`),
 };

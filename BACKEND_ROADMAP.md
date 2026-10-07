@@ -1,8 +1,13 @@
 # 🎯 QUICK REFERENCE — Actions Requises Backend
 
-## HIÉRARCHIE DE PRIORITÉS (Mise à jour 2026-07-30)
+## HIÉRARCHIE DE PRIORITÉS (Mise à jour 2026-10-07)
 
-### ✅ COMPLÉTÉ
+> Ce document contient encore un inventaire historique d'endpoints et de
+> tâches. La présence d'une route ne signifie pas qu'elle est validée en
+> production. Les priorités actuelles sont les tests de contrats/API et les
+> parcours end-to-end avec une base et des identifiants sandbox.
+
+### ✅ Présent dans le code (validation end-to-end distincte)
 1. **Authentification** - JWT, refresh tokens, register/login/logout ✅
 2. **Utilisateurs** - CRUD profils, upload avatar ✅
 3. **Projets** - CRUD complet, likes, commentaires, publication, modération ✅
@@ -35,7 +40,28 @@
 
 ---
 
-## API ENDPOINTS (État actuel : 100% implémentés)
+## API ENDPOINTS (routes relevées dans le dépôt ; non certifiées à 100%)
+
+### Academy — catalogue et interactions (ajout 2026-10-07)
+
+Routes publiques de lecture : `GET /api/academy/courses` et
+`GET /api/academy/courses/:id`. La route de détail utilise une authentification
+facultative afin d'inclure `likedByMe` pour un compte connecté, sans bloquer les
+visiteurs. Les actions authentifiées sont :
+
+```text
+GET  /api/academy/my-likes
+PUT  /api/academy/courses/:id/like       { liked: boolean }
+POST /api/academy/courses/:id/comments   { content: string }
+POST /api/academy/courses/:id/enroll
+GET  /api/academy/my-courses
+PUT  /api/academy/my-courses/:id/progress
+```
+
+Les commentaires utilisent la relation Prisma `user`; le service renvoie
+également un alias auteur pour l'interface. Les contrôles ciblés du schéma,
+lint et syntaxe sont passés, mais aucun test avec serveur et base actifs n'a
+été effectué au titre de cette mise à jour.
 
 ### Authentification (5 endpoints) ✅
 ```
@@ -100,9 +126,10 @@ GET    /api/admin/kyc/pending     [ADMIN]
 POST   /api/kyc/:id/request-docs
 ```
 
-### Messages (7 endpoints) ✅
+### Messages (8 endpoints) ✅
 ```
 POST   /api/messages
+POST   /api/messages/global          [ADMIN]
 GET    /api/conversations
 POST   /api/conversations/direct
 GET    /api/conversations/:id/messages
@@ -418,9 +445,9 @@ Before deploying to production:
 
 ---
 
-## ÉTAT ACTUEL DU PROJET (2026-07-30)
+## ÉTAT ACTUEL DU PROJET (révision 2026-10-07)
 
-### ✅ Modules Backend 100% Opérationnels
+### ✅ Modules backend présents et câblés (état de validation à distinguer)
 - Authentification complète avec JWT et refresh tokens
 - Gestion utilisateurs et profils avec upload avatar
 - Module projets avec CRUD, likes, commentaires, modération
@@ -436,6 +463,10 @@ Before deploying to production:
 - Appointments et gestion rendez-vous
 - Due diligence avec routes et service
 - Admin dashboard avec modération
+- Academy : gestion admin des cours, publication, interactions persistées
+- Forum admin : création/modification, épinglage, masquage et restauration
+- Investissements admin : recherche, filtres, historique et statut interne
+  « remboursé » (n'émet pas de remboursement chez le fournisseur de paiement)
 
 ### 🎯 Prochaines Étapes Prioritaires
 1. Validation sandbox paiements (tests réels)
@@ -445,4 +476,4 @@ Before deploying to production:
 
 ---
 
-**Dernière mise à jour** : 2026-07-30
+**Dernière mise à jour** : 2026-10-07

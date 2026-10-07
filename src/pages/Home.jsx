@@ -60,13 +60,13 @@ export default function Home() {
                             Explorer les projets
                         </button>
                     </div>
-                    {/* stats strip */}
+                    {/* Principales actions de la plateforme */}
                     <div className="home-stats">
                         {[
-                            ["2 400+", "Etudiants inscrits"],
-                            ["380+", "Projets publiés"],
-                            ["140+", "investisseurs actifs"],
-                            ["2.4M fcfa", "financements lévés"],
+                            ["Publiez", "vos projets"],
+                            ["Explorez", "les opportunités"],
+                            ["Échangez", "avec la communauté"],
+                            ["Suivez", "vos investissements"],
                         ].map(([v, l]) => (
                             <div key={l} className="home-stat">
                                 <div className="home-stat-value"> {v} </div>

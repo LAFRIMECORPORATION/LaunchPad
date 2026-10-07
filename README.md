@@ -18,13 +18,34 @@ LaunchPad est une application web full-stack permettant aux étudiants entrepren
 
 Lancer ces commandes depuis chaque dossier indiqué, dans deux terminaux séparés.
 
-Backend (`backEnd/`) — renseigner d'abord les variables d'environnement :
+Backend (`backEnd/`) — copier puis renseigner l'exemple d'environnement avant
+de démarrer. Il fournit une URL PostgreSQL locale d'exemple ; le serveur
+PostgreSQL doit être disponible et les deux secrets JWT doivent être distincts.
+
+Sous PowerShell, depuis `backEnd/`, créer le fichier local :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Modifier ensuite `.env` pour y indiquer les identifiants PostgreSQL locaux.
+Les valeurs fournies pour les secrets JWT sont des exemples à remplacer.
 
 ```bash
-# Installer les dépendances et démarrer l'API
+# Depuis backEnd/
 npm install
+npm run db:generate
+npm run db:migrate:deploy
+npm test
 npm run dev
 ```
+
+Ne pas utiliser les valeurs d'exemple pour un déploiement. `npm run
+db:migrate:deploy` applique les migrations en attente à la base indiquée par
+`DATABASE_URL`.
+
+`npm test` lance les tests de contrats backend avec le runner natif Node.js ;
+aucun test end-to-end dépendant de la base n'est inclus pour le moment.
 
 Frontend (`LaunchPad/`) :
 
@@ -100,6 +121,8 @@ parcours réels. `VITE_API_URL` doit pointer vers sa racine `/api`.
 - **Forum** : Posts et réponses
 - **Notifications** : In-app et push
 - **Academy** : catalogue, inscriptions et progression enregistrés via l'API
+- **Interactions Academy** : likes persistés par compte et commentaires liés aux cours publiés
+- **Administration** : gestion Academy, investissements et modération/création des publications du forum
 
 ### Contrats vérifiés dans le code
 
@@ -108,6 +131,13 @@ parcours réels. `VITE_API_URL` doit pointer vers sa racine `/api`.
 - Investissements : `GET /api/investments?page=...`
 - Academy : `GET /api/academy/courses`, inscription et progression via les routes
   `/api/academy/...`
+- Academy : `GET /api/academy/courses/:id` accepte une session facultative et
+  renvoie les commentaires/auteurs, les compteurs et l'état `likedByMe` si le
+  membre est connecté. Aimer un cours (`PUT .../:id/like`) et commenter
+  (`POST .../:id/comments`) requièrent une session.
+- Admin : `/api/admin/academy/*`, `/api/admin/investments-control` et
+  `/api/admin/forum/*` sont réservés aux administrateurs. Les annonces créées
+  par un administrateur apparaissent publiquement sous `adminlaunchpad`.
 
 Les appels Socket.IO sont authentifiés par JWT. Un utilisateur ne peut rejoindre
 que les rooms de ses propres conversations.
@@ -125,6 +155,20 @@ La présence d'une route ou d'un écran ne signifie pas que les paiements ont é
 validés auprès des opérateurs. Les webhooks, identifiants sandbox/production et
 parcours de remboursement doivent être testés dans leur environnement dédié.
 
+### Academy : état documenté au 2026-10-07
+
+- Le panneau **Admin → Academy** gère les cours et leur publication ; les
+  membres consultent uniquement les cours publiés.
+- Les likes sont enregistrés par utilisateur et le serveur accepte un état
+  désiré (`liked: true/false`), ce qui rend la répétition d'une requête sûre.
+- Les commentaires sont enregistrés et renvoient le compte auteur. Les erreurs
+  réseau et les erreurs de validation restent visibles à l'utilisateur.
+- Le détail d'un cours utilise l'authentification facultative pour renvoyer
+  `likedByMe`. Les commentaires sont chargés avec la relation Prisma `user`.
+- Les contrôles statiques ciblés sont passés : ESLint Academy, syntaxe Node des
+  fichiers backend Academy et `prisma validate`. Cela ne remplace pas un test
+  connecté à une base et à des comptes réels.
+
 ## 🎯 Fonctionnalités Principales
 
 - **Exploration de projets** : Filtrage par catégorie, stade, recherche
@@ -134,6 +178,7 @@ parcours de remboursement doivent être testés dans leur environnement dédié.
 - **KYC** : Validation d'identité pour accès complet
 - **Forum communautaire** : Discussions et échanges
 - **Badges et réputation** : Système de gamification
+- **Academy** : cours publiés, likes/commentaires membres, inscriptions et progression
 
 ## 🔐 Sécurité
 
@@ -185,6 +230,7 @@ npm run build
 ## 🔗 Liens Utiles
 
 - [Backend Repository](../backEnd)
+- [Guide du projet et des pages](./PROJECT_GUIDE.md)
 - [Documentation API](../SPRINT_PLAN.md)
 - [Roadmap Backend](./BACKEND_ROADMAP.md)
 
@@ -194,4 +240,4 @@ Propriétaire - LaunchPad Platform
 
 ---
 
-**Dernière mise à jour** : 2026-10-06
+**Dernière mise à jour** : 2026-10-07

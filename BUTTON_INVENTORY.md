@@ -1,6 +1,27 @@
 # 🎯 LAUNCHPAD — INVENTAIRE COMPLET DES BOUTONS
 
-**Date**: Juin 2026  
+> **État révisé le 2026-10-07.** Les totaux, pourcentages « production-ready »
+> et estimations ci-dessous sont historiques et n'ont pas été recalculés
+> bouton par bouton ; ils ne constituent pas une certification. Pour Academy,
+> les actions de likes et commentaires sont reliées à l'API persistante et
+> requièrent un compte connecté. Le panneau admin du forum gère la création,
+> l'édition, l'épinglage, le masquage et la restauration. Les actions sensibles
+> et les intégrations de paiement restent à tester end-to-end avant production.
+
+## Mise à jour ciblée Academy / administration
+
+| Zone | Actions présentes | Niveau de validation |
+|---|---|---|
+| Academy membre | Lire cours/commentaires, aimer/retirer son like, commenter, s'inscrire, mettre à jour la progression | Code, contrat et contrôles ciblés vérifiés ; pas d'E2E base/API |
+| Academy admin | CRUD, brouillon/publication | Routes admin protégées et UI branchées |
+| Investissements admin | Recherche, filtres, détails, historique, statut remboursement interne | Code/UI branchés ; pas de remboursement externe |
+| Forum admin | Publier sous `adminlaunchpad`, éditer, épingler, masquer/restaurer | Routes admin et UI branchées |
+
+Le reste de cet inventaire est une trace d'analyse antérieure. Les mentions
+« fonctionnel », nombres d'actions et priorités peuvent être obsolètes ; se
+référer à `PROJECT_GUIDE.md` et aux composants/routes cités avant toute décision.
+
+**Date de l'inventaire historique**: Juin 2026  
 **Total Boutons Analysés**: 150+  
 **Statut Frontend**: 95% des actions sont branchées  
 **Priorisation Backend**: Voir section "À Implémenter"

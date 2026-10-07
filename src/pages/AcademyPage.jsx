@@ -88,8 +88,19 @@ function CoursePlayerModal({ course, progress, onUpdateProgress, onClose }) {
 }
 
 /* ── Modal de détails du cours ──────────────────────────────── */
-function CourseModal({ course, onClose, onEnroll }) {
+function CourseModal({
+  course,
+  courseDetails,
+  commentsLoading,
+  commentDraft,
+  commentSubmitting,
+  onCommentChange,
+  onCommentSubmit,
+  onClose,
+  onEnroll,
+}) {
   const resourceUrl = getCourseResourceUrl(course.contentUrl);
+  const comments = courseDetails?.comments || [];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -106,6 +117,7 @@ function CourseModal({ course, onClose, onEnroll }) {
             <span>⏱️ {course.durationMin ? `${course.durationMin} min` : "Durée non précisée"}</span>
             <span>👥 {course.enrollCount} inscrits</span>
             <span>⭐ {Number(course.rating).toFixed(1)}/5</span>
+            <span>🤍 {courseDetails?.likesCount ?? course._count?.likes ?? 0} likes</span>
           </div>
           <p className="academy-modal__desc">{course.description}</p>
           {resourceUrl && (
@@ -113,6 +125,41 @@ function CourseModal({ course, onClose, onEnroll }) {
               Voir la ressource du cours
             </a>
           )}
+          <section className="academy-comments">
+            <h3>Commentaires ({courseDetails?.commentsCount ?? comments.length})</h3>
+            {commentDraft !== null && (
+              <form className="academy-comment-form" onSubmit={onCommentSubmit}>
+                <textarea
+                  aria-label="Écrire un commentaire"
+                  maxLength={2000}
+                  rows={3}
+                  placeholder="Partage ton avis sur cette formation…"
+                  value={commentDraft}
+                  onChange={(event) => onCommentChange(event.target.value)}
+                />
+                <button className="btn btn-primary btn-sm" type="submit" disabled={commentSubmitting || !commentDraft.trim()}>
+                  {commentSubmitting ? "Publication…" : "Commenter"}
+                </button>
+              </form>
+            )}
+            {commentsLoading ? (
+              <p>Chargement des commentaires…</p>
+            ) : comments.length === 0 ? (
+              <p>Soyez le premier à commenter cette formation.</p>
+            ) : (
+              <div className="academy-comment-list">
+                {comments.map((comment) => (
+                  <article className="academy-comment" key={comment.id}>
+                    <strong>{comment.author?.name || `${comment.user?.firstName || ""} ${comment.user?.lastName || ""}`.trim() || "Membre LaunchPad"}</strong>
+                    <p>{comment.content}</p>
+                    <time dateTime={comment.createdAt}>
+                      {new Date(comment.createdAt).toLocaleDateString("fr-FR")}
+                    </time>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
@@ -120,7 +167,7 @@ function CourseModal({ course, onClose, onEnroll }) {
             className={`btn ${course.isPremium ? "btn-warning" : "btn-primary"}`}
             onClick={() => onEnroll(course)}
           >
-            {course.isPremium ? "⭐ Accès Premium" : "▶️ Dérouler la formation"}
+            {course.isPremium ? "⭐ Accès Premium" : "▶️ Accéder à la formation"}
           </button>
         </div>
       </div>
@@ -134,9 +181,14 @@ export default function AcademyPage() {
   const [filter, setFilter]           = useState("all");
   const [courses, setCourses]         = useState([]);
   const [enrolled, setEnrolled]       = useState({});
+  const [likedCourses, setLikedCourses] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [loadError, setLoadError]     = useState("");
   const [activeCourse, setActiveCourse] = useState(null);
+  const [courseDetails, setCourseDetails] = useState(null);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [playerCourse, setPlayerCourse] = useState(null);
 
   useEffect(() => {
@@ -192,6 +244,43 @@ export default function AcademyPage() {
     return () => { cancelled = true; };
   }, [currentUser?.id, showToast]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLikes() {
+      if (!currentUser?.id) {
+        setLikedCourses([]);
+        return;
+      }
+      try {
+        const ids = await academyApi.getMyLikes();
+        if (!Array.isArray(ids)) throw new Error("Réponse invalide lors du chargement des likes.");
+        if (!cancelled) setLikedCourses(ids);
+      } catch (error) {
+        if (!cancelled) showToast(error.message || "Impossible de charger vos likes.", "error");
+      }
+    }
+
+    loadLikes();
+    return () => { cancelled = true; };
+  }, [currentUser?.id, showToast]);
+
+  async function openCourse(course) {
+    // The public catalogue exposes only published courses; read the full course and comments on demand.
+    setActiveCourse(course);
+    setCourseDetails(null);
+    setCommentDraft(currentUser ? "" : null);
+    setCommentsLoading(true);
+    try {
+      const details = await academyApi.getCourse(course.id);
+      setCourseDetails(details);
+    } catch (error) {
+      showToast(error.message || "Impossible de charger cette formation.", "error");
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
   const filtered = courses.filter(c => {
     if (filter === "all") return true;
     if (filter === "free") return !c.isPremium;
@@ -200,6 +289,11 @@ export default function AcademyPage() {
   });
 
   async function handleEnroll(course) {
+    if (enrolled[course.id] !== undefined) {
+      setPlayerCourse(course);
+      setActiveCourse(null);
+      return;
+    }
     if (!currentUser) {
       showToast("Connectez-vous pour vous inscrire à un cours.", "info");
       navigate("login");
@@ -214,7 +308,7 @@ export default function AcademyPage() {
     try {
       const enrollment = await academyApi.enroll(course.id);
       if (enrollment?.courseId !== course.id) {
-        throw new Error("Réponse invalide lors de l’inscription au cours.");
+        throw new Error("Réponse invalide lors de l'inscription au cours.");
       }
       setEnrolled(prev => ({ ...prev, [course.id]: enrollment.progress }));
       showToast(`Inscription à "${course.title}" confirmée !`, "success");
@@ -224,6 +318,73 @@ export default function AcademyPage() {
     }
     setActiveCourse(null);
   }
+
+    async function handleToggleLike(course) {
+      // Persist the desired state so repeated requests cannot accidentally invert a previous click.
+      if (!currentUser) {
+        showToast("Connectez-vous pour aimer une formation.", "info");
+        navigate("login");
+        return;
+      }
+
+      const liked = likedCourses.includes(course.id);
+      try {
+        const result = await academyApi.setLike(course.id, !liked);
+        setLikedCourses((previous) =>
+          result.liked
+            ? [...new Set([...previous, course.id])]
+            : previous.filter((id) => id !== course.id),
+        );
+        setCourses((previous) => previous.map((item) =>
+          item.id === course.id
+            ? { ...item, _count: { ...item._count, likes: result.likesCount } }
+            : item,
+        ));
+        setCourseDetails((previous) => previous?.id === course.id
+          ? { ...previous, likesCount: result.likesCount, likedByMe: result.liked }
+          : previous,
+        );
+      } catch (error) {
+        showToast(error.message || "Impossible d'enregistrer votre like.", "error");
+      }
+    }
+
+    async function handleCommentSubmit(event) {
+      event.preventDefault();
+      if (!activeCourse || !commentDraft?.trim()) return;
+      if (!currentUser) {
+        showToast("Connectez-vous pour commenter une formation.", "info");
+        navigate("login");
+        return;
+      }
+
+      setCommentSubmitting(true);
+      try {
+        const comment = await academyApi.addComment(activeCourse.id, commentDraft.trim());
+        const author = comment.user
+          ? { ...comment.user, name: `${comment.user.firstName} ${comment.user.lastName}`.trim() }
+          : null;
+        setCourseDetails((previous) => previous
+          ? {
+              ...previous,
+              comments: [{ ...comment, author }, ...(previous.comments || [])],
+              commentsCount: (previous.commentsCount || 0) + 1,
+            }
+          : previous,
+        );
+        setCourses((previous) => previous.map((course) =>
+          course.id === activeCourse.id
+            ? { ...course, _count: { ...course._count, comments: (course._count?.comments || 0) + 1 } }
+            : course,
+        ));
+        setCommentDraft("");
+        showToast("Commentaire publié.", "success");
+      } catch (error) {
+        showToast(error.message || "Impossible de publier le commentaire.", "error");
+      } finally {
+        setCommentSubmitting(false);
+      }
+    }
 
   async function handleUpdateProgress(courseId, newProg) {
     try {
@@ -327,7 +488,7 @@ export default function AcademyPage() {
             <div
               key={course.id}
               className="course-card"
-              onClick={() => isEnrolled ? setPlayerCourse(course) : setActiveCourse(course)}
+              onClick={() => openCourse(course)}
               role="button"
               tabIndex={0}
             >
@@ -349,12 +510,26 @@ export default function AcademyPage() {
                   <span>👥 {course.enrollCount}</span>
                   <span>⭐ {Number(course.rating).toFixed(1)}</span>
                 </div>
+                <div className="academy-course-social">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${likedCourses.includes(course.id) ? "btn-danger" : "btn-secondary"}`}
+                    aria-pressed={likedCourses.includes(course.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleLike(course);
+                    }}
+                  >
+                    {likedCourses.includes(course.id) ? "♥ Aimé" : "♡ J’aime"}
+                    {" · "}{course._count?.likes || 0}
+                  </button>
+                  <span>💬 {course._count?.comments || 0}</span>
+                </div>
                 <button
                   className={`btn btn-full btn-sm ${course.isPremium ? "btn-secondary" : "btn-primary"}`}
                   onClick={e => {
                     e.stopPropagation();
-                    if (isEnrolled) setPlayerCourse(course);
-                    else setActiveCourse(course);
+                    openCourse(course);
                   }}
                 >
                   {isEnrolled ? "▶️ Continuer la leçon" : course.isPremium ? "🔒 Aperçu Premium" : "▶️ Commencer le cours"}
@@ -369,6 +544,12 @@ export default function AcademyPage() {
       {activeCourse && (
         <CourseModal
           course={activeCourse}
+          courseDetails={courseDetails}
+          commentsLoading={commentsLoading}
+          commentDraft={commentDraft}
+          commentSubmitting={commentSubmitting}
+          onCommentChange={setCommentDraft}
+          onCommentSubmit={handleCommentSubmit}
           onClose={() => setActiveCourse(null)}
           onEnroll={handleEnroll}
         />

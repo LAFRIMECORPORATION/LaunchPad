@@ -1,5 +1,29 @@
 # TABLEAU RÉCAPITULATIF — Statut des Boutons par Page
 
+_Révision du guide : 2026-10-07. Les anciens tableaux de taux sont historiques._
+
+> **Révision 2026-10-07 :** les pourcentages et statuts `READY` ci-dessous
+> proviennent d'un inventaire ancien et ne sont pas des résultats de tests.
+> Utiliser les statuts par action ci-dessous comme guide de code, pas comme
+> preuve de disponibilité en production. Le périmètre Academy a été réaligné :
+> like explicite, commentaires persistés, session nécessaire aux mutations,
+> lecture publique des cours publiés et affichage de l'auteur corrigé.
+
+### État actuel vérifié — Academy et Admin
+
+| Interface | Action | Contrat/API | Limite de validation |
+|---|---|---|---|
+| `AcademyPage.jsx` | Liker / retirer un like | `PUT /api/academy/courses/:id/like` avec état cible | Lint ciblé passé ; API/base active non testée |
+| `AcademyPage.jsx` | Lire les commentaires | `GET /api/academy/courses/:id` | Jusqu'à 100 commentaires récents |
+| `AcademyPage.jsx` | Publier un commentaire | `POST /api/academy/courses/:id/comments` | Connexion requise ; longueur validée côté serveur |
+| `AcademyAdminPanel.jsx` | Créer/modifier/publier/supprimer un cours | `/api/admin/academy/courses` | Routes protégées admin |
+| `InvestmentAdminPanel.jsx` | Filtrer et voir les détails | `/api/admin/investments-control` | Pas de test paiement réel |
+| `InvestmentAdminPanel.jsx` | Marquer remboursé | `POST /api/admin/investments/:id/refund` | Statut interne seulement, aucun mouvement de fonds |
+| `ForumAdminPanel.jsx` | Créer/modifier/modérer/restaurer | `/api/admin/forum/*` | Auteur admin affiché `adminlaunchpad` |
+
+Les listes historiques plus bas ne doivent pas servir de checklist à jour sans
+vérification du composant et du routeur actuel.
+
 ## LÉGENDE
 | Symbole | Signification |
 |---------|---------------|

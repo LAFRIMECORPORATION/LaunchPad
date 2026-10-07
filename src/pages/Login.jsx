@@ -39,12 +39,12 @@ export default function Login() {
 
                 <div className="auth-deco-title">Rejoignez l ecosysteme etudiant</div>
                 <div className="auth-deco-sub">
-                    Des milliers de startups etudiantes trouvent leurs premiers investisseurs sur Launchpad.
+                    Publiez votre projet, échangez avec des investisseurs et développez votre réseau.
                 </div>
                 {[
-                    ["🚀", "2 400+", "Étudiants actifs"],
-                    ["💰", "€2.4M", "Financements levés"],
-                    ["🤝", "380+", "Projets financés"],
+                    ["🚀", "Publiez", "vos projets"],
+                    ["💰", "Échangez", "avec des investisseurs"],
+                    ["🤝", "Développez", "votre réseau"],
                 ].map(([ico, val, lbl]) => (
                     <div key={lbl} className="auth-deco-stat">
                         <span className="auth-deco-stat-icon"> {ico}</span>
